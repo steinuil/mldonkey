@@ -1,0 +1,4 @@
+(library
+ (name mldonkey_lib)
+ (wrapped false)
+ (modules queues fifo md4 unix32 set2 int64ops options intmap))

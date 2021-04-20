@@ -20,7 +20,7 @@
 
 
 open Int64ops
-open Printf2
+(* open Printf2 *)
 
 let log_prefix = "[Ux32]"
 

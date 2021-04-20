@@ -1,0 +1,3 @@
+(library
+ (name daemon_common)
+ (libraries mldonkey_lib))
