@@ -1,0 +1,3 @@
+(library
+ (name rss)
+ (libraries xml-light containers))

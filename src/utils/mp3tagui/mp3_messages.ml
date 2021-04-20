@@ -23,20 +23,27 @@
 (** Messages and string constants. *)
 
 let software = "mp3tag"
+
 let software_version = "1.1"
 
 (** {2 Command line messages} *)
 
-let usage = Sys.argv.(0)^" [options] <files>\n"
-let options_are = "Options are :"
+let usage = Sys.argv.(0) ^ " [options] <files>\n"
 
+let options_are = "Options are :"
 
 (** {2 Messages} *)
 
 let title = "Title"
+
 let artist = "Artist"
+
 let album = "Album"
+
 let year = "Year"
+
 let tracknum = "Track number"
+
 let comment = "Comment"
+
 let genre = "Genre"

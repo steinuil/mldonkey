@@ -1,0 +1,3 @@
+(library
+ (name mp3tag)
+ (modules mp3_args mp3_genres mp3_info mp3_messages mp3_misc mp3_tag mp3tag))

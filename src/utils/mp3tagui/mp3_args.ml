@@ -25,17 +25,17 @@
 (** The files to handle. *)
 let files = ref ([] : string list)
 
-let options  = ref ([] : (string * Arg.spec * string) list)
+let options = ref ([] : (string * Arg.spec * string) list)
 
 (** Parse the command line and fill the arguments variables. *)
 let parse () =
   try
-    let _ = Arg.parse !options
-        (fun s -> files := !files @ [s])
-        (Mp3_messages.usage^Mp3_messages.options_are)
+    let _ =
+      Arg.parse !options
+        (fun s -> files := !files @ [ s ])
+        (Mp3_messages.usage ^ Mp3_messages.options_are)
     in
     ()
-  with
-    Failure s ->
-      lprintf_newline "%s" s ;
-      exit 1
+  with Failure s ->
+    Printf.printf "%s\n" s;
+    exit 1
