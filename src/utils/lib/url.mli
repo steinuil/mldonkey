@@ -17,44 +17,45 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 
-
 type url = {
-    proto : string;
-    server : string;
-    port : int;
-    full_file : string;
-    short_file : string;
-    user : string;
-    passwd : string;
-    args : (string * string) list;
-    
-    string : string;
-  }
-  
-  (*
+  proto : string;
+  server : string;
+  port : int;
+  full_file : string;
+  short_file : string;
+  user : string;
+  passwd : string;
+  args : (string * string) list;
+  string : string;
+}
+
+(*
 val create  :    ?proto:string ->
     ?server:string ->
     ?port:int -> ?user:string -> ?pass:string -> string -> url
     (*d create an already parsed url *)
 *)
-  
+
 val of_string : ?args:(string * string) list -> string -> url
-    (*d [of_string s] returns the url corresponding to the given [s].
-       this string should start by ["http://"]. [raise Invalid_argument]
-       if the string is not an url *)
+
+(*d [of_string s] returns the url corresponding to the given [s].
+   this string should start by ["http://"]. [raise Invalid_argument]
+   if the string is not an url *)
 
 val to_string : url -> string
+
 (*d [to_string u] returns a string representing u.  *)
 
 val to_string_no_args : url -> string
+
 (*d [to_string u] returns a string representing u.  *)
 
 val cut_args : string -> (string * string) list
+
 val put_args : string -> (string * string) list -> string
 
-  
 val encode : string -> string
+
 val decode : ?raw:bool -> string -> string
 
 val option : url Options.option_class
-  

@@ -19,62 +19,57 @@
 
 open String2
 
-  
 let win32 = Sys.os_type = "Win32"
+
 let slash = if win32 then '\\' else '/'
+
 let slash_s = String.make 1 slash
-  
+
 let normalize filename =
   let l = split filename slash in
-  let is_absolute = match l with
-      "" :: _ -> true
-    | _ -> false
-  in
+  let is_absolute = match l with "" :: _ -> true | _ -> false in
   let rec iter l =
     match l with
-      [] -> [], false
+    | [] -> ([], false)
     | "" :: l -> iter l
     | "." :: l -> iter l
-    | ".." :: l -> let l,_ = iter l in ("..":: l), false
-    | _ :: ".." :: l -> 
-        let l,_ = iter l in l, true
-    | x :: l -> 
-        let l, redo = iter l in if redo then iter (x :: l) else (x :: l), false
+    | ".." :: l ->
+        let l, _ = iter l in
+        (".." :: l, false)
+    | _ :: ".." :: l ->
+        let l, _ = iter l in
+        (l, true)
+    | x :: l ->
+        let l, redo = iter l in
+        if redo then iter (x :: l) else (x :: l, false)
   in
   let l, _ = iter l in
-  let l = 
+  let l =
     if is_absolute then
-      let rec iter_abs l =
-        match l with
-          ".." :: l -> iter_abs l
-        | _ -> l
-      in
-      "" :: (iter_abs l)
+      let rec iter_abs l = match l with ".." :: l -> iter_abs l | _ -> l in
+      "" :: iter_abs l
     else l
   in
-  let file = match l with
-      [] -> "."
-    | [""] -> slash_s
-    | _ -> unsplit l slash
+  let file =
+    match l with [] -> "." | [ "" ] -> slash_s | _ -> unsplit l slash
   in
-(*  if file <> filename then begin
-      lprintf "[%s] normalized to [%s]" filename file; lprint_newline ();
-    end; *)
+  (* if file <> filename then begin
+       lprintf "[%s] normalized to [%s]" filename file; lprint_newline ();
+     end; *)
   file
-;;
 
 let dirname name =
   let name = normalize name in
   try
     match String.rindex name slash with
-      0 -> slash_s
+    | 0 -> slash_s
     | n -> String.sub name 0 n
   with Not_found -> "."
 
 let last_extension file =
   try
     let pos = String.rindex file '.' in
-    let pos2 = try String.rindex file slash with Not_found -> 0 in 
+    let pos2 = try String.rindex file slash with Not_found -> 0 in
     if pos < pos2 then raise Not_found;
     String2.after file pos
   with Not_found -> ""
@@ -82,27 +77,27 @@ let last_extension file =
 let last_extension2 file =
   try
     let pos = String.rindex file '.' in
-    let pos2 = try String.rindex file slash with Not_found -> 0 in 
+    let pos2 = try String.rindex file slash with Not_found -> 0 in
     if pos < pos2 then raise Not_found;
     String2.after file (pos + 1)
   with Not_found -> ""
 
 let extension file =
   try
-    let pos2 = try String.rindex file slash with _ -> 0 in 
+    let pos2 = try String.rindex file slash with _ -> 0 in
     let pos = String.index_from file pos2 '.' in
     let len = String.length file in
-    String.sub file pos (len -pos)
+    String.sub file pos (len - pos)
   with _ -> ""
-      
+
 let extensions file =
   let ext = extension file in
   let len = String.length ext in
-  if len > 0 then
-    String2.split_simplify (String.sub ext 1 (len-1)) '.'
+  if len > 0 then String2.split_simplify (String.sub ext 1 (len - 1)) '.'
   else []
-      
+
 let from_strings = ref []
+
 let to_strings = ref []
 
 let register_conversions from_string to_string =
@@ -111,23 +106,25 @@ let register_conversions from_string to_string =
 
 let from_string filename =
   List.fold_left (fun file f -> f file) filename !from_strings
-  
+
 let to_string filename =
   List.fold_left (fun file f -> f file) filename !to_strings
 
 let path_of_filename filename =
-  let filename = String.copy filename in
-  let len = String.length filename in
+  let filename = Bytes.of_string filename in
+  let len = Bytes.length filename in
   for i = 0 to len - 1 do
-    if filename.[i] = '\\' then filename.[i] <- '/';
+    if Bytes.get filename i = '\\' then Bytes.set filename i '/'
   done;
-  let filename = 
-    if len > 2 && filename.[1]  = ':' &&
-      match filename.[0] with 
-        'a' .. 'z' | 'A' .. 'Z' -> true
-      | _ -> false then
-      Printf.sprintf "%s/%s" (String.sub filename 0 2) 
-      (String.sub filename 2 (len-2))
+  let filename = Bytes.to_string filename in
+  let filename =
+    if
+      len > 2
+      && filename.[1] = ':'
+      && match filename.[0] with 'a' .. 'z' | 'A' .. 'Z' -> true | _ -> false
+    then
+      Printf.sprintf "%s/%s" (String.sub filename 0 2)
+        (String.sub filename 2 (len - 2))
     else filename
   in
   split_simplify filename '/'
@@ -142,69 +139,65 @@ let filesystem_compliant name fstype namemax =
   (* replace all illegal characters with a valid one.
      assumes all filesystems accept '_'s in filenames *)
   let escape_chars p filename =
-    let s = String.copy filename in
+    let s = Bytes.of_string filename in
     for i = 0 to String.length filename - 1 do
-      if p s.[i] then s.[i] <- '_'
+      if p (Bytes.get s i) then Bytes.set s i '_'
     done;
-    s in
+    s |> Bytes.to_string
+  in
 
   (* remove all illegal characters at the beginning of filename *)
   let trim_left p filename =
     let len = String.length filename in
     let left =
-      let rec aux i =
-        if i < len && p filename.[i] then aux (i+1) else i in
-      aux 0 in
-    if left = 0 then filename
-    else
-      String.sub filename left (len - left) in
+      let rec aux i = if i < len && p filename.[i] then aux (i + 1) else i in
+      aux 0
+    in
+    if left = 0 then filename else String.sub filename left (len - left)
+  in
 
   (* remove all illegal characters at the end of filename *)
   let trim_right p filename =
     let len = String.length filename in
     let right =
-      let rec aux i =
-        if i > 0 && p filename.[i-1] then aux (i-1) else i in
-      aux len in
-    if right = len then filename
-    else
-      String.sub filename 0 right in
+      let rec aux i = if i > 0 && p filename.[i - 1] then aux (i - 1) else i in
+      aux len
+    in
+    if right = len then filename else String.sub filename 0 right
+  in
 
   let minimal_filter c =
-    match c with
-      | '/' | '\\' | '<' | '>' | '"' -> true
-      | _ -> false in
+    match c with '/' | '\\' | '<' | '>' | '"' -> true | _ -> false
+  in
 
-  let posix_compliant name =
-    escape_chars minimal_filter name in
+  let posix_compliant name = escape_chars minimal_filter name in
 
   let windows_compliant name =
     (* http://msdn.microsoft.com/library/default.asp?url=/library/en-us/fileio/fs/creating__deleting__and_maintaining_files.asp *)
-    let windows_filter c = 
-      minimal_filter c ||
-        match c with
-          | '*' | '?' | '|' | ':' | '"' -> true
-          | _ -> false in
+    let windows_filter c =
+      minimal_filter c
+      || match c with '*' | '?' | '|' | ':' | '"' -> true | _ -> false
+    in
 
     (* Windows has additional restrictions:
-       - filenames cannot start with a '.' 
+       - filenames cannot start with a '.'
        - filenames cannot end with '.' or space *)
     let name = trim_left (fun c -> c = '.') name in
     let name = trim_right (fun c -> c = '.' || c = ' ') name in
-    escape_chars windows_filter name in
+    escape_chars windows_filter name
+  in
 
   let macosx_compliant name =
-  (* ':' is directory seperator on Mac OS X: http://www.comentum.com/File-Systems-HFS-FAT-UFS.html *)
-    let macosx_filter c = 
-      minimal_filter c || c = ':' in
-    escape_chars macosx_filter name in
+    (* ':' is directory seperator on Mac OS X: http://www.comentum.com/File-Systems-HFS-FAT-UFS.html *)
+    let macosx_filter c = minimal_filter c || c = ':' in
+    escape_chars macosx_filter name
+  in
 
   let sys_checked_name =
     match fstype with
     | `Win -> windows_compliant name
     | `Mac -> macosx_compliant name
-    | `Posix
-    | `Unknown -> posix_compliant name
+    | `Posix | `Unknown -> posix_compliant name
   in
 
   let fs_checked_name =
@@ -214,13 +207,12 @@ let filesystem_compliant name fstype namemax =
         if n = 0 then n
         else
           let n1 = n - 1 in
-          if s.[n1] = ' ' then aux n1
-          else n in
+          if s.[n1] = ' ' then aux n1 else n
+      in
       let last_space = aux len in
-      if last_space = len then s
-      else String.sub s 0 last_space
+      if last_space = len then s else String.sub s 0 last_space
     in
-(* FAT filesystems do not allow files with space as last char *)
+    (* FAT filesystems do not allow files with space as last char *)
     match fstype with
     | `Win -> remove_last_spaces sys_checked_name
     | _ -> sys_checked_name
@@ -231,55 +223,53 @@ let filesystem_compliant name fstype namemax =
       fs_checked_name
     else
       let ext = extension fs_checked_name in
-        if String.length ext > namemax then
-          String.sub fs_checked_name 0 namemax
-        else
-          String.sub fs_checked_name 0 (namemax - (String.length ext)) ^ ext
+      if String.length ext > namemax then String.sub fs_checked_name 0 namemax
+      else String.sub fs_checked_name 0 (namemax - String.length ext) ^ ext
   in
   length_checked_name
 
 let temp_dir_name () =
-  try
-    Sys.getenv "MLDONKEY_TEMP"
-  with Not_found ->
-(* kept for compatibility with Filename.temp_dir_name, this code
-   is never reached because $MLDONKEY_TEMP is filled in commonOptions.ml *)
-  match Sys.os_type with
-    | "Unix" | "Cygwin" ->
-      (try Sys.getenv "TMPDIR" with Not_found -> "/tmp")
-    | _ ->
-      (try Sys.getenv "TEMP" with Not_found -> ".")
+  try Sys.getenv "MLDONKEY_TEMP"
+  with Not_found -> (
+    (* kept for compatibility with Filename.temp_dir_name, this code
+       is never reached because $MLDONKEY_TEMP is filled in commonOptions.ml *)
+    match Sys.os_type with
+    | "Unix" | "Cygwin" -> (
+        try Sys.getenv "TMPDIR" with Not_found -> "/tmp" )
+    | _ -> ( try Sys.getenv "TEMP" with Not_found -> "." ) )
 
 (* this code is copied from OCaml stdlib/filename.ml but
    extended to respect runtime changes to $MLDONKEY_TEMP,
    OCaml uses variable $TMPDIR/$TEMP instead *)
-external open_desc: string -> open_flag list -> int -> int = "caml_sys_open"
-external close_desc: int -> unit = "caml_sys_close"
+external open_desc : string -> open_flag list -> int -> int = "caml_sys_open"
 
-let prng = Random.State.make_self_init ();;
+external close_desc : int -> unit = "caml_sys_close"
+
+let prng = Random.State.make_self_init ()
 
 let temp_file_name prefix suffix =
-  let rnd = (Random.State.bits prng) land 0xFFFFFF in
-  Filename.concat (temp_dir_name ()) (Printf.sprintf "%s%06x%s" prefix rnd suffix)
+  let rnd = Random.State.bits prng land 0xFFFFFF in
+  Filename.concat (temp_dir_name ())
+    (Printf.sprintf "%s%06x%s" prefix rnd suffix)
 
 let temp_file prefix suffix =
   let rec try_name counter =
     let name = temp_file_name prefix suffix in
     try
-      close_desc (open_desc name [Open_wronly; Open_creat; Open_excl] 0o600);
+      close_desc (open_desc name [ Open_wronly; Open_creat; Open_excl ] 0o600);
       name
     with Sys_error _ as e ->
       if counter >= 1000 then raise e else try_name (counter + 1)
-  in try_name 0
-  
-let _ = (* some assertions on these functions *)
+  in
+  try_name 0
+
+let _ =
+  (* some assertions on these functions *)
   assert (basename "c:\\Program Files\\Toto history.exe" = "Toto history.exe");
-  assert (path_of_filename 
-      "c:\\Program Files\\Toto history.exe" = 
-    [ "c:"; "Program Files"; "Toto history.exe"] );
-  assert (path_of_filename 
-      "/home/bidule/mldonkey folder/toto" = 
-    [ "home"; "bidule"; "mldonkey folder"; "toto"] );
-  assert (path_of_filename 
-      "/home//bidule" = ["home"; "bidule"])
-  
+  assert (
+    path_of_filename "c:\\Program Files\\Toto history.exe"
+    = [ "c:"; "Program Files"; "Toto history.exe" ] );
+  assert (
+    path_of_filename "/home/bidule/mldonkey folder/toto"
+    = [ "home"; "bidule"; "mldonkey folder"; "toto" ] );
+  assert (path_of_filename "/home//bidule" = [ "home"; "bidule" ])

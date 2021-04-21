@@ -17,37 +17,42 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 
-val removeq :  'a -> 'a list -> 'a list
+val removeq : 'a -> 'a list -> 'a list
+
 (*d [removeq ele list] returns a copy of [list] where all memory occurences
 of [ele] have been removed. *)
-  
-val remove :  'a -> 'a list -> 'a list
+
+val remove : 'a -> 'a list -> 'a list
+
 (*d [remove ele list] returns a copy of [list] where all structural occurences
 of [ele] have been removed. *)
 
-val removeq_first :  'a -> 'a list -> 'a list
+val removeq_first : 'a -> 'a list -> 'a list
+
 (*d [removeq_first ele list] returns a copy of [list] where the first memory
   occurence of [ele] has been removed. *)
 
-val remove_first : 'a ->  'a list -> 'a list
+val remove_first : 'a -> 'a list -> 'a list
+
 (*d [remove_first ele list] returns a copy of [list] where the first
 structural occurence of [ele] has been removed. *)
 
-val cut: int -> 'a list -> 'a list * 'a list
-  
+val cut : int -> 'a list -> 'a list * 'a list
+
 val tail_map : ('a -> 'b) -> 'a list -> 'b list
-  
+
 val assoc_inv : 'a -> ('b * 'a) list -> 'b
-  
+
 val safe_iter : ('a -> unit) -> 'a list -> unit
-  
+
 val min : 'a list -> 'a
+
 val max : 'a list -> 'a
 
-val shuffle: 'a list -> 'a list
+val shuffle : 'a list -> 'a list
 
-(** [filter_map f l] *)
 val filter_map : ('a -> 'b option) -> 'a list -> 'b list
+(** [filter_map f l] *)
 
-(** [iteri f l] call [f] on each element of [l] with the corresponding index, starting from zero *)
 val iteri : (int -> 'a -> unit) -> 'a list -> unit
+(** [iteri f l] call [f] on each element of [l] with the corresponding index, starting from zero *)

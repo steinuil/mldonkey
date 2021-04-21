@@ -41,7 +41,7 @@ val create : int -> bool -> t
 val init : int -> (int -> bool) -> t
 
 val set : t -> int -> bool -> unit
-    
+
 val get : t -> int -> bool
 
 val length : t -> int
@@ -109,14 +109,19 @@ val blit : t -> int -> t -> int -> int -> unit
     vector [v]. *)
 
 val iter : (bool -> unit) -> t -> unit
+
 val map : (bool -> bool) -> t -> t
 
 val iteri : (int -> bool -> unit) -> t -> unit
+
 val mapi : (int -> bool -> bool) -> t -> t
 
 val fold_left : ('a -> bool -> 'a) -> 'a -> t -> 'a
+
 val fold_right : (bool -> 'a -> 'a) -> t -> 'a -> 'a
+
 val foldi_left : ('a -> int -> bool -> 'a) -> 'a -> t -> 'a
+
 val foldi_right : (int -> bool -> 'a -> 'a) -> t -> 'a -> 'a
 
 val iteri_true : (int -> unit) -> t -> unit
@@ -140,28 +145,37 @@ val gray_iter : (t -> unit) -> int -> unit
     containing zeros and only containing ones. *)
 
 val bw_and : t -> t -> t
-val bw_or  : t -> t -> t
+
+val bw_or : t -> t -> t
+
 val bw_xor : t -> t -> t
+
 val bw_not : t -> t
 
 val shiftl : t -> int -> t
+
 val shiftr : t -> int -> t
 
 val all_zeros : t -> bool
-val all_ones  : t -> bool
+
+val all_ones : t -> bool
 
 (*s {\bf Conversions to and from strings.} 
     Least significant bit comes first. *)
 
 val to_string : t -> string
+
 val of_string : string -> t
+
 val print : Format.formatter -> t -> unit
 
 (*s {\bf Conversions to and from lists of integers.} 
     The list gives the indices of bits which are set (ie [true]). *)
 
 val to_list : t -> int list
+
 val of_list : int list -> t
+
 val of_list_with_length : int list -> int -> t
 
 (*s Interpretation of bit vectors as integers. Least significant bit 
@@ -169,30 +183,46 @@ val of_list_with_length : int list -> int -> t
     [to_xxx] functions truncate when the bit vector is too wide, 
     and raise [Invalid_argument] when it is too short. 
     Suffix [_s] indicates that sign bit is kept, 
-    and [_us] that it is discarded. *) 
+    and [_us] that it is discarded. *)
 
 (* type [int] (length 31/63 with sign, 30/62 without) *)
 val of_int_s : int -> t
+
 val to_int_s : t -> int
+
 val of_int_us : int -> t
+
 val to_int_us : t -> int
+
 (* type [Int32.t] (length 32 with sign, 31 without) *)
 val of_int32_s : Int32.t -> t
+
 val to_int32_s : t -> Int32.t
+
 val of_int32_us : Int32.t -> t
+
 val to_int32_us : t -> Int32.t
+
 (* type [Int64.t] (length 64 with sign, 63 without) *)
 val of_int64_s : Int64.t -> t
+
 val to_int64_s : t -> Int64.t
+
 val of_int64_us : Int64.t -> t
+
 val to_int64_us : t -> Int64.t
+
 (* type [Nativeint.t] (length 32/64 with sign, 31/63 without) *)
 val of_nativeint_s : Nativeint.t -> t
+
 val to_nativeint_s : t -> Nativeint.t
+
 val of_nativeint_us : Nativeint.t -> t
+
 val to_nativeint_us : t -> Nativeint.t
 
 (*s Only if you know what you are doing... *)
 
 val unsafe_set : t -> int -> bool -> unit
+
 val unsafe_get : t -> int -> bool

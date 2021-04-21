@@ -17,16 +17,14 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 
-module type MagicInfo =
-sig
+module type MagicInfo = sig
   val magic_works : unit -> bool
+
   val magic_fileinfo : string -> bool -> string option
 end
 
 module MagicInfo : MagicInfo = struct
-
   let magic_works () = false
 
   let magic_fileinfo file _ = None
-
 end

@@ -18,5 +18,8 @@
 *)
 
 let to_string = function
-  | Unix.Unix_error (e, f, arg) -> Printf.sprintf "%s failed%s: %s" f (if arg = "" then "" else " on " ^ arg) (Unix.error_message e)
+  | Unix.Unix_error (e, f, arg) ->
+      Printf.sprintf "%s failed%s: %s" f
+        (if arg = "" then "" else " on " ^ arg)
+        (Unix.error_message e)
   | exn -> Printexc.to_string exn

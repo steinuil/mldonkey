@@ -26,31 +26,43 @@ The module provides different queue behaviors:
 
   *)
 
+module Queue : sig
+  type 'a t
 
-module Queue :
-  sig
-    type 'a t
-    val head : 'a t -> int * 'a
-    val put : 'a t -> int * 'a -> unit
-    val iter : (int * 'a -> unit) -> 'a t -> unit
-    val length : 'a t -> int
-    val take : 'a t -> int * 'a
-    val put_back : 'a t -> int * 'a -> unit
-    val remove : 'a t -> int * 'a -> unit
-  end
+  val head : 'a t -> int * 'a
+
+  val put : 'a t -> int * 'a -> unit
+
+  val iter : (int * 'a -> unit) -> 'a t -> unit
+
+  val length : 'a t -> int
+
+  val take : 'a t -> int * 'a
+
+  val put_back : 'a t -> int * 'a -> unit
+
+  val remove : 'a t -> int * 'a -> unit
+end
+
 val fifo : unit -> 'a Queue.t
+
 val lifo : unit -> 'a Queue.t
-module Make :
-  functor (M : sig
-      type t
-      val compare : t -> t -> int
-        end) ->
-  sig
-    val lifo : unit -> M.t Queue.t
-    val fifo : unit -> M.t Queue.t
-    val oldest_first : unit -> M.t Queue.t
-    val oldest_last : unit -> M.t Queue.t
-  end
+
+module Make : functor
+  (M : sig
+     type t
+
+     val compare : t -> t -> int
+   end)
+  -> sig
+  val lifo : unit -> M.t Queue.t
+
+  val fifo : unit -> M.t Queue.t
+
+  val oldest_first : unit -> M.t Queue.t
+
+  val oldest_last : unit -> M.t Queue.t
+end
 
 (* [workflow delayed] returns a queue containing objects such that:
 - Queue.take returns an object only if [delayed timestamp] returns true
@@ -64,22 +76,21 @@ the lifo, and old objects (with the last exam timestamp) in the fifo.
 The delayed function then returns false if enough time has been spent
 after the last exam.
 *)
-  
+
 val workflow : (int -> bool) -> 'a Queue.t
-  
+
 (*  These are useful if you want to implement your own queues, as it
 provides the internal type of queues, and a function to translate
 the internal type to the Queue.t type. *)
-    
+
 type 'a impl = {
-    head : (unit -> int * 'a);
-    put : (int * 'a -> unit);
-    length : (unit -> int);
-    take : (unit -> int * 'a);
-    iter : ( (int * 'a -> unit) -> unit);
-    put_back : (int * 'a -> unit);
-    remove : (int * 'a -> unit);
-  }
-  
+  head : unit -> int * 'a;
+  put : int * 'a -> unit;
+  length : unit -> int;
+  take : unit -> int * 'a;
+  iter : (int * 'a -> unit) -> unit;
+  put_back : int * 'a -> unit;
+  remove : int * 'a -> unit;
+}
+
 val of_impl : 'a impl -> 'a Queue.t
-  

@@ -16,48 +16,72 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 
-
 (** Syslog routines *)
 
 (** These are loosely based on the unix syslog(3) function and
     relatives. *)
 
+type facility =
+  [ `LOG_KERN
+  | `LOG_USER
+  | `LOG_MAIL
+  | `LOG_DAEMON
+  | `LOG_AUTH
+  | `LOG_SYSLOG
+  | `LOG_LPR
+  | `LOG_NEWS
+  | `LOG_UUCP
+  | `LOG_CRON
+  | `LOG_AUTHPRIV
+  | `LOG_FTP
+  | `LOG_NTP
+  | `LOG_SECURITY
+  | `LOG_CONSOLE
+  | `LOG_LOCAL0
+  | `LOG_LOCAL1
+  | `LOG_LOCAL2
+  | `LOG_LOCAL3
+  | `LOG_LOCAL4
+  | `LOG_LOCAL5
+  | `LOG_LOCAL6
+  | `LOG_LOCAL7 ]
 (** The assorted logging facilities. The default is [`LOG_USER]. You
     can set a new default with openlog, or give a specific facility per
     syslog call. *)
-type facility = 
-    [ `LOG_KERN | `LOG_USER | `LOG_MAIL | `LOG_DAEMON | `LOG_AUTH
-    | `LOG_SYSLOG | `LOG_LPR | `LOG_NEWS | `LOG_UUCP | `LOG_CRON
-    | `LOG_AUTHPRIV | `LOG_FTP | `LOG_NTP | `LOG_SECURITY 
-    | `LOG_CONSOLE | `LOG_LOCAL0 | `LOG_LOCAL1 | `LOG_LOCAL2 
-    | `LOG_LOCAL3 | `LOG_LOCAL4 | `LOG_LOCAL5 | `LOG_LOCAL6 
-    | `LOG_LOCAL7 ]
 
+type flag = [ `LOG_CONS | `LOG_PERROR | `LOG_PID ]
 (** Flags to pass to openlog. [`LOG_CONS] isn't implemented
     yet. LOG_NDELAY is mandatory and implied *)
-type flag = [ `LOG_CONS | `LOG_PERROR | `LOG_PID ]
 
+type level =
+  [ `LOG_EMERG
+  | `LOG_ALERT
+  | `LOG_CRIT
+  | `LOG_ERR
+  | `LOG_WARNING
+  | `LOG_NOTICE
+  | `LOG_INFO
+  | `LOG_DEBUG ]
 (** The priority of the error. *)
-type level = [ `LOG_EMERG | `LOG_ALERT | `LOG_CRIT | `LOG_ERR | `LOG_WARNING
-             | `LOG_NOTICE | `LOG_INFO | `LOG_DEBUG ]
 
-(** the type of a syslog connection *)
 type t
+(** the type of a syslog connection *)
 
+val facility_of_string : string -> facility
 (** given a string descibing a facility, return the facility. The
     strings consist of the name of the facility with the LOG_ chopped
     off. They are not case sensitive. @raise Syslog_error when given
     an invalid facility *)
-val facility_of_string: string -> facility
 
+val openlog :
+  ?logpath:string -> ?facility:facility -> ?flags:flag list -> string -> t
 (** openlog ?(logpath=AUTODETECTED) ?(facility=`LOG_USER) ?(flags=[])
     program_name, similar to openlog(3) @raise Syslog_error on
     error *)
-val openlog: ?logpath:string -> ?facility:facility -> ?flags:flag list -> string -> t
 
+val syslog : ?fac:facility -> t -> level -> string -> unit
 (** Same as syslog(3), except there's no formats. @raise Syslog_error
     on error (very rare) *)
-val syslog: ?fac:facility -> t -> level -> string -> unit
 
+val closelog : t -> unit
 (** Close the log. @raise Syslog_error on error *)
-val closelog: t -> unit

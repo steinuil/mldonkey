@@ -43,7 +43,6 @@
    ]}
 *)
 
-
 (** The type of tokens. The lexical classes are: [Int] and [Float]
    for integer and floating-point numbers; [String] for
    string literals, enclosed in double quotes; [Char] for
@@ -53,13 +52,14 @@
    [+], [*], etc); and [Kwd] for keywords (either identifiers or
    single ``special characters'' such as [(], [}], etc). *)
 type token =
-    Kwd of string
+  | Kwd of string
   | Ident of string
   | Int of int64
   | Float of float
   | String of string
   | Char of char
-           
+
+val make_lexer : string list -> char Stream.t -> token Stream.t
 (** Construct the lexer function. The first argument is the list of
    keywords. An identifier [s] is returned as [Kwd s] if [s]
    belongs to this list, and as [Ident s] otherwise.
@@ -68,6 +68,3 @@ type token =
    [Parse_error]) otherwise. Blanks and newlines are skipped.
    Comments delimited by [(*] and [*)] are skipped as well,
    and can be nested. *)
-val make_lexer: string list -> (char Stream.t -> token Stream.t)
-
-        

@@ -139,7 +139,7 @@ let find_value list m =
 let prune_file file = file.file_pruned <- true
 
 let define_simple_option
-    normalp (section : options_section) (option_name : string list) desc
+    _normalp (section : options_section) (option_name : string list) desc
   restart public internal
   (option_help : string) (option_class : 'a option_class)
   (default_value : 'a) (advanced : bool) =
@@ -208,7 +208,7 @@ and parse_option = parser
 | [< 'Int i >] -> IntValue i
 | [< 'Float f >] -> FloatValue  f
 | [< 'Kwd "@"; 'Int i; v = parse_once_value i >] -> OnceValue v
-| [< 'Char c >] -> StringValue (let s = String.create 1 in s.[0] <- c; s)    
+| [< 'Char c >] -> StringValue (let s = Bytes.create 1 in Bytes.set s 0 c; Bytes.to_string s)    
 | [< 'Kwd "["; v = parse_list [] >] -> List v
 | [< 'Kwd "("; v = parse_list [] >] -> List v
 
@@ -375,7 +375,7 @@ let rec save_module indent oc list =
        | m :: tail ->
            let p =
              try List.assoc m !subm with
-               e -> let p = ref [] in subm := (m, p) :: !subm; p
+               _ -> let p = ref [] in subm := (m, p) :: !subm; p
            in
            p := (tail, help, restart, internal, value) :: !p)
     list;
@@ -514,7 +514,7 @@ let value_to_port v =
 
 (* The Pervasives version is too restrictive *)
 let bool_of_string s =
-  match String.lowercase s with
+  match String.lowercase_ascii s with
     "true" -> true
   | "false" -> false
   | "yes" -> true
@@ -680,7 +680,7 @@ let list_to_value c2v l =
        List.iter (save_delayed_list_value oc indent c2v) l;
        Printf.fprintf oc "]")
 
-let intmap_to_value name c2v map =
+let intmap_to_value _name c2v map =
   DelayedValue
     (fun oc indent ->
        let save = save_delayed_list_value oc indent c2v in
@@ -694,7 +694,7 @@ let hasharray_to_value x c2v l =
        Printf.fprintf oc "[";
        let save = save_delayed_list_value oc indent c2v in
        for i = 0 to Array.length l - 1 do
-         Hashtbl.iter (fun a b -> save (0, x, b)) l.(i)
+         Hashtbl.iter (fun _ b -> save (0, x, b)) l.(i)
        done;
        Printf.fprintf oc "]")
 
@@ -949,12 +949,12 @@ let option_hook option f = option.option_hooks <- f :: option.option_hooks
 let class_hook option_class f =
   option_class.class_hooks <- f :: option_class.class_hooks
 
-let rec iter_order f list =
+(* let rec iter_order f list =
   match list with
     [] -> ()
-  | v :: tail -> f v; iter_order f tail
+  | v :: tail -> f v; iter_order f tail *)
   
-let help oc opfile =
+(* let help oc opfile =
   List.iter (fun s ->
       List.iter
         (fun o ->
@@ -978,7 +978,7 @@ let help oc opfile =
           Printf.fprintf oc "\n")
       s.section_options;
   ) opfile.file_sections;
-  flush oc
+  flush oc *)
   
     
 let tuple2_to_value (c1, c2) (a1, a2) =
@@ -1209,4 +1209,3 @@ let set_after_save_hook file f =
   
 let set_before_save_hook file f =
   file.file_before_save_hook <- f
-  

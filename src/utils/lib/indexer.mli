@@ -17,81 +17,96 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 
-
 module type Doc = sig
-      type t
-      
-      val num : t -> int
-      val filtered : t -> bool
-      val filter : t -> bool -> unit
-    end
+  type t
 
-  
-module type Make = functor (Doc: Doc) ->
-sig    
-  type   index
-  val create : unit ->  index
-  
-  val add :  index -> string ->  Doc.t -> int -> unit
-  
-  val clear :  index -> unit
-  
-  val filter_words :  index -> string list -> unit
-  val clear_filter :  index -> unit
-  val filtered :  Doc.t -> bool
-  
+  val num : t -> int
+
+  val filtered : t -> bool
+
+  val filter : t -> bool -> unit
+end
+
+module type Make = functor (Doc : Doc) -> sig
+  type index
+
+  val create : unit -> index
+
+  val add : index -> string -> Doc.t -> int -> unit
+
+  val clear : index -> unit
+
+  val filter_words : index -> string list -> unit
+
+  val clear_filter : index -> unit
+
+  val filtered : Doc.t -> bool
+
   type doc = Doc.t
+
   type node
+
   val or_get_fields : Doc.t Intmap.t ref -> node -> int -> Doc.t Intmap.t
+
   val find : index -> string -> node
+
   val and_get_fields : node -> int -> Doc.t Intmap.t -> Doc.t Intmap.t
+
   val size : node -> int
+
   val stats : index -> int
 end
 
-
 type 'a query =
-  And of 'a query * 'a query
-| Or of 'a query * 'a query
-| AndNot of 'a query * 'a query
-| HasWord of string
-| HasField of int * string
-| Predicate of ('a -> bool)
+  | And of 'a query * 'a query
+  | Or of 'a query * 'a query
+  | AndNot of 'a query * 'a query
+  | HasWord of string
+  | HasField of int * string
+  | Predicate of ('a -> bool)
 
 module type Index = sig
-    type index
-    type node
-    type doc
-    val or_get_fields : doc Intmap.t ref -> node -> int -> doc Intmap.t
-    val find : index -> string -> node
-    val and_get_fields : node -> int -> doc Intmap.t -> doc Intmap.t
-    val size : node -> int  
-    
-    val stats : index -> int
-  end
-  
-module QueryMake ( Index : Index) : sig
-    val query : Index.index -> Index.doc query -> Index.doc array      
-    val query_map : Index.index -> Index.doc query -> Index.doc Intmap.t      
-  end
-  
+  type index
+
+  type node
+
+  type doc
+
+  val or_get_fields : doc Intmap.t ref -> node -> int -> doc Intmap.t
+
+  val find : index -> string -> node
+
+  val and_get_fields : node -> int -> doc Intmap.t -> doc Intmap.t
+
+  val size : node -> int
+
+  val stats : index -> int
+end
+
+module QueryMake (Index : Index) : sig
+  val query : Index.index -> Index.doc query -> Index.doc array
+
+  val query_map : Index.index -> Index.doc query -> Index.doc Intmap.t
+end
+
 module FullMake (Doc : Doc) (Make : Make) : sig
-    
-    type   index
-    val create : unit ->  index
-    
-    val add :  index -> string ->  Doc.t -> int -> unit
-    
-    val clear :  index -> unit
-    
-    val filter_words :  index -> string list -> unit
-    val clear_filter :  index -> unit
-    val filtered :  Doc.t -> bool
-    
-    val query_map : index -> Doc.t query -> Doc.t Intmap.t      
-    val query : index -> Doc.t query -> Doc.t array          
-    
-    val stats : index -> int
-      
-  end
-  
+  type index
+
+  val create : unit -> index
+
+  val add : index -> string -> Doc.t -> int -> unit
+
+  val clear : index -> unit
+
+  val filter_words : index -> string list -> unit
+
+  val clear_filter : index -> unit
+
+  val filtered : Doc.t -> bool
+
+  val query_map : index -> Doc.t query -> Doc.t Intmap.t
+
+  val query : index -> Doc.t query -> Doc.t array
+
+  val stats : index -> int
+end

@@ -19,92 +19,73 @@
 
 let rec removeq_rec ele list tail =
   match list with
-    [] -> List.rev tail
+  | [] -> List.rev tail
   | e :: list ->
       if e == ele then removeq_rec ele list tail
-      else
-        removeq_rec ele list (e :: tail)
+      else removeq_rec ele list (e :: tail)
 
-let removeq ele list =
-  removeq_rec ele list []
+let removeq ele list = removeq_rec ele list []
 
 let rec remove_rec ele list tail =
   match list with
-    [] -> List.rev tail
+  | [] -> List.rev tail
   | e :: list ->
       if e = ele then remove_rec ele list tail
-      else
-        remove_rec ele list (e :: tail)
+      else remove_rec ele list (e :: tail)
 
-let remove ele list =
-  remove_rec ele list []
+let remove ele list = remove_rec ele list []
 
-let rec remove_one_rec ele list tail =
+(* let rec remove_one_rec ele list tail =
   match list with
     [] -> List.rev tail
   | e :: list ->
       if e = ele then
         List.rev_append tail list
       else
-        remove_one_rec ele list (e :: tail)
+        remove_one_rec ele list (e :: tail) *)
 
-let remove_one ele list =
-  remove_rec ele list []
+(* let remove_one ele list = remove_rec ele list [] *)
 
 let rec removeq_first ele list =
   match list with
-    e :: tail when e == ele -> tail
-  | e :: tail -> e :: (removeq_first ele tail)
+  | e :: tail when e == ele -> tail
+  | e :: tail -> e :: removeq_first ele tail
   | _ -> []
 
 let rec remove_first ele list =
   match list with
-    e :: tail when e = ele -> remove_first ele tail
-  | e :: tail -> e :: (remove_first ele tail)
+  | e :: tail when e = ele -> remove_first ele tail
+  | e :: tail -> e :: remove_first ele tail
   | _ -> []
 
 let rec cut_rec n list r =
-  match n, list with
-    (0,_) | (_, []) -> List.rev r, list
-  | _, x :: tail ->
-      cut_rec (n-1) tail (x :: r)
+  match (n, list) with
+  | 0, _ | _, [] -> (List.rev r, list)
+  | _, x :: tail -> cut_rec (n - 1) tail (x :: r)
 
 let cut n list =
   if n < 0 then failwith "List2.sub: invalid parameter";
   cut_rec n list []
 
-let tail_map f list =
-  List.rev (List.rev_map f list)
-
+let tail_map f list = List.rev (List.rev_map f list)
 
 let rec assoc_inv x = function
-    [] -> raise Not_found
-  | (a,b)::l -> if b = x then a else assoc_inv x l
+  | [] -> raise Not_found
+  | (a, b) :: l -> if b = x then a else assoc_inv x l
 
-let safe_iter f list =
-  List.iter (fun v -> try f v with _ -> ()) list
+let safe_iter f list = List.iter (fun v -> try f v with _ -> ()) list
 
 let min list =
   let rec iter m tail =
-    match tail with
-      [] -> m
-    | m' :: tail ->
-        iter (min m' m) tail
+    match tail with [] -> m | m' :: tail -> iter (min m' m) tail
   in
-  match list with
-    [] -> raise Not_found
-  | m :: tail -> iter m tail
+  match list with [] -> raise Not_found | m :: tail -> iter m tail
 
 let max list =
   let rec iter m tail =
-    match tail with
-      [] -> m
-    | m' :: tail ->
-        iter (max m' m) tail
+    match tail with [] -> m | m' :: tail -> iter (max m' m) tail
   in
-  match list with
-    [] -> raise Not_found
-  | m :: tail -> iter m tail
+  match list with [] -> raise Not_found | m :: tail -> iter m tail
 
 let shuffle list =
   let a = Array.of_list list in
@@ -112,11 +93,15 @@ let shuffle list =
   Array.to_list a
 
 let filter_map f =
-  List.fold_left (fun acc x -> match f x with Some y -> y :: acc | None -> acc) []
+  List.fold_left
+    (fun acc x -> match f x with Some y -> y :: acc | None -> acc)
+    []
 
 let iteri f l =
   let rec loop i = function
-  | [] -> ()
-  | x::xs -> f i x; loop (i+1) xs
-        in
-        loop 0 l
+    | [] -> ()
+    | x :: xs ->
+        f i x;
+        loop (i + 1) xs
+  in
+  loop 0 l

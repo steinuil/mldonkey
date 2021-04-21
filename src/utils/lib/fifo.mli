@@ -17,19 +17,33 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 exception Empty
+
 type 'a t
+
 val create : unit -> 'a t
+
 val put : 'a t -> 'a -> unit
+
 val mem : 'a t -> 'a -> bool
+
 val take : 'a t -> 'a
+
 val clear : 'a t -> unit
+
 val head : 'a t -> 'a
+
 val empty : 'a t -> bool
+
 val to_list : 'a t -> 'a list
+
 val length : 'a t -> int
+
 val put_back_ele : 'a t -> 'a -> unit
+
 val put_back : 'a t -> 'a list -> unit
-val iter: ('a -> unit) -> 'a t -> unit
+
+val iter : ('a -> unit) -> 'a t -> unit
+
 val remove : 'a t -> 'a -> unit
-  
+
 val to_array : 'a t -> 'a array

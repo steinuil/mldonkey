@@ -19,20 +19,19 @@
 
 open Magiclib
 
-module type MagicInfo =
-sig
+module type MagicInfo = sig
   val magic_works : unit -> bool
 
-(* magic_fileinfo <file> <return mime value true/false> <libmagic result, None for exceptions> *)
+  (* magic_fileinfo <file> <return mime value true/false> <libmagic result, None for exceptions> *)
   val magic_fileinfo : string -> bool -> string option
 end
 
 module MagicInfo : MagicInfo = struct
-
   let magic_cookie () =
-    Magiclib.create ?flags:(Some [Symlink;Preserve_atime]) []
+    Magiclib.create ?flags:(Some [ Symlink; Preserve_atime ]) []
+
   let magic_cookie_mime () =
-    Magiclib.create ?flags:(Some [Mime;Symlink;Preserve_atime]) []
+    Magiclib.create ?flags:(Some [ Mime; Symlink; Preserve_atime ]) []
 
   let magic_works () =
     try
@@ -43,9 +42,7 @@ module MagicInfo : MagicInfo = struct
 
   let magic_fileinfo file mime =
     try
-      let cookie =
-        if mime then magic_cookie_mime () else magic_cookie ()
-      in
+      let cookie = if mime then magic_cookie_mime () else magic_cookie () in
       try
         let fileinfo = Magiclib.file cookie file in
         Magiclib.close cookie;
@@ -54,5 +51,4 @@ module MagicInfo : MagicInfo = struct
         Magiclib.close cookie;
         None
     with e -> None
-
 end

@@ -18,32 +18,36 @@
 *)
 
 module Queue = struct
-    type 'a t = {
-        head : (unit -> int * 'a);
-        put : (int * 'a -> unit);
-        length : (unit -> int);
-        take : (unit -> int * 'a);
-        iter : ( (int * 'a -> unit) -> unit);
-        put_back : (int * 'a -> unit);
-        remove : ( (int * 'a) -> unit);
-      }
-    
-    let head t = t.head ()
-    let put t x = t.put x
-    let iter f t = t.iter f
-    let length t = t.length ()
-    let take t = t.take ()
-    let put_back t e = t.put_back e
-    let remove t e = t.remove e
-  end
-
-open Queue
-type 'a lifo = {
-    mutable lifo_size : int;
-    mutable lifo_list : 'a list;
+  type 'a t = {
+    head : unit -> int * 'a;
+    put : int * 'a -> unit;
+    length : unit -> int;
+    take : unit -> int * 'a;
+    iter : (int * 'a -> unit) -> unit;
+    put_back : int * 'a -> unit;
+    remove : int * 'a -> unit;
   }
 
-let fifo () = 
+  let head t = t.head ()
+
+  let put t x = t.put x
+
+  let iter f t = t.iter f
+
+  let length t = t.length ()
+
+  let take t = t.take ()
+
+  let put_back t e = t.put_back e
+
+  let remove t e = t.remove e
+end
+
+open Queue
+
+type 'a lifo = { mutable lifo_size : int; mutable lifo_list : 'a list }
+
+let fifo () =
   let t = Fifo.create () in
   {
     head = (fun _ -> Fifo.head t);
@@ -55,92 +59,100 @@ let fifo () =
     remove = (fun e -> Fifo.remove t e);
   }
 
-let lifo () = 
+let lifo () =
   let t = { lifo_size = 0; lifo_list = [] } in
   {
-    head = (fun _ -> match t.lifo_list with 
-          [] -> raise Fifo.Empty | x :: _ -> x);
-    put = (fun x -> 
+    head =
+      (fun _ -> match t.lifo_list with [] -> raise Fifo.Empty | x :: _ -> x);
+    put =
+      (fun x ->
         t.lifo_list <- x :: t.lifo_list;
-        t.lifo_size <- t.lifo_size +1
-    );
+        t.lifo_size <- t.lifo_size + 1);
     length = (fun _ -> t.lifo_size);
-    take = (fun _ -> match t.lifo_list with 
-          [] -> raise Fifo.Empty | x :: tail -> 
-            t.lifo_list <- tail; t.lifo_size <- t.lifo_size - 1; x); 
+    take =
+      (fun _ ->
+        match t.lifo_list with
+        | [] -> raise Fifo.Empty
+        | x :: tail ->
+            t.lifo_list <- tail;
+            t.lifo_size <- t.lifo_size - 1;
+            x);
     iter = (fun f -> List.iter (fun x -> f x) t.lifo_list);
-    put_back = (fun e -> 
+    put_back =
+      (fun e ->
         t.lifo_list <- e :: t.lifo_list;
-        t.lifo_size <- 1+ t.lifo_size
-    );
-    remove = (fun e ->
+        t.lifo_size <- 1 + t.lifo_size);
+    remove =
+      (fun e ->
         let removed = ref 0 in
-        t.lifo_list <- List.filter (fun ee -> 
-            if e = ee then begin
+        t.lifo_list <-
+          List.filter
+            (fun ee ->
+              if e = ee then (
                 incr removed;
-                false
-              end else true) t.lifo_list;
-        if !removed > 0 then t.lifo_size <- t.lifo_size - !removed
-    );
-  }      
+                false )
+              else true)
+            t.lifo_list;
+        if !removed > 0 then t.lifo_size <- t.lifo_size - !removed);
+  }
 
-module Make(M: sig
-      type t 
-      val compare : t -> t -> int
-    end) = struct
-    
-    module InsidesSet = Set2.Make (
-        struct
-          type t = int * M.t
-          let compare (t1,s1) (t2,s2) = 
-            if s1 == s2 then begin
-                0 end else              
-            let x = compare t1 t2 in
-            if x = 0 then M.compare s1 s2 else x
-        end
-      )
+module Make (M : sig
+  type t
 
-    let lifo = lifo
-    let fifo = fifo
-      
-    let oldest_first () = 
-      let t = ref InsidesSet.empty in
-      {
-        head = (fun _ -> try InsidesSet.min_elt !t with _ -> raise Fifo.Empty);
-        put = (fun x ->  t := InsidesSet.add x !t);
-        length = (fun _ -> InsidesSet.cardinal !t);
-        take = (fun _ ->
-            try 
-              let x = InsidesSet.min_elt !t in
-              t := InsidesSet.remove x !t;
-              x
-            with _ -> raise Fifo.Empty);
-        iter = (fun f ->
-            InsidesSet.iter (fun x -> f x) !t);
-        put_back = (fun e -> t := InsidesSet.add e !t);
-        remove = (fun e -> t := InsidesSet.remove e !t);
-      }
-    
-    let oldest_last () = 
-      let t = ref InsidesSet.empty in
-      {
-        head = (fun _ ->
-            try InsidesSet.max_elt !t with _ -> raise Fifo.Empty);
-        put = (fun x ->  t := InsidesSet.add x !t);
-        length = (fun _ -> InsidesSet.cardinal !t);
-        take = (fun _ ->
-            try
-              let x = InsidesSet.max_elt !t in
-              t := InsidesSet.remove x !t;
-              x
-            with _ -> raise Fifo.Empty);
-        iter = (fun f ->
-            InsidesSet.iter (fun x -> f x) !t);
-        put_back = (fun e -> t := InsidesSet.add e !t);
-        remove = (fun e -> t := InsidesSet.remove e !t);
-      }
+  val compare : t -> t -> int
+end) =
+struct
+  module InsidesSet = Set2.Make (struct
+    type t = int * M.t
 
-      (*
+    let compare (t1, s1) (t2, s2) =
+      if s1 == s2 then 0
+      else
+        let x = compare t1 t2 in
+        if x = 0 then M.compare s1 s2 else x
+  end)
+
+  let lifo = lifo
+
+  let fifo = fifo
+
+  let oldest_first () =
+    let t = ref InsidesSet.empty in
+    {
+      head = (fun _ -> try InsidesSet.min_elt !t with _ -> raise Fifo.Empty);
+      put = (fun x -> t := InsidesSet.add x !t);
+      length = (fun _ -> InsidesSet.cardinal !t);
+      take =
+        (fun _ ->
+          try
+            let x = InsidesSet.min_elt !t in
+            t := InsidesSet.remove x !t;
+            x
+          with _ -> raise Fifo.Empty);
+      iter = (fun f -> InsidesSet.iter (fun x -> f x) !t);
+      put_back = (fun e -> t := InsidesSet.add e !t);
+      remove = (fun e -> t := InsidesSet.remove e !t);
+    }
+
+  let oldest_last () =
+    let t = ref InsidesSet.empty in
+    {
+      head = (fun _ -> try InsidesSet.max_elt !t with _ -> raise Fifo.Empty);
+      put = (fun x -> t := InsidesSet.add x !t);
+      length = (fun _ -> InsidesSet.cardinal !t);
+      take =
+        (fun _ ->
+          try
+            let x = InsidesSet.max_elt !t in
+            t := InsidesSet.remove x !t;
+            x
+          with _ -> raise Fifo.Empty);
+      iter = (fun f -> InsidesSet.iter (fun x -> f x) !t);
+      put_back = (fun e -> t := InsidesSet.add e !t);
+      remove = (fun e -> t := InsidesSet.remove e !t);
+    }
+
+  (*
     let max_first compare =
       let module InsideSet = Set2.Make(struct
             type t = source
@@ -179,74 +191,63 @@ module Make(M: sig
         put_back = (fun e -> t := InsidesSet.add e !t);
 }
   *)
-  end
+end
 
 type 'a impl = 'a t = {
-    head : unit -> int * 'a;
-    put : int * 'a -> unit;
-    length : unit -> int;
-    take : unit -> int * 'a;
-    iter : (int * 'a -> unit) -> unit;
-    put_back : int * 'a -> unit;
-    remove : (int * 'a -> unit);
-  } 
+  head : unit -> int * 'a;
+  put : int * 'a -> unit;
+  length : unit -> int;
+  take : unit -> int * 'a;
+  iter : (int * 'a -> unit) -> unit;
+  put_back : int * 'a -> unit;
+  remove : int * 'a -> unit;
+}
+
 let of_impl x = x
 
-module Workflow = struct 
-    
-    type 'a workflow = {
-        fifo: 'a Queue.t;
-        lifo: 'a Queue.t;
-        delayed : (int -> bool);
-      }
-    
-    let head t =
-      try
-        Queue.head t.lifo
-      with _ ->
-          let (time,x) = Queue.head t.fifo in
-          if t.delayed time then raise Not_found;
-          time,x
-    
-    let put t ((time,_) as x)=
-      Queue.put (
-        if time = 0 then t.lifo else t.fifo) x
-    
-    let length t = Queue.length t.fifo + Queue.length t.lifo 
-    
-    let take t  = 
-      try
-        Queue.take t.lifo
-      with _ ->
-          let (time,x) = Queue.head t.fifo in
-          if t.delayed time then begin
-(*              Printf2.lprintf "not ready\n";*)
-              raise Not_found;
-            end;
-          ignore (Queue.take t.fifo);
-          time,x
-          
-    let iter f t =
-      Queue.iter f t.lifo;
-      Queue.iter f t.fifo
+module Workflow = struct
+  type 'a workflow = {
+    fifo : 'a Queue.t;
+    lifo : 'a Queue.t;
+    delayed : int -> bool;
+  }
 
-    let put_back = put
+  let head t =
+    try Queue.head t.lifo
+    with _ ->
+      let time, x = Queue.head t.fifo in
+      if t.delayed time then raise Not_found;
+      (time, x)
 
-    let remove t e =
-      Queue.remove t.fifo e;      
-      Queue.remove t.lifo e
-      
-      
-  end
-  
+  let put t ((time, _) as x) = Queue.put (if time = 0 then t.lifo else t.fifo) x
+
+  let length t = Queue.length t.fifo + Queue.length t.lifo
+
+  let take t =
+    try Queue.take t.lifo
+    with _ ->
+      let time, x = Queue.head t.fifo in
+      if t.delayed time then
+        (*              Printf2.lprintf "not ready\n";*)
+        raise Not_found;
+      ignore (Queue.take t.fifo);
+      (time, x)
+
+  let iter f t =
+    Queue.iter f t.lifo;
+    Queue.iter f t.fifo
+
+  let put_back = put
+
+  let remove t e =
+    Queue.remove t.fifo e;
+    Queue.remove t.lifo e
+end
+
 open Workflow
-  
+
 let workflow delayed =
-  let t = {
-      fifo = fifo ();
-      lifo = lifo ();
-      delayed = delayed;
-    } in
+  let t = { fifo = fifo (); lifo = lifo (); delayed } in
   {
     head = (fun _ -> head t);
     put = (fun x -> put t x);
