@@ -1,7 +1,7 @@
 (library
  (name extlib)
  (wrapped false)
- (libraries str containers unix)
+ (libraries str containers unix rss)
  (inline_tests)
  (preprocess
   (pps ppx_inline_test)))
