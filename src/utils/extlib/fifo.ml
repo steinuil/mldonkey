@@ -1,65 +1,22 @@
-(* Copyright 2001, 2002 b8_bavard, b8_fee_carabine, INRIA *)
 (*
-    This file is part of mldonkey.
-
-    mldonkey is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    mldonkey is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with mldonkey; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-*)
-
-(*
-exception Empty;;
-
-type 'a t = { mutable inlist : 'a list; mutable outlist : 'a list };;
-
-let create () = {inlist = []; outlist = []};;
-let put t e =
-  t.inlist <- e :: t.inlist
-
-let rec take t =
-  match t.outlist with
-    e :: queue -> t.outlist <- queue; e
-  | [] ->
-      t.outlist <- List.rev t.inlist;
-      t.inlist <- [];
-      match t.outlist with
-        e :: queue -> t.outlist <- queue; e
-      | [] -> raise Empty
-let clear t =
-  t.inlist <- [];
-  t.outlist <- []
-
-let read t =
-  match t.outlist with
-    e :: queue -> e
-  | [] ->
-      t.outlist <- List.rev t.inlist;
-      t.inlist <- [];
-      match t.outlist with
-        e :: queue -> e
-      | [] -> raise Empty
-
-let empty t = (t.inlist == [] && t.outlist == [])
-
-let to_list t =
-  t.outlist <- t.outlist @ (List.rev t.inlist);
-  t.inlist <- [];
-  t.outlist
-
-let length t = List.length t.inlist + List.length t.outlist
-let put_back t l = t.outlist <- l@t.outlist
-
-    *)
+ * Copyright 2001, 2002 b8_bavard, b8_fee_carabine, INRIA
+ * 
+ * This file is part of mldonkey.
+ *
+ * mldonkey is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * mldonkey is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with mldonkey; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *)
 
 exception Empty
 
@@ -139,18 +96,16 @@ let shrink t =
     t.size <- (t.size - 1) / 2 )
 
 let put t e =
-  (*  lprintf "FIFO PUT"; lprint_newline (); *)
+  (* lprintf "FIFO PUT"; lprint_newline (); *)
   if t.inpos = t.outpos && not t.empty then realloc t;
   t.array.(t.inpos) <- e;
   t.inpos <- (t.inpos + 1) land t.size;
   t.empty <- false;
-  (*
-lprintf "FIFO NOT EMPTY %s" (string_of_bool t.empty); lprint_newline ();
-*)
+  (* lprintf "FIFO NOT EMPTY %s" (string_of_bool t.empty); lprint_newline (); *)
   ()
 
 let clear t =
-  (*  lprintf "FIFO CLEAR"; lprint_newline (); *)
+  (* lprintf "FIFO CLEAR"; lprint_newline (); *)
   let tab = Array.make 4 t.array.(0) in
   t.array <- tab;
   t.size <- 3;
@@ -159,7 +114,7 @@ let clear t =
   t.outpos <- 0
 
 let length t =
-  (*  lprintf "FIFO LEN"; lprint_newline (); *)
+  (* lprintf "FIFO LEN"; lprint_newline (); *)
   if t.empty then 0
   else if t.inpos > t.outpos then t.inpos - t.outpos
   else
@@ -167,7 +122,7 @@ let length t =
     s + t.inpos - t.outpos
 
 let take t =
-  (*  lprintf "FIFO TAKE"; lprint_newline (); *)
+  (* lprintf "FIFO TAKE"; lprint_newline (); *)
   if t.empty then raise Empty;
   if length t < (t.size + 1) / 4 then shrink t;
   let e = t.array.(t.outpos) in
@@ -180,7 +135,7 @@ let head t =
   t.array.(t.outpos)
 
 let empty t =
-  (*  lprintf "FIFO EMPTY %s" (string_of_bool t.empty); lprint_newline (); *)
+  (* lprintf "FIFO EMPTY %s" (string_of_bool t.empty); lprint_newline (); *)
   t.empty
 
 let to_list t =
@@ -252,34 +207,31 @@ let remove t e =
         if e = ee then iter t (i + 1) j
         else (
           if i > j then
-            t.array
-            (*                Printf2.lprintf "Move i=%d at j=%d" i j; print_newline ();  *).(
-            j) <- ee;
+            (* Printf2.lprintf "Move i=%d at j=%d" i j; print_newline ();  *)
+            t.array.(j) <- ee;
           iter t (i + 1) (j + 1) )
     in
     iter t t.outpos t.outpos )
 
-(* TEST SUITE
+let%test_unit "test suite" =
+  let t = create () in
 
-let t = Fifo.create ();;
+  for i = 0 to 100 do
+    put t i
+  done;
 
-for i = 0 to 100 do
-  Fifo.put t i
-done;;
+  for _ = 0 to 80 do
+    put t (take t)
+  done;
 
-for i = 0 to 80 do
-  Fifo.put t (Fifo.take t)
-done;;
+  assert (length t = 101);
 
-Fifo.length t;;
+  for i = 56 to 76 do
+    remove t i
+  done;
 
-for i = 56 to 76 do
-  Fifo.remove t i
-done
-;;
+  for _ = 0 to 79 do
+    ignore (take t)
+  done;
 
-while true do
-  Printf2.lprintf "%d\n" (Fifo.take t)
-done;;
-
-*)
+  assert (length t = 0)

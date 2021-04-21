@@ -200,22 +200,26 @@ let rename oldname newname =
         Sys.remove oldname
       with _ -> if not !copied then Sys.remove newname )
 
-external c_seek64 : Unix.file_descr -> int64 -> Unix.seek_command -> int64
-  = "unix_lseek_64"
+let c_seek64 = Unix.LargeFile.lseek
 
-external c_getsize64 : string -> int64 = "ml_getsize64"
+(* external c_seek64 : Unix.file_descr -> int64 -> Unix.seek_command -> int64
+  = "unix_lseek_64" *)
 
-external c_getfdsize64 : Unix.file_descr -> int64 = "ml_getfdsize64"
+let c_getfdsize64 fd = (Unix.LargeFile.fstat fd).st_size
+
+(* external c_getfdsize64 : Unix.file_descr -> int64 = "ml_getfdsize64" *)
+
+let c_ftruncate64 fd size _ = Unix.LargeFile.ftruncate fd size
 
 (* c_ftruncate64 sets size, optionally using a sparse file *)
-external c_ftruncate64 : Unix.file_descr -> int64 -> bool -> unit
-  = "mld_ftruncate_64"
+(* external c_ftruncate64 : Unix.file_descr -> int64 -> bool -> unit
+  = "mld_ftruncate_64" *)
 
 external c_getdtablesize : unit -> int = "ml_getdtablesize"
 
 external c_sizeofoff_t : unit -> int = "ml_sizeofoff_t"
 
-external endianness : unit -> string = "ml_check_endianness"
+let endianness () = if Sys.big_endian then "big endian" else "little endian"
 
 let rec remove_all_directory dirname =
   let files = list_directory dirname in
@@ -296,4 +300,6 @@ let ml_setrlimit resource n =
   let new_rlimit = { rlim_cur = n; rlim_max = n } in
   try setrlimit resource new_rlimit with _ -> ()
 
-external fsync : Unix.file_descr -> unit = "ml_fsync"
+let fsync = Unix.fsync
+
+(* external fsync : Unix.file_descr -> unit = "ml_fsync" *)

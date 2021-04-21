@@ -193,13 +193,6 @@ let resize s newlen =
     Bytes.blit (Bytes.of_string s) 0 str 0 len;
     Bytes.to_string str
 
-(* let init len f =
-  let s = Bytes.create len in
-  for i = 0 to len - 1 do
-    Bytes.set s i (f i)
-  done;
-  Bytes.to_string s *)
-
 let is_space c = c = ' ' || c = '\n' || c = '\r' || c = '\t'
 
 let tokens s =
@@ -230,18 +223,9 @@ let tokens s =
 
   iter_next 0
 
-external contains : string -> string -> bool = "ml_strstr"
+let contains s sub = CCString.mem ~sub s
 
-let rec strneql s1 s2 len =
-  len = 0
-  ||
-  let len = len - 1 in
-  s1.[len] = s2.[len] && strneql s1 s2 len
-
-let starts_with s1 s2 =
-  let len1 = String.length s1 in
-  let len2 = String.length s2 in
-  len2 <= len1 && strneql s1 s2 len2
+let starts_with s1 s2 = CCString.prefix s1 ~pre:s2
 
 let replace_char s c1 c2 =
   for i = 0 to Bytes.length s - 1 do
@@ -256,22 +240,9 @@ let stem s =
   done;
   split_simplify (Bytes.to_string s) ' '
 
-let map f s =
-  let len = String.length s in
-  if len = 0 then [||]
-  else
-    let v = f s.[0] in
-    let array = Array.make len v in
-    for i = 1 to len - 1 do
-      array.(i) <- f s.[i]
-    done;
-    array
+let map f s = CCString.to_array s |> Array.map f
 
-let iteri f s =
-  let len = String.length s in
-  for i = 0 to len - 1 do
-    f i s.[i]
-  done
+let iteri = String.iteri
 
 let init n f =
   let s = Bytes.create n in
@@ -280,27 +251,19 @@ let init n f =
   done;
   Bytes.to_string s
 
-let exists p s =
-  let l = String.length s in
-  let rec aux i = i < l && (p s.[i] || aux (i + 1)) in
-  aux 0
+let exists = CCString.exists
 
 let existsi p s =
   let l = String.length s in
   let rec aux i = i < l && (p i s.[i] || aux (i + 1)) in
   aux 0
 
-let for_all p s =
-  let l = String.length s in
-  let rec aux i = i >= l || (p s.[i] && aux (i + 1)) in
-  aux 0
+let for_all = CCString.for_all
 
 let hex_string_of_string s =
   let buf = Buffer.create 100 in
   String.iter (fun c -> Printf.bprintf buf "%02x " (int_of_char c)) s;
   Buffer.contents buf
-
-let ( |> ) x f = f x
 
 let dehtmlize =
   let br_regexp = Str.regexp_case_fold "<br>" in

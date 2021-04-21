@@ -102,7 +102,7 @@ module Make (M : sig
   val compare : t -> t -> int
 end) =
 struct
-  module InsidesSet = Set2.Make (struct
+  module InsidesSet = Set.Make (struct
     type t = int * M.t
 
     let compare (t1, s1) (t2, s2) =
@@ -151,46 +151,6 @@ struct
       put_back = (fun e -> t := InsidesSet.add e !t);
       remove = (fun e -> t := InsidesSet.remove e !t);
     }
-
-  (*
-    let max_first compare =
-      let module InsideSet = Set2.Make(struct
-            type t = source
-            let compare = compare
-          end) in
-      let t = ref InsidesSet.empty in
-      {
-        head = (fun _ -> InsidesSet.max_elt !t);
-        put = (fun x ->  t := InsidesSet.add x !t);
-        length = (fun _ -> InsidesSet.cardinal !t);
-        take = (fun _ ->
-            let x = InsidesSet.max_elt !t in
-            t := InsidesSet.remove x !t;
-            x);
-        iter = (fun f ->
-            InsidesSet.iter f !t);
-        put_back = (fun e -> t := InsidesSet.add e !t);
-        }
-
-    let min_first compare =
-      let module InsideSet = Set2.Make(struct
-            type t = source
-            let compare = compare
-          end) in
-      let t = ref InsidesSet.empty in
-      {
-        head = (fun _ -> InsidesSet.min_elt !t);
-        put = (fun x ->  t := InsidesSet.add x !t);
-        length = (fun _ -> InsidesSet.cardinal !t);
-        take = (fun _ ->
-            let x = InsidesSet.min_elt !t in
-            t := InsidesSet.remove x !t;
-            x);
-        iter = (fun f ->
-            InsidesSet.iter f !t);
-        put_back = (fun e -> t := InsidesSet.add e !t);
-}
-  *)
 end
 
 type 'a impl = 'a t = {
@@ -227,8 +187,7 @@ module Workflow = struct
     try Queue.take t.lifo
     with _ ->
       let time, x = Queue.head t.fifo in
-      if t.delayed time then
-        (*              Printf2.lprintf "not ready\n";*)
+      if t.delayed time then (* Printf2.lprintf "not ready\n";*)
         raise Not_found;
       ignore (Queue.take t.fifo);
       (time, x)

@@ -1,28 +1,8 @@
 (library
  (name mldonkey_lib)
  (wrapped false)
- (modules
-  queues
-  fifo
-  md4
-  unix32
-  set2
-  int64ops
-  options
-  intmap
-  printf2
-  printexc2
-  unix2
-  syslog
-  tar
-  string2
-  url
-  list2
-  array2
-  genlex2
-  filename2
-  filepath)
- (libraries camlp4.lib IO camlzip))
+ (modules md4 unix32 options intmap printf2 unix2 syslog tar url genlex2)
+ (libraries camlp4.lib extlib camlzip str))
 
 (rule
  (targets options.ml)

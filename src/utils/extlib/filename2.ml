@@ -19,9 +19,7 @@
 
 open String2
 
-let win32 = Sys.os_type = "Win32"
-
-let slash = if win32 then '\\' else '/'
+let slash = if Sys.win32 then '\\' else '/'
 
 let slash_s = String.make 1 slash
 
@@ -238,33 +236,9 @@ let temp_dir_name () =
         try Sys.getenv "TMPDIR" with Not_found -> "/tmp" )
     | _ -> ( try Sys.getenv "TEMP" with Not_found -> "." ) )
 
-(* this code is copied from OCaml stdlib/filename.ml but
-   extended to respect runtime changes to $MLDONKEY_TEMP,
-   OCaml uses variable $TMPDIR/$TEMP instead *)
-external open_desc : string -> open_flag list -> int -> int = "caml_sys_open"
+let temp_file prefix suffix = Filename.temp_file prefix suffix
 
-external close_desc : int -> unit = "caml_sys_close"
-
-let prng = Random.State.make_self_init ()
-
-let temp_file_name prefix suffix =
-  let rnd = Random.State.bits prng land 0xFFFFFF in
-  Filename.concat (temp_dir_name ())
-    (Printf.sprintf "%s%06x%s" prefix rnd suffix)
-
-let temp_file prefix suffix =
-  let rec try_name counter =
-    let name = temp_file_name prefix suffix in
-    try
-      close_desc (open_desc name [ Open_wronly; Open_creat; Open_excl ] 0o600);
-      name
-    with Sys_error _ as e ->
-      if counter >= 1000 then raise e else try_name (counter + 1)
-  in
-  try_name 0
-
-let _ =
-  (* some assertions on these functions *)
+let%test_unit "some assertions on these functions" =
   assert (basename "c:\\Program Files\\Toto history.exe" = "Toto history.exe");
   assert (
     path_of_filename "c:\\Program Files\\Toto history.exe"

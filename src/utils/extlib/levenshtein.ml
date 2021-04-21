@@ -1,10 +1,9 @@
-(* Levenshtein distance between two arrays of elements
-   It uses O(C.length s1) space.
-   The function can be curried on last argument to factorize array
-   allocation costs.
-
-   Complexity O(C.length s1 * C.length s2)
-*)
+(** Levenshtein distance between two arrays of elements.
+    It uses O(C.length s1) space.
+    The function can be curried on last argument to factorize array
+    allocation costs.
+ 
+    Complexity O(C.length s1 * C.length s2) *)
 
 type levenshtein_costs = {
   insert_cost : int;

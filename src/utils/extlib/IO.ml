@@ -20,13 +20,13 @@
 
 type input = {
   mutable in_read : unit -> char;
-  mutable in_input : bytes -> int -> int -> int;
+  mutable in_input : Bytes.t -> int -> int -> int;
   mutable in_close : unit -> unit;
 }
 
 type 'a output = {
   mutable out_write : char -> unit;
-  mutable out_output : bytes -> int -> int -> int;
+  mutable out_output : Bytes.t -> int -> int -> int;
   mutable out_close : unit -> 'a;
   mutable out_flush : unit -> unit;
 }
@@ -72,6 +72,11 @@ let nread i n =
       if !p = 0 then raise e;
       Bytes.sub s 0 !p
 
+let nread_string i n =
+  (* [nread] transfers ownership of the returned string, so
+     [unsafe_to_string] is safe here *)
+  Bytes.unsafe_to_string (nread i n)
+
 let really_output o s p l' =
   let sl = Bytes.length s in
   if p + l' > sl || p < 0 || l' < 0 then invalid_arg "IO.really_output";
@@ -111,6 +116,11 @@ let really_nread i n =
     ignore (really_input i s 0 n);
     s
 
+let really_nread_string i n =
+  (* [really_nread] transfers ownership of the returned string,
+     so [unsafe_to_string] is safe here *)
+  Bytes.unsafe_to_string (really_nread i n)
+
 let close_in i =
   let f _ = raise Input_closed in
   i.in_close ();
@@ -130,12 +140,24 @@ let nwrite o s =
     l := !l - w
   done
 
+let nwrite_string o s =
+  (* [nwrite] does not mutate or capture its [bytes] input,
+     so using [Bytes.unsafe_of_string] is safe here *)
+  nwrite o (Bytes.unsafe_of_string s)
+
 let output o s p l =
   let sl = Bytes.length s in
   if p + l > sl || p < 0 || l < 0 then invalid_arg "IO.output";
   o.out_output s p l
 
-let printf o fmt = Printf.kprintf (fun s -> nwrite o (Bytes.of_string s)) fmt
+let scanf i fmt =
+  let ib =
+    Scanf.Scanning.from_function (fun () ->
+        try read i with No_more_input -> raise End_of_file)
+  in
+  Scanf.kscanf ib (fun _ exn -> raise exn) fmt
+
+let printf o fmt = Printf.kprintf (fun s -> nwrite_string o s) fmt
 
 let flush o = o.out_flush ()
 
@@ -161,8 +183,9 @@ let read_all i =
   try loop ()
   with No_more_input ->
     let buf = Bytes.create !pos in
-    List.iter (fun (s, p) -> Bytes.unsafe_blit s 0 buf p (Bytes.length s)) !str;
-    buf
+    List.iter (fun (s, p) -> Bytes.blit s 0 buf p (Bytes.length s)) !str;
+    (* 'buf' doesn't escape, it won't be mutated again *)
+    Bytes.unsafe_to_string buf
 
 let pos_in i =
   let p = ref 0 in
@@ -201,7 +224,7 @@ let pos_out o =
 (* -------------------------------------------------------------- *)
 (* Standard IO *)
 
-let input_string s =
+let input_bytes s =
   let pos = ref 0 in
   let len = Bytes.length s in
   {
@@ -221,7 +244,12 @@ let input_string s =
     in_close = (fun () -> ());
   }
 
-let output_string () =
+let input_string s =
+  (* Bytes.unsafe_of_string is safe here as input_bytes does not
+     mutate the byte sequence *)
+  input_bytes (Bytes.unsafe_of_string s)
+
+let output_buffer close =
   let b = Buffer.create 0 in
   {
     out_write = (fun c -> Buffer.add_char b c);
@@ -229,7 +257,40 @@ let output_string () =
       (fun s p l ->
         Buffer.add_subbytes b s p l;
         l);
-    out_close = (fun () -> Buffer.to_bytes b);
+    out_close = (fun () -> close b);
+    out_flush = (fun () -> ());
+  }
+
+let output_string () = output_buffer Buffer.contents
+
+let output_bytes () = output_buffer Buffer.to_bytes
+
+let output_strings () =
+  let sl = ref [] in
+  let size = ref 0 in
+  let b = Buffer.create 0 in
+  {
+    out_write =
+      (fun c ->
+        if !size = Sys.max_string_length then (
+          sl := Buffer.contents b :: !sl;
+          Buffer.clear b;
+          size := 0 )
+        else incr size;
+        Buffer.add_char b c);
+    out_output =
+      (fun s p l ->
+        if !size + l > Sys.max_string_length then (
+          sl := Buffer.contents b :: !sl;
+          Buffer.clear b;
+          size := 0 )
+        else size := !size + l;
+        Buffer.add_subbytes b s p l;
+        l);
+    out_close =
+      (fun () ->
+        sl := Buffer.contents b :: !sl;
+        List.rev !sl);
     out_flush = (fun () -> ());
   }
 
@@ -256,76 +317,29 @@ let output_channel ch =
     out_flush = (fun () -> Stdlib.flush ch);
   }
 
-(*
-let input_enum e =
-        let pos = ref 0 in
-        {
-                in_read = (fun () ->
-                        match Enum.get e with
-                        | None -> raise No_more_input
-                        | Some c ->
-                                incr pos;
-                                c
-                );
-                in_input = (fun s p l ->
-                        let rec loop p l =
-                                if l = 0 then
-                                        0
-                                else
-                                        match Enum.get e with
-                                        | None -> l
-                                        | Some c ->
-                                                String.unsafe_set s p c;
-                                                loop (p + 1) (l - 1)
-                        in
-                        let k = loop p l in
-                        if k = l then raise No_more_input;
-                        l - k
-                );
-                in_close = (fun () -> ());
-        }
-
-let output_enum() =
-        let b = Buffer.create 0 in
-        {
-                out_write = (fun x ->
-                        Buffer.add_char b x
-                );
-                out_output = (fun s p l ->
-                        Buffer.add_substring b s p l;
-                        l
-                );
-                out_close = (fun () ->
-                        let s = Buffer.contents b in
-                        ExtString.String.enum s
-                );
-                out_flush = (fun () -> ());
-        }
-*)
-
 let pipe () =
-  let input = ref Bytes.empty in
+  let input = ref "" in
   let inpos = ref 0 in
   let output = Buffer.create 0 in
   let flush () =
-    input := Buffer.to_bytes output;
+    input := Buffer.contents output;
     inpos := 0;
     Buffer.reset output;
-    if Bytes.length !input = 0 then raise No_more_input
+    if String.length !input = 0 then raise No_more_input
   in
   let read () =
-    if !inpos = Bytes.length !input then flush ();
-    let c = Bytes.unsafe_get !input !inpos in
+    if !inpos = String.length !input then flush ();
+    let c = String.unsafe_get !input !inpos in
     incr inpos;
     c
   in
   let input s p l =
-    if !inpos = Bytes.length !input then flush ();
+    if !inpos = String.length !input then flush ();
     let r =
-      if !inpos + l > Bytes.length !input then Bytes.length !input - !inpos
+      if !inpos + l > String.length !input then String.length !input - !inpos
       else l
     in
-    Bytes.unsafe_blit !input !inpos s p r;
+    String.unsafe_blit !input !inpos s p r;
     inpos := !inpos + r;
     r
   in
@@ -358,7 +372,7 @@ let read_signed_byte i =
   let c = int_of_char (i.in_read ()) in
   if c land 128 <> 0 then c - 256 else c
 
-let read_string i =
+let read_string_into_buffer i =
   let b = Buffer.create 8 in
   let rec loop () =
     let c = i.in_read () in
@@ -367,7 +381,11 @@ let read_string i =
       loop () )
   in
   loop ();
-  Buffer.to_bytes b
+  b
+
+let read_string i = Buffer.contents (read_string_into_buffer i)
+
+let read_bytes i = Buffer.to_bytes (read_string_into_buffer i)
 
 let read_line i =
   let b = Buffer.create 8 in
@@ -390,10 +408,10 @@ let read_line i =
   in
   try
     loop ();
-    Buffer.to_bytes b
+    Buffer.contents b
   with No_more_input ->
     if !cr then Buffer.add_char b '\r';
-    if Buffer.length b > 0 then Buffer.to_bytes b else raise No_more_input
+    if Buffer.length b > 0 then Buffer.contents b else raise No_more_input
 
 let read_ui16 i =
   let ch1 = read_byte i in
@@ -406,17 +424,27 @@ let read_i16 i =
   let n = ch1 lor (ch2 lsl 8) in
   if ch2 land 128 <> 0 then n - 65536 else n
 
-let read_i32 ch =
+let sign_bit_i32 = lnot 0x7FFF_FFFF
+
+let read_32 ~i31 ch =
   let ch1 = read_byte ch in
   let ch2 = read_byte ch in
   let ch3 = read_byte ch in
   let ch4 = read_byte ch in
   if ch4 land 128 <> 0 then (
-    if ch4 land 64 = 0 then raise (Overflow "read_i32");
-    ch1 lor (ch2 lsl 8) lor (ch3 lsl 16) lor ((ch4 land 127) lsl 24) )
+    if i31 && ch4 land 64 = 0 then raise (Overflow "read_i31");
+    ch1 lor (ch2 lsl 8) lor (ch3 lsl 16)
+    lor ((ch4 land 127) lsl 24)
+    lor sign_bit_i32 )
   else (
-    if ch4 land 64 <> 0 then raise (Overflow "read_i32");
+    if i31 && ch4 land 64 <> 0 then raise (Overflow "read_i31");
     ch1 lor (ch2 lsl 8) lor (ch3 lsl 16) lor (ch4 lsl 24) )
+
+let read_i31 ch = read_32 ~i31:true ch
+
+let read_i32_as_int ch = read_32 ~i31:false ch
+
+let read_i32 = read_i31
 
 let read_real_i32 ch =
   let ch1 = read_byte ch in
@@ -436,18 +464,24 @@ let read_i64 ch =
   let big = Int64.of_int32 (read_real_i32 ch) in
   Int64.logor (Int64.shift_left big 32) small
 
+let read_float32 ch = Int32.float_of_bits (read_real_i32 ch)
+
 let read_double ch = Int64.float_of_bits (read_i64 ch)
 
 let write_byte o n =
-  (* doesn't test bounds of n in order to keep semantics of Stdlib.output_byte *)
+  (* doesn't test bounds of n in order to keep semantics of Pervasives.output_byte *)
   write o (Char.unsafe_chr (n land 0xFF))
 
 let write_string o s =
+  nwrite_string o s;
+  write o '\000'
+
+let write_bytes o s =
   nwrite o s;
   write o '\000'
 
 let write_line o s =
-  nwrite o s;
+  nwrite_string o s;
   write o '\n'
 
 let write_ui16 ch n =
@@ -459,11 +493,17 @@ let write_i16 ch n =
   if n < -0x8000 || n > 0x7FFF then raise (Overflow "write_i16");
   if n < 0 then write_ui16 ch (65536 + n) else write_ui16 ch n
 
-let write_i32 ch n =
+let write_32 ch n =
   write_byte ch n;
   write_byte ch (n lsr 8);
   write_byte ch (n lsr 16);
   write_byte ch (n asr 24)
+
+let write_i31 ch n = write_32 ch n
+
+let write_i32 ch n =
+  if n < -0x8000_0000 || n > 0x7FFF_FFFF then raise (Overflow "write_i32");
+  write_32 ch n
 
 let write_real_i32 ch n =
   let base = Int32.to_int n in
@@ -476,6 +516,8 @@ let write_real_i32 ch n =
 let write_i64 ch n =
   write_real_i32 ch (Int64.to_int32 n);
   write_real_i32 ch (Int64.to_int32 (Int64.shift_right_logical n 32))
+
+let write_float32 ch f = write_real_i32 ch (Int32.bits_of_float f)
 
 let write_double ch f = write_i64 ch (Int64.bits_of_float f)
 
@@ -494,17 +536,27 @@ module BigEndian = struct
     let n = ch1 lor (ch2 lsl 8) in
     if ch2 land 128 <> 0 then n - 65536 else n
 
-  let read_i32 ch =
+  let sign_bit_i32 = lnot 0x7FFF_FFFF
+
+  let read_32 ~i31 ch =
     let ch4 = read_byte ch in
     let ch3 = read_byte ch in
     let ch2 = read_byte ch in
     let ch1 = read_byte ch in
     if ch4 land 128 <> 0 then (
-      if ch4 land 64 = 0 then raise (Overflow "read_i32");
-      ch1 lor (ch2 lsl 8) lor (ch3 lsl 16) lor ((ch4 land 127) lsl 24) )
+      if i31 && ch4 land 64 = 0 then raise (Overflow "read_i31");
+      ch1 lor (ch2 lsl 8) lor (ch3 lsl 16)
+      lor ((ch4 land 127) lsl 24)
+      lor sign_bit_i32 )
     else (
-      if ch4 land 64 <> 0 then raise (Overflow "read_i32");
+      if i31 && ch4 land 64 <> 0 then raise (Overflow "read_i31");
       ch1 lor (ch2 lsl 8) lor (ch3 lsl 16) lor (ch4 lsl 24) )
+
+  let read_i31 ch = read_32 ~i31:true ch
+
+  let read_i32_as_int ch = read_32 ~i31:false ch
+
+  let read_i32 = read_i31
 
   let read_real_i32 ch =
     let big = Int32.shift_left (Int32.of_int (read_byte ch)) 24 in
@@ -524,6 +576,8 @@ module BigEndian = struct
     let small = Int64.logor base (Int64.shift_left (Int64.of_int ch4) 24) in
     Int64.logor (Int64.shift_left big 32) small
 
+  let read_float32 ch = Int32.float_of_bits (read_real_i32 ch)
+
   let read_double ch = Int64.float_of_bits (read_i64 ch)
 
   let write_ui16 ch n =
@@ -535,11 +589,19 @@ module BigEndian = struct
     if n < -0x8000 || n > 0x7FFF then raise (Overflow "write_i16");
     if n < 0 then write_ui16 ch (65536 + n) else write_ui16 ch n
 
-  let write_i32 ch n =
+  let write_32 ch n =
     write_byte ch (n asr 24);
     write_byte ch (n lsr 16);
     write_byte ch (n lsr 8);
     write_byte ch n
+
+  let write_i31 ch n =
+    if n < -0x4000_0000 || n > 0x3FFF_FFFF then raise (Overflow "write_i31");
+    write_32 ch n
+
+  let write_i32 ch n =
+    if n < -0x8000_0000 || n > 0x7FFF_FFFF then raise (Overflow "write_i32");
+    write_32 ch n
 
   let write_real_i32 ch n =
     let base = Int32.to_int n in
@@ -552,6 +614,8 @@ module BigEndian = struct
   let write_i64 ch n =
     write_real_i32 ch (Int64.to_int32 (Int64.shift_right_logical n 32));
     write_real_i32 ch (Int64.to_int32 n)
+
+  let write_float32 ch f = write_real_i32 ch (Int32.bits_of_float f)
 
   let write_double ch f = write_i64 ch (Int64.bits_of_float f)
 end
@@ -580,7 +644,7 @@ let rec read_bits b n =
   else
     let k = read_byte b.ch in
     if b.nbits >= 24 then (
-      if n >= 31 then raise Bits_error;
+      if n > 31 then raise Bits_error;
       let c = 8 + b.nbits - n in
       let d = b.bits land ((1 lsl b.nbits) - 1) in
       let d = (d lsl (8 - c)) lor (k lsr c) in

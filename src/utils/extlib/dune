@@ -1,2 +1,9 @@
 (library
- (name IO))
+ (name extlib)
+ (wrapped false)
+ (libraries str containers unix)
+ (inline_tests)
+ (preprocess
+  (pps ppx_inline_test)))
+
+;; Bitv = bitv library

@@ -78,7 +78,8 @@ val basename : string -> string
 
 (* remove invalid chars in a filename, depending on the filesystem, 
    trim filename length to allowed limit on filesystem *)
-val filesystem_compliant : string -> Unix32.fstype -> int -> string
+val filesystem_compliant :
+  string -> [ `Win | `Mac | `Posix | `Unknown ] -> int -> string
 
 val temp_file : string -> string -> string
 (** [temp_file prefix suffix] returns the name of a

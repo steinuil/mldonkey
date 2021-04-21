@@ -39,23 +39,24 @@
 *)
 
 type spec =
-    Unit of (unit -> unit)     (** Call the function with unit argument *)
-  | Set of bool ref            (** Set the reference to true *)
-  | Clear of bool ref          (** Set the reference to false *)
-  | String of (string -> unit) (** Call the function with a string argument *)
-  | Int of (int -> unit)       (** Call the function with an int argument *)
-  | Int64 of (int64 -> unit)       (** Call the function with an int argument *)
-  | Float of (float -> unit)   (** Call the function with a float argument *)
-  | Rest of (string -> unit)   (** Stop interpreting keywords and call the 
+  | Unit of (unit -> unit)  (** Call the function with unit argument *)
+  | Set of bool ref  (** Set the reference to true *)
+  | Clear of bool ref  (** Set the reference to false *)
+  | String of (string -> unit)  (** Call the function with a string argument *)
+  | Int of (int -> unit)  (** Call the function with an int argument *)
+  | Int64 of (int64 -> unit)  (** Call the function with an int argument *)
+  | Float of (float -> unit)  (** Call the function with a float argument *)
+  | Rest of (string -> unit)
+      (** Stop interpreting keywords and call the 
                                    function with each remaining argument *)
   | Array of int * (string array -> unit)
-                           (* Call the function with an array of arguments *)
+
+(* Call the function with an array of arguments *)
 
 (** The concrete type describing the behavior associated
    with a keyword. *)
 
-val parse :
-  (string * spec * string) list -> (string -> unit) -> string -> unit
+val parse : (string * spec * string) list -> (string -> unit) -> string -> unit
 (** [Arg.parse speclist anonfun usage_msg] parses the command line.
     [speclist] is a list of triples [(key, spec, doc)].
     [key] is the option keyword, it must start with a ['-'] character.
@@ -81,8 +82,12 @@ val parse :
     own [-help] and [--help] options in [speclist].
 *)
 
-val parse_argv : string array ->
-  (string * spec * string) list -> (string -> unit) -> string -> unit
+val parse_argv :
+  string array ->
+  (string * spec * string) list ->
+  (string -> unit) ->
+  string ->
+  unit
 (** [Arg.parse_argv args speclist anonfun usage_msg] parses array [args] as
   if it were the command line. *)
 
@@ -100,6 +105,4 @@ val current : int ref
 (** Position (in {!Sys.argv}) of the argument being processed.  You can
     change this value, e.g. to force {!Arg.parse} to skip some arguments.*)
 
-  
-val parse2 :
-  (string * spec * string) list -> (string -> unit) -> string -> unit
+val parse2 : (string * spec * string) list -> (string -> unit) -> string -> unit

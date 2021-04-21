@@ -33,10 +33,7 @@ let max a =
   done;
   !max_val
 
-let exists p a =
-  let l = Array.length a in
-  let rec aux i = i < l && (p a.(i) || aux (i + 1)) in
-  aux 0
+let exists = Array.exists
 
 let existsi p a =
   let l = Array.length a in
@@ -62,10 +59,4 @@ let subarray_fold_lefti f x a firstidx lastidx =
   !r
 
 (** Fisher-Yates shuffle *)
-let shuffle a =
-  for i = Array.length a - 1 downto 1 do
-    let j = Random.int (i + 1) in
-    let tmp = a.(j) in
-    a.(j) <- a.(i);
-    a.(i) <- tmp
-  done
+let shuffle = CCArray.shuffle
