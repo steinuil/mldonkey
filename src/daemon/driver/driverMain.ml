@@ -690,7 +690,7 @@ for config files at the end. *)
         for i = 1 to !!config_files_security_space do
           for j = 1 to 32 do (* 32 = 1 MB / 32kB *)
             ignore(Unix2.c_seek64 oc !pos Unix.SEEK_SET);
-            Unix2.really_write oc s 0 len;
+            Unix2.really_write oc (Bytes.unsafe_of_string s) 0 len;
             pos := !pos ++ (Int64.of_int len)
           done
         done;

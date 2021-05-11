@@ -26,7 +26,7 @@ type event =
 
   
 and buf = {
-  mutable buf : string;
+  mutable buf : bytes;
   mutable pos : int;
   mutable len : int;
   mutable max_buf_size : int;
@@ -177,4 +177,3 @@ val output_buffered : t -> int
 val get_latencies : bool ref -> string
 
 val string_of_event : event -> string
-

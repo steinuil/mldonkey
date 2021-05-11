@@ -46,9 +46,9 @@ module Id3v1 =
       let res =
         if len < 128 then false else begin
           seek_in ic (len - 128);
-          let buffer = String.create 3 in
+          let buffer = Bytes.create 3 in
           really_input ic buffer 0 3;
-          buffer = "TAG"
+          buffer = Bytes.of_string "TAG"
         end in
       close_in ic;
       res
@@ -58,9 +58,9 @@ let read_channel ic =
     if len < 128 then raise Not_found;
     seek_in ic (len - 128);
     let readstring len =
-      let buf = String.create len in
+      let buf = Bytes.create len in
       really_input ic buf 0 len;
-      Mp3_misc.chop_whitespace buf 0 in
+      Mp3_misc.chop_whitespace (Bytes.to_string buf) 0 in
     if readstring 3 <> "TAG" then raise Not_found;
     let title = readstring 30 in
     let artist = readstring 30 in
@@ -146,11 +146,11 @@ module Id3v2 = struct
     b
 
   let input_buffer ic len =
-    let buff = String.create len in
+    let buff = Bytes.create len in
     for i = 0 to len - 1 do
       buff.[i] <- Char.chr (input_byte ic)
     done;
-    buff
+    Bytes.unsafe_to_string buff
 
   let input_int4 ic =
     let b4 = input_byte ic in let b3 = input_byte ic in
@@ -188,8 +188,9 @@ module Id3v2 = struct
 
   let read_channel ic =
     try
-      let header = String.create 10 in
+      let header = Bytes.create 10 in
       really_input ic header 0 10;
+      let header = Bytes.to_string header in
       if not (valid_header header) then raise Not_found;
       let len = length_header header in
       let startpos = pos_in ic in
@@ -282,14 +283,15 @@ module Id3v2 = struct
       begin try
         let header = String.create 10 in
         really_input ic header 0 10;
+        let header = Bytes.unsafe_to_string header in
         if not (valid_header header) then raise Not_found;
         seek_in ic (pos_in ic + length_header header)
       with Not_found | End_of_file ->
         seek_in ic 0
       end;
-      let buffer = String.create 4096 in
+      let buffer = Bytes.create 4096 in
       let rec copy_file () =
-        let n = input ic buffer 0 (String.length buffer) in
+        let n = input ic buffer 0 (Bytes.length buffer) in
         if n = 0 then () else begin output oc buffer 0 n; copy_file () end in
       copy_file ();
       close_in ic
@@ -417,4 +419,3 @@ let write_file_both_v1 ?src:srcname filename tag =
 let write_file_both_v2 ?src:srcname filename tag =
   Id3v2.write_tag ?src:srcname filename tag;
   Id3v1.write_tag filename (v2_to_v1 tag)
-

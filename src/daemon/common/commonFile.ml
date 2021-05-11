@@ -925,7 +925,7 @@ let recover_bytes file =
   let fd = file_fd file in
   let len = 32768 in
   let len64 = Int64.of_int len in
-  let s = String.create len in
+  let s = Bytes.create len in
   
   let rec iter_file_out file_pos segments =
 
@@ -975,7 +975,7 @@ let recover_bytes file =
     if pos = max then
       iter_file_out file_pos segments
     else
-    if s.[pos] = '\000' then
+    if Bytes.get s pos = '\000' then
       iter_string_out file_pos (pos+1) max segments
     else
     let begin_pos = file_pos -- (Int64.of_int (max - pos)) in
@@ -995,7 +995,7 @@ let recover_bytes file =
     if pos = max then
       iter_file_in file_pos begin_pos segments
     else
-    if s.[pos] = '\000' then
+    if Bytes.get s pos = '\000' then
       let end_pos = file_pos -- (Int64.of_int (max - pos)) in
 (*      lprintf "  0 byte at %Ld\n" end_pos; *)
       iter_string_out file_pos (pos+1) max 
@@ -1135,7 +1135,7 @@ let file_write file offset s pos len =
   if !!CommonOptions.buffer_writes then 
     Unix32.buffered_write_copy (file_fd file) offset s pos len
   else
-    Unix32.write  (file_fd file) offset s pos len
+    Unix32.write  (file_fd file) offset (Bytes.unsafe_of_string s) pos len
 
 let file_verify file key begin_pos end_pos =
   Unix32.flush_fd (file_fd file);
@@ -1278,4 +1278,3 @@ let concat_file dir filename =
     | Some v -> v
   in
   Filename.concat dir (Filename2.filesystem_compliant filename fs namemax)
-

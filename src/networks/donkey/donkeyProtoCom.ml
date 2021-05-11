@@ -42,11 +42,11 @@ let client_msg_to_string emule_version msg =
   buf_int8 buf 0;
   buf_int buf 0;
   let magic = DonkeyProtoClient.write emule_version buf msg in
-  let s = Buffer.contents buf in
-  let len = String.length s - 5 in
+  let s = Buffer.to_bytes buf in
+  let len = Bytes.length s - 5 in
   s.[0] <- char_of_int magic;
   str_int s 1 len;
-  s
+  Bytes.unsafe_to_string s
 
 let server_msg_to_string msg =
   Buffer.reset buf;
@@ -60,10 +60,10 @@ let server_msg_to_string msg =
       lprint_newline ();
     end;
 
-  let s = Buffer.contents buf in
-  let len = String.length s - 5 in
+  let s = Buffer.to_bytes buf in
+  let len = Bytes.length s - 5 in
   str_int s 1 len;
-  s
+  Bytes.unsafe_to_string s
 
 let server_send sock m =
 (*
@@ -101,11 +101,12 @@ let client_handler2 c ff f =
             None -> emule_proto ();
           | Some c -> c.client_emule_proto
         in
-        let opcode = get_uint8 b.buf b.pos in
-        let msg_len = get_int b.buf (b.pos+1) in
+        let buf_str = Bytes.to_string b.buf in
+        let opcode = get_uint8 buf_str b.pos in
+        let msg_len = get_int buf_str (b.pos+1) in
         if b.len >= 5 + msg_len then
           begin
-            let s = String.sub b.buf (b.pos+5) msg_len in
+            let s = Bytes.sub_string b.buf (b.pos+5) msg_len in
             buf_used b  (msg_len + 5);
             let t = M.parse emule_version opcode s in
 (*          M.print t;
@@ -124,11 +125,12 @@ let cut_messages parse f sock nread =
   let b = TcpBufferedSocket.buf sock in
   try
     while b.len >= 5 do
-      let opcode = get_uint8 b.buf b.pos in
-      let msg_len = get_int b.buf (b.pos+1) in
+      let buf_str = Bytes.to_string b.buf in
+      let opcode = get_uint8 buf_str b.pos in
+      let msg_len = get_int buf_str (b.pos+1) in
       if b.len >= 5 + msg_len then
         begin
-          let s = String.sub b.buf (b.pos+5) msg_len in
+          let s = Bytes.sub_string b.buf (b.pos+5) msg_len in
           buf_used b (msg_len + 5);
           let t = parse opcode s in
           f t sock
@@ -198,7 +200,7 @@ let udp_basic_handler f sock event =
 
 
 let new_string msg s =
-  let len = String.length s - 5 in
+  let len = Bytes.length s - 5 in
   str_int s 1 len
 
 let empty_string = ""
@@ -315,9 +317,9 @@ let server_send_share compressed sock msg =
           ( make_tagged_server compressed (Some sock) msg )
           0 max_len
       in
-      let s = Buffer.contents buf in
+      let s = Buffer.to_bytes buf in
       str_int s 0 nfiles;
-      let s = String.sub s 0 prev_len in
+      let s = Bytes.sub s 0 prev_len in
       if !verbose_share || !verbose then
          lprintf_nl "Sending %d share%s to server %s:%d%s"
            nfiles (Printf2.print_plural_s nfiles) (Ip.to_string (peer_ip sock)) (peer_port sock)
@@ -331,26 +333,26 @@ let server_send_share compressed sock msg =
       in
       (* Emule only sends the string compressed when it
          is smaller in that state. *)
-      if compressed && ((String.length s_c) < (String.length s))  then
+      if compressed && ((Bytes.length s_c) < (Bytes.length s))  then
         begin
           buf_int8 buf 0xD4;
           buf_int buf 0;
           buf_int8 buf 21; (* ShareReq *)
-          Buffer.add_string buf s_c;
-          Buffer.contents buf
+          Buffer.add_bytes buf s_c;
+          Buffer.to_bytes buf
         end
       else
         begin
           buf_int8 buf 227;
           buf_int buf 0;
           buf_int8 buf 21; (* ShareReq *)
-          Buffer.add_string buf s;
-          Buffer.contents buf
+          Buffer.add_bytes buf s;
+          Buffer.to_bytes buf
         end
   in
-  let len = String.length s - 5 in
+  let len = Bytes.length s - 5 in
   str_int s 1 len;
-  write_string sock s
+  write_string sock (Bytes.unsafe_to_string s)
 
 let client_send_files sock msg =
   let max_len = !!client_buffer_size - 100 -
@@ -363,12 +365,12 @@ let client_send_files sock msg =
   let nfiles, prev_len = DonkeyProtoClient.ViewFilesReply.write_files_max buf (
       make_tagged (Some sock) msg)
     0 max_len in
-  let s = Buffer.contents buf in
-  let s = String.sub s 0 prev_len in
-  let len = String.length s - 5 in
+  let s = Buffer.to_bytes buf in
+  let s = Bytes.sub s 0 prev_len in
+  let len = Bytes.length s - 5 in
   str_int s 1 len;
   str_int s 6 nfiles;
-  write_string sock s
+  write_string sock (Bytes.unsafe_to_string s)
 
 let client_send_dir sock dir files =
   let max_len = !!client_buffer_size - 100 -
@@ -383,13 +385,13 @@ let client_send_dir sock dir files =
   let nfiles, prev_len = DonkeyProtoClient.ViewFilesReply.write_files_max buf (
       make_tagged (Some sock) files)
     0 max_len in
-  let s = Buffer.contents buf in
-  let s = String.sub s 0 prev_len in
-  let len = String.length s - 5 in begin
+  let s = Buffer.to_bytes buf in
+  let s = Bytes.sub s 0 prev_len in
+  let len = Bytes.length s - 5 in begin
     str_int s 1 len;
     str_int s (pos-4) nfiles;
   end;
-  write_string sock s
+  write_string sock (Bytes.unsafe_to_string s)
 
 let udp_server_send s t =
   udp_send (get_udp_sock ()) s.server_ip (s.server_port+4) t

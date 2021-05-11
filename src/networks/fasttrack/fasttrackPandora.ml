@@ -89,7 +89,7 @@ X-KazaaTag: 6=Christina Aguliera(13)
 X-KazaaTag: 8=Stripped(13)
 X-KazaaTag: 14=Other(13)
 X-KazaaTag: 1=2002(13)
-X-KazaaTag: 26=© christinas_eyedol 2002(13)
+X-KazaaTag: 26=ï¿½ christinas_eyedol 2002(13)
 X-KazaaTag: 12=album version, stripped, fighter, real, christina, aguilera(13)
 X-KazaaTag: 10=en(13)
 X-KazaaTag: 18=Video Clip(13)
@@ -242,14 +242,16 @@ let parse (s_out : string) (s_in : string) =
           ;
 
           begin
-            let s = String.create 8 in
+            let s = Bytes.create 8 in
             cipher_packet_set ciphers.out_cipher s 0;
+            let s = Bytes.unsafe_to_string s in
             lprintf "OUT CIPHER: [%s]\n" (String.escaped s);
           end;
 
           begin
-            let s = String.create 8 in
+            let s = Bytes.create 8 in
             cipher_packet_set ciphers.in_cipher s 0;
+            let s = Bytes.unsafe_to_string s in
             lprintf "IN CIPHER: [%s]\n" (String.escaped s);
           end;
 
@@ -689,7 +691,7 @@ let received ip port time s =
 let read_trace () =
   let ic = open_in "ft_supernode.dump" in
   let buffer_size = 52000 in
-  let s = String.create buffer_size in
+  let s = Bytes.create buffer_size in
   let total = ref zero in
   let rec iter pos =
     let nread = input ic s pos (buffer_size - pos) in
@@ -704,6 +706,7 @@ let read_trace () =
 
   and iter_log pos len =
     if len > 13 then
+      let s = Bytes.to_string s in
       let size = get_int s (pos + 10) in
       let ip = LittleEndian.get_ip s pos in
       let port = get_int16 s (pos+4) in
@@ -720,7 +723,7 @@ let read_trace () =
     if pos = 0 then iter len
     else
       begin
-        String.blit s pos s 0 len;
+        Bytes.blit s pos s 0 len;
         iter len
       end
   in

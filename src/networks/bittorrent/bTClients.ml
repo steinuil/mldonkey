@@ -529,7 +529,7 @@ let is_bit_set s n =
 
 let set_bit s n =
   let i = n lsr 3 in
-  s.[i] <- Char.unsafe_chr (Char.code s.[i] lor bits.(n land 7))
+  s.[i] <- Char.unsafe_chr (Char.code (Bytes.get s (i)) lor bits.(n land 7))
 
 (* Official client seems to use max_range_request 5 and max_range_len 2^14 *)
 (* How much requests in the 'pipeline' *)
@@ -537,7 +537,7 @@ let max_range_requests = 5
 (* How much bytes we can request in one Piece *)
 
 let reserved () =
-  let s = String.make 8 '\x00' in
+  let s = Bytes.make 8 '\x00' in
   s.[7] <- (match !bt_dht with None -> '\x00' | Some _ -> '\x01');
   s.[5] <- '\x10'; (* TODO bep9, bep10, notify clients about extended*)
   s
@@ -546,7 +546,7 @@ let reserved () =
 let send_init client_uid file_id sock =
   let buf = Buffer.create 100 in
   buf_string8 buf  "BitTorrent protocol";
-  Buffer.add_string buf (reserved ());
+  Buffer.add_bytes buf (reserved ());
   Buffer.add_string buf (Sha1.direct_to_string file_id);
   Buffer.add_string buf (Sha1.direct_to_string client_uid);
   let s = Buffer.contents buf in
@@ -579,20 +579,20 @@ let send_bitfield c =
             lprintf_nl "Sending completed verified bitmap";
           let nchunks = Array.length c.client_file.file_chunks in
           let len = (nchunks+7)/8 in
-          let s = String.make len '\000' in
+          let s = Bytes.make len '\000' in
           for i = 0 to nchunks - 1 do
             set_bit s i
           done;
-          s
+          Bytes.unsafe_to_string s
       | Some swarmer ->
           let bitmap = CommonSwarming.chunks_verified_bitmap swarmer in
           if !verbose_download then 
             lprintf_nl "Sending verified bitmap: [%s]" (VB.to_string bitmap);
           let len = (VB.length bitmap + 7)/8 in
-          let s = String.make len '\000' in
+          let s = Bytes.make len '\000' in
           VB.iteri (fun i c ->
             if c = VB.State_verified then set_bit s i) bitmap;
-          s
+          Bytes.unsafe_to_string s
     ))
 
 let counter = ref 0
@@ -1385,7 +1385,7 @@ and client_to_client c sock msg =
                             (* regexp ee is a fugly way to find the end of the 1st dict before the real payload *)
                               let metaindex = (2 + (Str.search_forward  (Str.regexp_string "ee") chunk 0 )) in
                               let chunklength = ((String.length chunk) - metaindex) in
-                              Unix32.write fd !fileindex chunk
+                              Unix32.write fd !fileindex (Bytes.unsafe_of_string chunk)
                                 metaindex
                                 chunklength;
                               fileindex := Int64.add !fileindex  (Int64.of_int chunklength);
@@ -1875,7 +1875,7 @@ let recover_files () =
           | s -> if !verbose then lprintf_file_nl (as_file file) "recover: Other state %s!!" (string_of_state s)
       ) !current_files
 
-let upload_buffer = String.create 100000
+let upload_buffer = Bytes.create 100000
 
 
 (**
@@ -1920,7 +1920,7 @@ let rec iter_upload sock c =
                   end
           in
 (*          lprintf "sending piece\n"; *)
-          send_client c (Piece (num, pos, upload_buffer, 0, len));
+          send_client c (Piece (num, pos, Bytes.to_string upload_buffer, 0, len));
           iter_upload sock c
         with exn -> 
           if !verbose then 

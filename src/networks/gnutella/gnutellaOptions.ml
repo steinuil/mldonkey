@@ -94,7 +94,7 @@ let client_uid = define_option gnutella_section ["client_uid"]
   
   let _  =
   option_hook client_uid (fun _ ->
-     let s = Md4.direct_to_string !!client_uid in
+     let s = Md4.direct_to_string !!client_uid |> Bytes.of_string in
      s.[8] <- '\255';
      s.[15] <- '\000';
   )
@@ -173,4 +173,3 @@ let gui_gnutella_options_panel =
 let old_files =
   define_option gnutella_section ["old_files"]
     "" (list_option (tuple2_option (string_option, int64_option))) []
-

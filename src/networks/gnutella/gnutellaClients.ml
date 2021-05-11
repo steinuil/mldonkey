@@ -215,7 +215,7 @@ save it on disk in the next version. *)
             end;
           let buf = Buffer.create 100 in
           let read_ttr counter_pos b to_read_int =
-            Buffer.add_substring buf b.buf b.pos to_read_int
+            Buffer.add_subbytes buf b.buf b.pos to_read_int
           in
           let read_more () =
             if !verbose_msg_clients then
@@ -266,7 +266,7 @@ and read_some d c counter_pos b to_read_int =
   begin
     try
       CommonSwarming.received up
-        counter_pos b.buf b.pos to_read_int;
+        counter_pos (Bytes.to_string b.buf) b.pos to_read_int;
     with e -> 
         lprintf "FT: Exception %s in CommonSwarming.received\n"
           (Printexc2.to_string e);
@@ -1000,7 +1000,7 @@ let get_handler get_request cc gconn sock (first_line, headers) =
                   uc.uc_reader pos upload_buffer 0 rlen;
                   if !verbose_msg_clients then
                     lprintf "[GUP] Writting %d\n" rlen;
-                  TcpBufferedSocket.write sock upload_buffer 0 rlen;
+                  TcpBufferedSocket.write sock (Bytes.to_string upload_buffer) 0 rlen;
                   
                   uc.uc_chunk_pos <- uc.uc_chunk_pos ++ (Int64.of_int rlen);
                   if remaining_to_write sock = 0 then refill sock
@@ -1129,4 +1129,3 @@ let push_connection guid index ip port =
 
   in
   ()
-  

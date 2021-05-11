@@ -62,7 +62,7 @@ module P = struct
 (* This fucking Emule implementation uses 4 32-bits integers instead of
   16 8-bits integers... welcome back to the non-portability problems... *)
     let get_md4 s pos =
-      let ss = String.create 16 in
+      let ss = Bytes.create 16 in
 
       ss.[0] <- s.[pos+3];
       ss.[1] <- s.[pos+2];
@@ -84,12 +84,12 @@ module P = struct
       ss.[14] <- s.[pos+13];
       ss.[15] <- s.[pos+12];
 
-      Md4.direct_of_string ss
+      Md4.direct_of_string (Bytes.unsafe_to_string ss)
 
     let buf_md4 buf s =
       let s = Md4.direct_to_string s in
 
-      let ss = String.create 16 in
+      let ss = Bytes.create 16 in
       let pos = 0 in
 
       ss.[0] <- s.[pos+3];
@@ -112,7 +112,7 @@ module P = struct
       ss.[14] <- s.[pos+13];
       ss.[15] <- s.[pos+12];
 
-      Buffer.add_string buf ss
+      Buffer.add_bytes buf ss
 
 
 (* Strange: why was the IP format changed for Kademlia ? *)
@@ -421,7 +421,7 @@ module P = struct
       let opcode = int_of_char pbuf.[1] in
       let msg = String.sub pbuf 2 (len-2) in
       let msg = if magic = kademlia_packed_header_code then
-          let s = Zlib.uncompress_string2 msg in
+          let s = Zlib.uncompress_string2 (Bytes.unsafe_of_string msg) in
 (*          lprintf "Uncompressed:\n";
           dump s; *)
           s
@@ -440,7 +440,7 @@ module P = struct
           if String.length s > 200 then
             let opcode = String.sub s 0 1 in
             let args = String.sub s 1 (String.length s - 1) in
-            kademlia_packed_header ^ opcode ^ (Zlib.compress_string args)
+            kademlia_packed_header ^ opcode ^ (Bytes.unsafe_to_string (Zlib.compress_string (Bytes.unsafe_of_string args)))
           else
             kademlia_header ^ s
         in
@@ -522,4 +522,3 @@ module P = struct
   end
 
 module Kademlia = Make(P)
-

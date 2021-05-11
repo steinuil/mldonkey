@@ -328,7 +328,7 @@ let decode_torrent s =
 let encode_torrent torrent =
 
   let npieces = Array.length torrent.torrent_pieces in
-  let pieces = String.create (20 * npieces) in
+  let pieces = Bytes.create (20 * npieces) in
   for i = 0 to npieces - 1 do
     String.blit (Sha1.direct_to_string torrent.torrent_pieces.(i)) 0
       pieces (i*20) 20
@@ -357,7 +357,7 @@ let encode_torrent torrent =
       "name", String torrent.torrent_name;
       "name.utf-8", String torrent.torrent_name_utf8;
       "piece length", Int torrent.torrent_piece_size;
-      "pieces", String pieces;
+      "pieces", String (Bytes.unsafe_to_string pieces);
       "private", Int (if torrent.torrent_private then 1L else 0L);
     ]
   in
@@ -456,4 +456,3 @@ let generate_torrent announce torrent_filename torrent_comment torrent_private f
   let encoded = Bencode.encode encoded in
   File.from_string torrent_filename encoded;
   file_id
-

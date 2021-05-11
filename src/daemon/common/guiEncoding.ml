@@ -44,10 +44,10 @@ let gui_send writer sock t =
     Buffer.reset buf;
     buf_int buf 0;
     writer buf t;
-    let s = Buffer.contents buf in
-    let len = String.length s - 4 in
+    let s = Buffer.to_bytes buf in
+    let len = Bytes.length s - 4 in
     str_int s 0 len;
-    write_string sock s;
+    write_string sock (Bytes.unsafe_to_string s);
   with UnsupportedGuiMessage -> ()
       
 (***************
@@ -1352,4 +1352,3 @@ let _ =
     assert (check_from_gui (SetFilePriority (5,6)));
     assert (check_from_gui (Password ("mldonkey", "toto")));
   done
-  

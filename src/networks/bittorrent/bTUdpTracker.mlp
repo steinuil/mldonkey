@@ -4,7 +4,7 @@
 open Bitstring
 
 let of_bits = string_of_bitstring
-let bits = bitstring_of_string
+let bits = bitstring_of_bytes
 
 exception Error of string
 
@@ -18,11 +18,12 @@ let connect_request txn =
 
 (** connect response with connection_id for future use *)
 let connect_response s exp_txn =
+  let s = Bytes.of_string s in
   bitmatch bits s with
   | { 0l : 32 ; txn : 32 ; conn_id : 64 } -> 
     if txn = exp_txn then conn_id else fail "error connect_response txn %ld expected %ld" txn exp_txn
   | { :error_response } -> fail "error connect_response txn %ld : %s" txn msg
-  | { }  -> fail "error connect_response (expected txn %ld) : %s" exp_txn (AnyEndian.dump_hex_s s)
+  | { }  -> fail "error connect_response (expected txn %ld) : %s" exp_txn (AnyEndian.dump_hex_s (Bytes.to_string s))
 
 (** announce *)
 let announce_request conn txn ~info_hash ~peer_id (downloaded,left,uploaded) event ?(ip=0l) ?(key=0l) ~numwant port =
@@ -43,6 +44,7 @@ let announce_request conn txn ~info_hash ~peer_id (downloaded,left,uploaded) eve
 
 (** announce response *)
 let announce_response s exp_txn =
+  let s = Bytes.of_string s in
   let rec clients rest l =
     bitmatch rest with
     | { ip : 32 ; port : 16 ; rest : -1 : bitstring } -> clients rest ((ip,port)::l)
@@ -56,4 +58,4 @@ let announce_response s exp_txn =
         else
           fail "error announce_response txn %ld expected %ld" txn exp_txn
   | { :error_response } -> fail "error announce_response txn %ld : %s" txn msg
-  | { } -> fail "error announce_response (expected txn %ld) : %s" exp_txn (AnyEndian.dump_hex_s s)
+  | { } -> fail "error announce_response (expected txn %ld) : %s" exp_txn (AnyEndian.dump_hex_s (Bytes.to_string s))

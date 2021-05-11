@@ -122,13 +122,13 @@ let read_request ic =
   assert (c = 227);
   let len32 = read_uint64_32 ic in
   let len = Int64.to_int len32 in
-  let s = String.create len in
+  let s = Bytes.create len in
   really_input ic s 0 len;
   (*
   lprintf "read_request %d [%s]" len (String.escaped s); 
 lprint_newline ();
   *)
-  s
+  Bytes.unsafe_to_string s
 
 let output_request oc s =
   output_char oc (char_of_int 227);

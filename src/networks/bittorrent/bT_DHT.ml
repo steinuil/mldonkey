@@ -308,20 +308,20 @@ let make_peer (ip,port) =
   assert (port <= 0xffff);
   let (a,b,c,d) = Ip.to_ints ip in
   let e = port lsr 8 and f = port land 0xff in
-  let s = String.create 6 in
+  let s = Bytes.create 6 in
   let set i c = s.[i] <- char_of_int c in
   set 0 a; set 1 b; set 2 c; set 3 d; set 4 e; set 5 f;
-  s
+  Bytes.unsafe_to_string s
 
 let make_nodes nodes =
-  let s = String.create (26 * List.length nodes) in
+  let s = Bytes.create (26 * List.length nodes) in
   let i = ref 0 in
   List.iter (fun (id,addr) ->
     String.blit (H.direct_to_string id) 0 s (!i*26) 20;
     String.blit (make_peer addr) 0 s (!i*26+20) 6;
     incr i
     ) nodes;
-  s
+  Bytes.unsafe_to_string s
 
 let parse_response_exn q dict =
   let get k = List.assoc k dict in
@@ -727,4 +727,3 @@ let start rt port bw_control =
   !!dht
 
 let stop dht = M.shutdown dht
-

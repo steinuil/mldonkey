@@ -645,7 +645,7 @@ bitmatch bits with
    {3 Types}
 *)
 
-type bitstring = string * int * int
+type bitstring = bytes * int * int
 (** [bitstring] is the basic type used to store bitstrings.
 
     The type contains the underlying data (a string),
@@ -772,14 +772,16 @@ val zeroes_bitstring : int -> bitstring
 val ones_bitstring : int -> bitstring
 (** [ones_bitstring] creates an [n] bit bitstring of all 1's. *)
 
-val bitstring_of_string : string -> bitstring
-(** [bitstring_of_string str] creates a bitstring
-    of length [String.length str * 8] (bits) containing the
+val bitstring_of_bytes : bytes -> bitstring
+(** [bitstring_of_bytes str] creates a bitstring
+    of length [Bytes.length str * 8] (bits) containing the
     bits in [str].
 
     Note that the bitstring uses [str] as the underlying
     string (see the representation of {!bitstring}) so you
     should not change [str] after calling this. *)
+
+val bitstring_of_string : string -> bitstring
 
 val bitstring_of_file : string -> bitstring
 (** [bitstring_of_file filename] loads the named file
@@ -828,6 +830,8 @@ val string_of_bitstring : bitstring -> string
     final byte of the string contains the high bits set to the
     remaining bits and the low bits set to 0. *)
 
+val bytes_of_bitstring : bitstring -> bytes
+
 val bitstring_to_file : bitstring -> string -> unit
 (** [bitstring_to_file bits filename] writes the bitstring [bits]
     to the file [filename].  It overwrites the output file.
@@ -865,7 +869,7 @@ module Buffer : sig
   type t
   val create : unit -> t
   val contents : t -> bitstring
-  val add_bits : t -> string -> int -> unit
+  val add_bits : t -> bytes -> int -> unit
   val add_bit : t -> bool -> unit
   val add_byte : t -> int -> unit
 end
@@ -931,121 +935,121 @@ val nativeendian : endian
 
 (* 'extract' functions are used in bitmatch statements. *)
 
-val extract_bit : string -> int -> int -> int -> bool
+val extract_bit : bytes -> int -> int -> int -> bool
 
-val extract_char_unsigned : string -> int -> int -> int -> int
+val extract_char_unsigned : bytes -> int -> int -> int -> int
 
-val extract_int_be_unsigned : string -> int -> int -> int -> int
+val extract_int_be_unsigned : bytes -> int -> int -> int -> int
 
-val extract_int_le_unsigned : string -> int -> int -> int -> int
+val extract_int_le_unsigned : bytes-> int -> int -> int -> int
 
-val extract_int_ne_unsigned : string -> int -> int -> int -> int
+val extract_int_ne_unsigned : bytes -> int -> int -> int -> int
 
-val extract_int_ee_unsigned : endian -> string -> int -> int -> int -> int
+val extract_int_ee_unsigned : endian -> bytes -> int -> int -> int -> int
 
-val extract_int32_be_unsigned : string -> int -> int -> int -> int32
+val extract_int32_be_unsigned : bytes -> int -> int -> int -> int32
 
-val extract_int32_le_unsigned : string -> int -> int -> int -> int32
+val extract_int32_le_unsigned : bytes -> int -> int -> int -> int32
 
-val extract_int32_ne_unsigned : string -> int -> int -> int -> int32
+val extract_int32_ne_unsigned : bytes -> int -> int -> int -> int32
 
-val extract_int32_ee_unsigned : endian -> string -> int -> int -> int -> int32
+val extract_int32_ee_unsigned : endian -> bytes -> int -> int -> int -> int32
 
-val extract_int64_be_unsigned : string -> int -> int -> int -> int64
+val extract_int64_be_unsigned : bytes -> int -> int -> int -> int64
 
-val extract_int64_le_unsigned : string -> int -> int -> int -> int64
+val extract_int64_le_unsigned : bytes -> int -> int -> int -> int64
 
-val extract_int64_ne_unsigned : string -> int -> int -> int -> int64
+val extract_int64_ne_unsigned : bytes -> int -> int -> int -> int64
 
-val extract_int64_ee_unsigned : endian -> string -> int -> int -> int -> int64
+val extract_int64_ee_unsigned : endian -> bytes -> int -> int -> int -> int64
 
-external extract_fastpath_int16_be_unsigned : string -> int -> int = "ocaml_bitstring_extract_fastpath_int16_be_unsigned" "noalloc"
+external extract_fastpath_int16_be_unsigned : bytes -> int -> int = "ocaml_bitstring_extract_fastpath_int16_be_unsigned" [@@noalloc]
 
-external extract_fastpath_int16_le_unsigned : string -> int -> int = "ocaml_bitstring_extract_fastpath_int16_le_unsigned" "noalloc"
+external extract_fastpath_int16_le_unsigned : bytes -> int -> int = "ocaml_bitstring_extract_fastpath_int16_le_unsigned" [@@noalloc]
 
-external extract_fastpath_int16_ne_unsigned : string -> int -> int = "ocaml_bitstring_extract_fastpath_int16_ne_unsigned" "noalloc"
+external extract_fastpath_int16_ne_unsigned : bytes -> int -> int = "ocaml_bitstring_extract_fastpath_int16_ne_unsigned" [@@noalloc]
 
-external extract_fastpath_int16_be_signed : string -> int -> int = "ocaml_bitstring_extract_fastpath_int16_be_signed" "noalloc"
+external extract_fastpath_int16_be_signed : bytes -> int -> int = "ocaml_bitstring_extract_fastpath_int16_be_signed" [@@noalloc]
 
-external extract_fastpath_int16_le_signed : string -> int -> int = "ocaml_bitstring_extract_fastpath_int16_le_signed" "noalloc"
+external extract_fastpath_int16_le_signed : bytes -> int -> int = "ocaml_bitstring_extract_fastpath_int16_le_signed" [@@noalloc]
 
-external extract_fastpath_int16_ne_signed : string -> int -> int = "ocaml_bitstring_extract_fastpath_int16_ne_signed" "noalloc"
-
-(*
-external extract_fastpath_int24_be_unsigned : string -> int -> int = "ocaml_bitstring_extract_fastpath_int24_be_unsigned" "noalloc"
-
-external extract_fastpath_int24_le_unsigned : string -> int -> int = "ocaml_bitstring_extract_fastpath_int24_le_unsigned" "noalloc"
-
-external extract_fastpath_int24_ne_unsigned : string -> int -> int = "ocaml_bitstring_extract_fastpath_int24_ne_unsigned" "noalloc"
-
-external extract_fastpath_int24_be_signed : string -> int -> int = "ocaml_bitstring_extract_fastpath_int24_be_signed" "noalloc"
-
-external extract_fastpath_int24_le_signed : string -> int -> int = "ocaml_bitstring_extract_fastpath_int24_le_signed" "noalloc"
-
-external extract_fastpath_int24_ne_signed : string -> int -> int = "ocaml_bitstring_extract_fastpath_int24_ne_signed" "noalloc"
-*)
-
-external extract_fastpath_int32_be_unsigned : string -> int -> int32 -> int32 = "ocaml_bitstring_extract_fastpath_int32_be_unsigned" "noalloc"
-
-external extract_fastpath_int32_le_unsigned : string -> int -> int32 -> int32 = "ocaml_bitstring_extract_fastpath_int32_le_unsigned" "noalloc"
-
-external extract_fastpath_int32_ne_unsigned : string -> int -> int32 -> int32 = "ocaml_bitstring_extract_fastpath_int32_ne_unsigned" "noalloc"
-
-external extract_fastpath_int32_be_signed : string -> int -> int32 -> int32 = "ocaml_bitstring_extract_fastpath_int32_be_signed" "noalloc"
-
-external extract_fastpath_int32_le_signed : string -> int -> int32 -> int32 = "ocaml_bitstring_extract_fastpath_int32_le_signed" "noalloc"
-
-external extract_fastpath_int32_ne_signed : string -> int -> int32 -> int32 = "ocaml_bitstring_extract_fastpath_int32_ne_signed" "noalloc"
+external extract_fastpath_int16_ne_signed : bytes -> int -> int = "ocaml_bitstring_extract_fastpath_int16_ne_signed" [@@noalloc]
 
 (*
-external extract_fastpath_int40_be_unsigned : string -> int -> int64 -> int64 = "ocaml_bitstring_extract_fastpath_int40_be_unsigned" "noalloc"
+external extract_fastpath_int24_be_unsigned : string -> int -> int = "ocaml_bitstring_extract_fastpath_int24_be_unsigned" [@@noalloc]
 
-external extract_fastpath_int40_le_unsigned : string -> int -> int64 -> int64 = "ocaml_bitstring_extract_fastpath_int40_le_unsigned" "noalloc"
+external extract_fastpath_int24_le_unsigned : string -> int -> int = "ocaml_bitstring_extract_fastpath_int24_le_unsigned" [@@noalloc]
 
-external extract_fastpath_int40_ne_unsigned : string -> int -> int64 -> int64 = "ocaml_bitstring_extract_fastpath_int40_ne_unsigned" "noalloc"
+external extract_fastpath_int24_ne_unsigned : string -> int -> int = "ocaml_bitstring_extract_fastpath_int24_ne_unsigned" [@@noalloc]
 
-external extract_fastpath_int40_be_signed : string -> int -> int64 -> int64 = "ocaml_bitstring_extract_fastpath_int40_be_signed" "noalloc"
+external extract_fastpath_int24_be_signed : string -> int -> int = "ocaml_bitstring_extract_fastpath_int24_be_signed" [@@noalloc]
 
-external extract_fastpath_int40_le_signed : string -> int -> int64 -> int64 = "ocaml_bitstring_extract_fastpath_int40_le_signed" "noalloc"
+external extract_fastpath_int24_le_signed : string -> int -> int = "ocaml_bitstring_extract_fastpath_int24_le_signed" [@@noalloc]
 
-external extract_fastpath_int40_ne_signed : string -> int -> int64 -> int64 = "ocaml_bitstring_extract_fastpath_int40_ne_signed" "noalloc"
-
-external extract_fastpath_int48_be_unsigned : string -> int -> int64 -> int64 = "ocaml_bitstring_extract_fastpath_int48_be_unsigned" "noalloc"
-
-external extract_fastpath_int48_le_unsigned : string -> int -> int64 -> int64 = "ocaml_bitstring_extract_fastpath_int48_le_unsigned" "noalloc"
-
-external extract_fastpath_int48_ne_unsigned : string -> int -> int64 -> int64 = "ocaml_bitstring_extract_fastpath_int48_ne_unsigned" "noalloc"
-
-external extract_fastpath_int48_be_signed : string -> int -> int64 -> int64 = "ocaml_bitstring_extract_fastpath_int48_be_signed" "noalloc"
-
-external extract_fastpath_int48_le_signed : string -> int -> int64 -> int64 = "ocaml_bitstring_extract_fastpath_int48_le_signed" "noalloc"
-
-external extract_fastpath_int48_ne_signed : string -> int -> int64 -> int64 = "ocaml_bitstring_extract_fastpath_int48_ne_signed" "noalloc"
-
-external extract_fastpath_int56_be_unsigned : string -> int -> int64 -> int64 = "ocaml_bitstring_extract_fastpath_int56_be_unsigned" "noalloc"
-
-external extract_fastpath_int56_le_unsigned : string -> int -> int64 -> int64 = "ocaml_bitstring_extract_fastpath_int56_le_unsigned" "noalloc"
-
-external extract_fastpath_int56_ne_unsigned : string -> int -> int64 -> int64 = "ocaml_bitstring_extract_fastpath_int56_ne_unsigned" "noalloc"
-
-external extract_fastpath_int56_be_signed : string -> int -> int64 -> int64 = "ocaml_bitstring_extract_fastpath_int56_be_signed" "noalloc"
-
-external extract_fastpath_int56_le_signed : string -> int -> int64 -> int64 = "ocaml_bitstring_extract_fastpath_int56_le_signed" "noalloc"
-
-external extract_fastpath_int56_ne_signed : string -> int -> int64 -> int64 = "ocaml_bitstring_extract_fastpath_int56_ne_signed" "noalloc"
+external extract_fastpath_int24_ne_signed : string -> int -> int = "ocaml_bitstring_extract_fastpath_int24_ne_signed" [@@noalloc]
 *)
 
-external extract_fastpath_int64_be_unsigned : string -> int -> int64 -> int64 = "ocaml_bitstring_extract_fastpath_int64_be_unsigned" "noalloc"
+external extract_fastpath_int32_be_unsigned : bytes -> int -> int32 -> int32 = "ocaml_bitstring_extract_fastpath_int32_be_unsigned" [@@noalloc]
 
-external extract_fastpath_int64_le_unsigned : string -> int -> int64 -> int64 = "ocaml_bitstring_extract_fastpath_int64_le_unsigned" "noalloc"
+external extract_fastpath_int32_le_unsigned : bytes -> int -> int32 -> int32 = "ocaml_bitstring_extract_fastpath_int32_le_unsigned" [@@noalloc]
 
-external extract_fastpath_int64_ne_unsigned : string -> int -> int64 -> int64 = "ocaml_bitstring_extract_fastpath_int64_ne_unsigned" "noalloc"
+external extract_fastpath_int32_ne_unsigned : bytes -> int -> int32 -> int32 = "ocaml_bitstring_extract_fastpath_int32_ne_unsigned" [@@noalloc]
 
-external extract_fastpath_int64_be_signed : string -> int -> int64 -> int64 = "ocaml_bitstring_extract_fastpath_int64_be_signed" "noalloc"
+external extract_fastpath_int32_be_signed : bytes -> int -> int32 -> int32 = "ocaml_bitstring_extract_fastpath_int32_be_signed" [@@noalloc]
 
-external extract_fastpath_int64_le_signed : string -> int -> int64 -> int64 = "ocaml_bitstring_extract_fastpath_int64_le_signed" "noalloc"
+external extract_fastpath_int32_le_signed : bytes -> int -> int32 -> int32 = "ocaml_bitstring_extract_fastpath_int32_le_signed" [@@noalloc]
 
-external extract_fastpath_int64_ne_signed : string -> int -> int64 -> int64 = "ocaml_bitstring_extract_fastpath_int64_ne_signed" "noalloc"
+external extract_fastpath_int32_ne_signed : bytes -> int -> int32 -> int32 = "ocaml_bitstring_extract_fastpath_int32_ne_signed" [@@noalloc]
+
+(*
+external extract_fastpath_int40_be_unsigned : string -> int -> int64 -> int64 = "ocaml_bitstring_extract_fastpath_int40_be_unsigned" [@@noalloc]
+
+external extract_fastpath_int40_le_unsigned : string -> int -> int64 -> int64 = "ocaml_bitstring_extract_fastpath_int40_le_unsigned" [@@noalloc]
+
+external extract_fastpath_int40_ne_unsigned : string -> int -> int64 -> int64 = "ocaml_bitstring_extract_fastpath_int40_ne_unsigned" [@@noalloc]
+
+external extract_fastpath_int40_be_signed : string -> int -> int64 -> int64 = "ocaml_bitstring_extract_fastpath_int40_be_signed" [@@noalloc]
+
+external extract_fastpath_int40_le_signed : string -> int -> int64 -> int64 = "ocaml_bitstring_extract_fastpath_int40_le_signed" [@@noalloc]
+
+external extract_fastpath_int40_ne_signed : string -> int -> int64 -> int64 = "ocaml_bitstring_extract_fastpath_int40_ne_signed" [@@noalloc]
+
+external extract_fastpath_int48_be_unsigned : string -> int -> int64 -> int64 = "ocaml_bitstring_extract_fastpath_int48_be_unsigned" [@@noalloc]
+
+external extract_fastpath_int48_le_unsigned : string -> int -> int64 -> int64 = "ocaml_bitstring_extract_fastpath_int48_le_unsigned" [@@noalloc]
+
+external extract_fastpath_int48_ne_unsigned : string -> int -> int64 -> int64 = "ocaml_bitstring_extract_fastpath_int48_ne_unsigned" [@@noalloc]
+
+external extract_fastpath_int48_be_signed : string -> int -> int64 -> int64 = "ocaml_bitstring_extract_fastpath_int48_be_signed" [@@noalloc]
+
+external extract_fastpath_int48_le_signed : string -> int -> int64 -> int64 = "ocaml_bitstring_extract_fastpath_int48_le_signed" [@@noalloc]
+
+external extract_fastpath_int48_ne_signed : string -> int -> int64 -> int64 = "ocaml_bitstring_extract_fastpath_int48_ne_signed" [@@noalloc]
+
+external extract_fastpath_int56_be_unsigned : string -> int -> int64 -> int64 = "ocaml_bitstring_extract_fastpath_int56_be_unsigned" [@@noalloc]
+
+external extract_fastpath_int56_le_unsigned : string -> int -> int64 -> int64 = "ocaml_bitstring_extract_fastpath_int56_le_unsigned" [@@noalloc]
+
+external extract_fastpath_int56_ne_unsigned : string -> int -> int64 -> int64 = "ocaml_bitstring_extract_fastpath_int56_ne_unsigned" [@@noalloc]
+
+external extract_fastpath_int56_be_signed : string -> int -> int64 -> int64 = "ocaml_bitstring_extract_fastpath_int56_be_signed" [@@noalloc]
+
+external extract_fastpath_int56_le_signed : string -> int -> int64 -> int64 = "ocaml_bitstring_extract_fastpath_int56_le_signed" [@@noalloc]
+
+external extract_fastpath_int56_ne_signed : string -> int -> int64 -> int64 = "ocaml_bitstring_extract_fastpath_int56_ne_signed" [@@noalloc]
+*)
+
+external extract_fastpath_int64_be_unsigned : bytes -> int -> int64 -> int64 = "ocaml_bitstring_extract_fastpath_int64_be_unsigned" [@@noalloc]
+
+external extract_fastpath_int64_le_unsigned : bytes -> int -> int64 -> int64 = "ocaml_bitstring_extract_fastpath_int64_le_unsigned" [@@noalloc]
+
+external extract_fastpath_int64_ne_unsigned : bytes -> int -> int64 -> int64 = "ocaml_bitstring_extract_fastpath_int64_ne_unsigned" [@@noalloc]
+
+external extract_fastpath_int64_be_signed : bytes -> int -> int64 -> int64 = "ocaml_bitstring_extract_fastpath_int64_be_signed" [@@noalloc]
+
+external extract_fastpath_int64_le_signed : bytes -> int -> int64 -> int64 = "ocaml_bitstring_extract_fastpath_int64_le_signed" [@@noalloc]
+
+external extract_fastpath_int64_ne_signed : bytes -> int -> int64 -> int64 = "ocaml_bitstring_extract_fastpath_int64_ne_signed" [@@noalloc]
 
 (* 'construct' functions are used in BITSTRING constructors. *)
 val construct_bit : Buffer.t -> bool -> int -> exn -> unit

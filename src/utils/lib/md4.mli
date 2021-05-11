@@ -18,9 +18,9 @@
 *)
 
 module type Base = sig 
-    val to_string : int -> string -> string
-    val to_string_case : bool -> int -> string -> string
-    val of_string : int -> string -> string
+    val to_string : int -> bytes -> string
+    val to_string_case : bool -> int -> bytes -> string
+    val of_string : int -> string -> bytes
   end
   
 module type Digest = sig
@@ -80,4 +80,3 @@ module Md5Ext : Digest
 module Base16 : Base
 module Base32 : Base
 module Base6427 : Base
-  

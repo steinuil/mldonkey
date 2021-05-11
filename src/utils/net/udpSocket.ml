@@ -110,7 +110,7 @@ let local_sendto sock p =
           declare_ping ip
       | _ -> ()
   end;
-  Unix.sendto sock p.udp_content 0 (String.length p.udp_content) [] p.udp_addr
+  Unix.sendto sock (Bytes.of_string p.udp_content) 0 (String.length p.udp_content) [] p.udp_addr
    
 
 module PacketSet = Set.Make (struct
@@ -234,7 +234,7 @@ let write t ping s ip port =
               let _ =
                 try
                   if ping then declare_ping ip;
-                  ignore(Unix.sendto (fd sock) s 0 len [] addr);
+                  ignore(Unix.sendto (fd sock) (Bytes.of_string s) 0 len [] addr);
                   if !verbose_bandwidth > 1 then begin
                       lprintf_nl "[BW2] direct send udp %d bytes (write)" len;
                     end;
@@ -290,7 +290,7 @@ lprintf_nl "UDP sent [%s]" (String.escaped
     
 let dummy_sock = Obj.magic 0
 
-let read_buf = String.create 66000
+let read_buf = Bytes.create 66000
 
 let rec iter_write_no_bc t sock = 
   let (time,p) = PacketSet.min_elt t.wlist in
@@ -368,14 +368,14 @@ let udp_handler t sock event =
   | CAN_READ ->
       let (len, addr) = Unix.recvfrom (fd sock) read_buf 0 66000 [] in
       let s, addr = match t.socks_proxy with
-        None -> String.sub read_buf 0 len, addr
+        None -> Bytes.sub read_buf 0 len, addr
       | Some _ ->
-          String.sub read_buf 10 (len-10), 
-          Unix.ADDR_INET(Ip.to_inet_addr (get_ip read_buf 4), get_int16 read_buf 8)
+          Bytes.sub read_buf 10 (len-10), 
+          Unix.ADDR_INET(Ip.to_inet_addr (get_ip (Bytes.to_string read_buf) 4), get_int16 (Bytes.to_string read_buf) 8)
       in
       udp_downloaded_bytes := !udp_downloaded_bytes ++ (Int64.of_int len);
       t.rlist <- {
-        udp_content = s;
+        udp_content = Bytes.to_string s;
         udp_ping = false;
         udp_addr = addr;
       } :: t.rlist;
@@ -584,4 +584,3 @@ let _ =
         done
       with _ -> ()
   )
-

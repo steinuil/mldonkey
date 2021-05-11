@@ -33,9 +33,9 @@ let i_0 = int_of_char '0'
 let i_9 = int_of_char '9'
 
 module type Base = sig 
-    val to_string : int -> string -> string
-    val to_string_case : bool -> int -> string -> string
-    val of_string : int -> string -> string
+    val to_string : int -> bytes -> string
+    val to_string_case : bool -> int -> bytes -> string
+    val of_string : int -> string -> bytes
   end
   
 module Base16 = struct 
@@ -45,16 +45,16 @@ module Base16 = struct
       else Char.chr (Char.code '0' + x)
         
     let to_string hash_length s =
-      let p = String.create (hash_length * 2) in
+      let p = Bytes.create (hash_length * 2) in
       for i = 0 to hash_length - 1 do
-        let c = s.[i] in
+        let c = Bytes.get s i in
         let n = int_of_char c in
         let i0 = (n/16) land 15 in
         let i1 = n land 15 in
         p.[2 * i] <- hexa_digit i0;
         p.[2 * i+1] <- hexa_digit i1;
       done;
-      p
+      Bytes.unsafe_to_string p
     
     let hexa_digit_case upper x =
       if x >= 10 then Char.chr (Char.code (
@@ -62,16 +62,16 @@ module Base16 = struct
       else Char.chr (Char.code '0' + x)
 
     let to_string_case upper hash_length s =
-      let p = String.create (hash_length * 2) in
+      let p = Bytes.create (hash_length * 2) in
       for i = 0 to hash_length - 1 do
-        let c = s.[i] in
+        let c = Bytes.get s i in
         let n = int_of_char c in
         let i0 = (n/16) land 15 in
         let i1 = n land 15 in
         p.[2 * i] <- hexa_digit_case upper i0;
         p.[2 * i+1] <- hexa_digit_case upper i1;
       done;
-      p
+      Bytes.unsafe_to_string p
     
     let digit_hexa c =
       let i = int_of_char c in
@@ -82,7 +82,7 @@ module Base16 = struct
     
     let of_string hash_length s =
       assert (String.length s = hash_length*2);
-      let p = String.create hash_length in
+      let p = Bytes.create hash_length in
       for i = 0 to hash_length - 1 do
         let c0 = s.[2*i] in
         let c1 = s.[2*i+1] in
@@ -107,7 +107,7 @@ module Base32 = struct
     let of_string hash_length r =
       let len = String.length r in
       assert (len =  (hash_length * 8 + 4)/5);
-      let s = String.make hash_length '\000' in
+      let s = Bytes.make hash_length '\000' in
       for i = 0 to len - 1 do
         let pos = i * 5 in
         let byte = pos / 8 in
@@ -115,63 +115,63 @@ module Base32 = struct
         let c = int5_of_char r.[i] in
         if bit < 3 then 
           let x = c lsl (3-bit) in
-          s.[byte] <- char_of_int (int_of_char s.[byte] lor x);
+          s.[byte] <- char_of_int (int_of_char (Bytes.get s byte) lor x);
         else
         let x = (c lsr (bit - 3)) land 0xff in
-        s.[byte] <- char_of_int (int_of_char s.[byte] lor x);
+        s.[byte] <- char_of_int (int_of_char (Bytes.get s byte) lor x);
         if byte+1 < hash_length then
           let y = (c lsl (11 - bit)) land 0xff in
-          s.[byte+1] <- char_of_int (int_of_char s.[byte+1] lor y);
+          s.[byte+1] <- char_of_int (int_of_char (Bytes.get s (byte+1)) lor y);
       done;
       s    
     
     let to_string hash_length s =
-      assert (String.length s = hash_length);
+      assert (Bytes.length s = hash_length);
       let len = (hash_length * 8 + 4)/5 in
-      let r = String.create len in
+      let r = Bytes.create len in
       for i = 0 to len - 1 do
         let pos = i * 5 in
         let byte = pos / 8 in
         let bit = pos mod 8 in
         if bit < 3 then
-          let x = int_of_char s.[byte] in
+          let x = int_of_char (Bytes.get s byte) in
           let c = (x lsr (3 - bit)) land 0x1f in
           r.[i] <- char_of_int5 c
         else
-        let x = int_of_char s.[byte] in
+        let x = int_of_char (Bytes.get s byte) in
         let y = if byte + 1 = hash_length then 0 else 
-            int_of_char s.[byte+1] in
+            int_of_char (Bytes.get s (byte+1)) in
         let x = (x lsl 8) + y in
         let c = (x lsr (11 - bit)) land 0x1f in
         r.[i] <- char_of_int5 c
       done;
-      r
+      Bytes.unsafe_to_string r
 
     let char_of_int5 upper n =
       char_of_int (if n < 26 then (if upper then 65 else 97)+n else
           50+(n-26))
     
     let to_string_case upper hash_length s =
-      assert (String.length s = hash_length);
+      assert (Bytes.length s = hash_length);
       let len = (hash_length * 8 + 4)/5 in
-      let r = String.create len in
+      let r = Bytes.create len in
       for i = 0 to len - 1 do
         let pos = i * 5 in
         let byte = pos / 8 in
         let bit = pos mod 8 in
         if bit < 3 then
-          let x = int_of_char s.[byte] in
+          let x = int_of_char (Bytes.get s byte) in
           let c = (x lsr (3 - bit)) land 0x1f in
           r.[i] <- char_of_int5 upper c
         else
-        let x = int_of_char s.[byte] in
+        let x = int_of_char (Bytes.get s byte) in
         let y = if byte + 1 = hash_length then 0 else 
-            int_of_char s.[byte+1] in
+            int_of_char (Bytes.get s (byte+1)) in
         let x = (x lsl 8) + y in
         let c = (x lsr (11 - bit)) land 0x1f in
         r.[i] <- char_of_int5 upper c
       done;
-      r
+      Bytes.unsafe_to_string r
       
   end
 
@@ -181,8 +181,8 @@ module Base6427 = struct
     let _ = assert (String.length base64tbl = 64)
     
     let to_string _ hashbin =
-      let hash64 = String.create 30 in
-      let hashbin n = int_of_char hashbin.[n] in
+      let hash64 = Bytes.create 30 in
+      let hashbin n = int_of_char (Bytes.get hashbin n) in
       hash64.[0] <- '=';
       let j = ref 1 in
       for i = 0 to 6 do
@@ -198,19 +198,19 @@ module Base6427 = struct
         done
       done;
       hash64.[!j-1] <- '=';
-      String.sub hash64 0 !j
+      Bytes.sub_string hash64 0 !j
     
-    let base64tbl_inv = String.create 126
+    let base64tbl_inv = Bytes.create 126
     let _ = 
       for i = 0 to 63 do
         base64tbl_inv.[int_of_char base64tbl.[i]] <- char_of_int i
       done
     
     let of_string _ hash64 =
-      let hashbin = String.make 20 '\000' in
+      let hashbin = Bytes.make 20 '\000' in
       let hash64 n = 
-        let c = hash64.[n] in
-        int_of_char base64tbl_inv.[int_of_char c]
+        let c = String.get hash64 n in
+        int_of_char (Bytes.get base64tbl_inv (int_of_char c))
       in
       let j = ref 0 in
       for i = 0 to 6 do
@@ -291,70 +291,70 @@ module Make(M: sig
       val hash_name : string
       
 (* [unsafe_string digest string string_len] *)
-      val unsafe_string : string -> string -> int -> unit
+      val unsafe_string : bytes -> string -> int -> unit
           
 (* [unsafe_file digest filename filesize] *)
-        val unsafe_file : string -> string -> int64 -> unit
+        val unsafe_file : bytes -> string -> int64 -> unit
 (* [unsafe_string digest file_fd offset len] *)
-      val digest_subfile : string -> Unix.file_descr -> int64 -> int64 -> unit 
+      val digest_subfile : bytes -> Unix.file_descr -> int64 -> int64 -> unit 
     
       module Base : Base
     end) = struct
     open M
     
-    type t = string
+    type t = bytes
       
     let length = hash_length
     
-    let null = String.make hash_length '\000'
-    let one = String.make hash_length '\001'
-    let two =  String.make hash_length '\002'
+    let null = Bytes.make hash_length '\000'
+    let one = Bytes.make hash_length '\001'
+    let two =  Bytes.make hash_length '\002'
 
-    let equal h1 h2 = (String.compare h1 h2) = 0
+    let equal h1 h2 = (Bytes.compare h1 h2) = 0
 
     let string s =
       let len = String.length s in
-      let digest = String.create hash_length in
+      let digest = Bytes.create hash_length in
       unsafe_string digest s len;
       digest
 
     let to_bits s =
-      let len = String.length s in
-      let digest = String.create (8*len) in
+      let len = Bytes.length s in
+      let digest = Bytes.create (8*len) in
       for i = 0 to len-1 do
-        let c = int_of_char s.[i] in
+        let c = int_of_char (Bytes.get s i) in
         for j = 7 downto 0 do
           digest.[i*8 + (7-j)] <- 
             (if c land (1 lsl j) <> 0 then '1' else '0')
             
         done
       done;
-      digest
+      Bytes.to_string digest
       
-    external xor_c : t -> t -> t -> unit = "md4_xor" "noalloc"
+    external xor_c : t -> t -> t -> unit = "md4_xor" [@@noalloc]
     
     let xor m1 m2 =
-      let m3 = String.create hash_length in
+      let m3 = Bytes.create hash_length in
       xor_c m1 m2 m3;
       m3
     
     let file s =
-      let digest = String.create hash_length in
+      let digest = Bytes.create hash_length in
       let file_size = Unix32.getsize s in
       unsafe_file digest s file_size;
       digest
     
     let digest_subfile fd pos len =
-      let digest = String.create hash_length in
+      let digest = Bytes.create hash_length in
       Unix32.apply_on_chunk fd pos len 
         (fun fd pos ->
           digest_subfile digest fd pos len);
       digest
     
-    let create () =  String.create hash_length
+    let create () =  Bytes.create hash_length
     
-    let direct_to_string s = s
-    let direct_of_string s = s
+    let direct_to_string = Bytes.to_string
+    let direct_of_string = Bytes.of_string
     
     let random () =
       let s = create () in
@@ -385,10 +385,10 @@ module Make(M: sig
       define_option_class hash_name value_to_hash hash_to_value
     
     
-    let up s = int_of_char s.[0]
-    let up2 s = ((int_of_char s.[0]) lsl 8) lor (int_of_char s.[1])
-    let up3 s = ((int_of_char s.[0]) lsl 16) lor 
-                ((int_of_char s.[1]) lsl 8) lor (int_of_char s.[2])
+    let up s = int_of_char (Bytes.get s 0)
+    let up2 s = ((int_of_char (Bytes.get s 0)) lsl 8) lor (int_of_char (Bytes.get s 1))
+    let up3 s = ((int_of_char (Bytes.get s 0)) lsl 16) lor 
+                ((int_of_char (Bytes.get s 1)) lsl 8) lor (int_of_char (Bytes.get s 2))
   
     let enabled = true
   end
@@ -397,9 +397,9 @@ module Md4 = Make(struct
       let hash_length = 16
       let hash_name = "Md4"        
       
-      external unsafe_string : string -> string -> int -> unit = "md4_unsafe_string"
-      external unsafe_file : string -> string -> int64 -> unit = "md4_unsafe_file"
-      external digest_subfile : string -> Unix.file_descr -> int64 -> int64 -> unit =
+      external unsafe_string : bytes -> string -> int -> unit = "md4_unsafe_string"
+      external unsafe_file : bytes -> string -> int64 -> unit = "md4_unsafe_file"
+      external digest_subfile : bytes -> Unix.file_descr -> int64 -> int64 -> unit =
         "md4_unsafe64_fd"
   
       module Base = Base16
@@ -409,9 +409,9 @@ module Md5 = Make(struct
       let hash_length = 16
       let hash_name = "Md5"        
       
-      external unsafe_string : string -> string -> int -> unit = "md5_unsafe_string"
-      external unsafe_file : string -> string -> int64 -> unit = "md5_unsafe_file"
-      external digest_subfile : string -> Unix.file_descr -> int64 -> int64 -> unit =
+      external unsafe_string : bytes -> string -> int -> unit = "md5_unsafe_string"
+      external unsafe_file : bytes -> string -> int64 -> unit = "md5_unsafe_file"
+      external digest_subfile : bytes -> Unix.file_descr -> int64 -> int64 -> unit =
         "md5_unsafe64_fd"
     
       module Base = Base16
@@ -421,9 +421,9 @@ module PreSha1 = Make(struct
       let hash_length = 20
       let hash_name = "Sha1"        
       
-      external unsafe_string : string -> string -> int -> unit = "sha1_unsafe_string"
-      external unsafe_file : string -> string -> int64 -> unit = "sha1_unsafe_file"
-      external digest_subfile : string -> Unix.file_descr -> int64 -> int64 -> unit =
+      external unsafe_string : bytes -> string -> int -> unit = "sha1_unsafe_string"
+      external unsafe_file : bytes -> string -> int64 -> unit = "sha1_unsafe_file"
+      external digest_subfile : bytes -> Unix.file_descr -> int64 -> int64 -> unit =
         "sha1_unsafe64_fd"
       
       module Base = Base32
@@ -464,7 +464,7 @@ module Tiger = Make(struct
       let hash_length = 24
       let hash_name = "Tiger"        
       
-      external unsafe_string : string -> string -> int -> unit = 
+      external unsafe_string : bytes -> string -> int -> unit = 
         "tiger_unsafe_string"
         
       let unsafe_file digest filename = 
@@ -481,8 +481,8 @@ module PreTigerTree = Make(struct
       let hash_length = 24
       let hash_name = "TigerTree"        
       
-      external unsafe_string : string -> string -> int -> unit = "tigertree_unsafe_string"
-      external digest_subfile : string -> Unix.file_descr -> int64 -> int64 -> unit =
+      external unsafe_string : bytes -> string -> int -> unit = "tigertree_unsafe_string"
+      external digest_subfile : bytes -> Unix.file_descr -> int64 -> int64 -> unit =
         "tigertree_unsafe64_fd"
       
       let unsafe_file digest filename file_size = 
@@ -530,10 +530,10 @@ module PreMd5Ext = Make(struct
       let hash_length = 20
       let hash_name = "Md5Ext"        
 
-      external unsafe_string : string -> string -> int -> unit =
+      external unsafe_string : bytes -> string -> int -> unit =
         "fst_hash_string_ml"
         
-      external unsafe_file : string -> string -> int64 -> unit = "fst_hash_file_ml"
+      external unsafe_file : bytes -> string -> int64 -> unit = "fst_hash_file_ml"
       let digest_subfile _ _ _ _ = 
         failwith "Md5Ext.digest_subfile not implemented"
     

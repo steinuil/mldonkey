@@ -95,7 +95,7 @@ val open_out_chan: ?compress:[<`Plain|`Gzip|`Bzip2>`Plain] -> out_channel -> t_o
   body. [header.t_size] is set based on the length of the string that's
   used as the file. [header.t_chksum] is also filled in
   automatically. *)
-val output: t_out -> header -> string -> unit
+val output: t_out -> header -> bytes -> unit
 
 (** Flush out the tar archive but don't close the underlying
   [out_channel] *)
@@ -103,4 +103,3 @@ val flush: t_out -> unit
 
 (** Closes the tar file *)
 val close_out: t_out -> unit
-

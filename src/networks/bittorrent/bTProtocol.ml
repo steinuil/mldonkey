@@ -50,11 +50,11 @@
            ;
            "name" = "mandrake9.1";
            "piece length" =  262144;
-           "pieces" =  "[EAd\155ã´gÛ ÓþËf\134Ê«\025\016ôÍµ,1U\150À
-\132\147îª\n%ù\\é,\012ÿC\008GÈÓd!æ¾öuL!\134Ô\016\152&\017¾\008³¢d\029Ë3\031Ï\134
-#»×\025\137¡=¢.®\019§´\138î.ñ\151O\137Ùÿ,£ç&\019ÀÛ¢Ã§\156.ù\150<Eªª\153\018\145\
-149d\147[+J=º\155l\139Î\028¡dVÉ\000-\017°Å¤\013\154¼>A¹Ã5ïIt\007\020©ãÚÀÈÈ\014O®
-ô1\152UÄ\026K\021^ãúì5Í¿ü \026\149\131q\024\015¸]Òþ£\027&\148\\ã-©\028WMÂ5...";
+           "pieces" =  "[EAd\155ï¿½gÛ ï¿½ï¿½ï¿½f\134Ê«\025\016ï¿½Íµ,1U\150ï¿½
+\132\147ï¿½\n%ï¿½\\ï¿½,\012ï¿½C\008Gï¿½ï¿½d!ï¿½ï¿½uL!\134ï¿½\016\152&\017ï¿½\008ï¿½ï¿½d\029ï¿½3\031ï¿½\134
+#ï¿½ï¿½\025\137ï¿½=ï¿½.ï¿½\019ï¿½ï¿½\138ï¿½.ï¿½\151O\137ï¿½ï¿½,ï¿½ï¿½&\019ï¿½Û¢Ã§\156.ï¿½\150<Eï¿½ï¿½\153\018\145\
+149d\147[+J=ï¿½\155l\139ï¿½\028ï¿½dVï¿½\000-\017ï¿½Å¤\013\154ï¿½>Aï¿½ï¿½5ï¿½It\007\020ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½\014Oï¿½
+ï¿½1\152Uï¿½\026K\021^ï¿½ï¿½ï¿½5Í¿ï¿½ï¿½\026\149\131q\024\015ï¿½]ï¿½ï¿½ï¿½\027&\148\\ï¿½-ï¿½\028WMï¿½5...";
  }
  ;
   }
@@ -329,9 +329,9 @@ module TcpMessages = struct
         | DHT_Port n -> buf_int8 buf 9; buf_int16 buf n
         | Extended (n,msg) -> buf_int8 buf 20; buf_int8 buf n; Buffer.add_string buf msg
       end;
-      let s = Buffer.contents buf in
-      str_int s 0 (String.length s - 4);
-      s
+      let s = Buffer.to_bytes buf in
+      str_int s 0 (Bytes.length s - 4);
+      Bytes.unsafe_to_string s
   end
 
 (*************************************************************************)
@@ -456,7 +456,7 @@ let bt_handler parse_fun handler c sock =
            then drop the connection) *)
         if b.len >= 20 then
           begin
-            let payload = String.sub b.buf b.pos 20 in
+            let payload = Bytes.sub_string b.buf b.pos 20 in
             let p = parse_fun (-1) payload in
             buf_used b 20;
             c.client_received_peer_id <- true;
@@ -477,13 +477,13 @@ let bt_handler parse_fun handler c sock =
         raise (Wait_for_more "after_peer_id");
       end;
     while b.len >= 4 do
-        let msg_len = get_int b.buf b.pos in
+        let msg_len = get_int (Bytes.to_string b.buf) b.pos in
         if msg_len < 0 then
           begin
             let (ip,port) = (TcpBufferedSocket.peer_addr sock) in
             lprintf_nl "BT: Unknown message from %s:%d dropped!! peerid:%b data_len:%i msg_len:%i software: %s"
                 (Ip.to_string ip) port c.client_received_peer_id b.len msg_len (brand_to_string c.client_brand);
-            dump (String.sub b.buf b.pos (min b.len 30));
+            dump (Bytes.sub_string b.buf b.pos (min b.len 30));
             buf_used b b.len;
             close sock Closed_by_user;
           end
@@ -494,7 +494,7 @@ let bt_handler parse_fun handler c sock =
             let (ip,port) = (TcpBufferedSocket.peer_addr sock) in
             lprintf_nl "btprotocol.bt_handler: closed connection from %s:%d because of too much data!! data_len:%i msg_len:%i software: %s"
                 (Ip.to_string ip) port b.len msg_len (brand_to_string c.client_brand);
-            dump (String.sub b.buf b.pos (min b.len 30));
+            dump (Bytes.sub_string b.buf b.pos (min b.len 30));
             buf_used b b.len;
             close sock Closed_by_user
           end
@@ -503,9 +503,9 @@ let bt_handler parse_fun handler c sock =
             buf_used b 4;
             (* lprintf "Message complete: %d\n" msg_len;  *)
             if msg_len > 0 then
-                let opcode = get_int8 b.buf b.pos in
+                let opcode = get_int8 (Bytes.to_string b.buf) b.pos in
                 (* FIXME sub *)
-                let payload = String.sub b.buf (b.pos+1) (msg_len-1) in
+                let payload = String.sub (Bytes.to_string b.buf) (b.pos+1) (msg_len-1) in
                 buf_used b msg_len;
                 (* lprintf "Opcode %d\n" opcode; *)
                 try
@@ -543,7 +543,7 @@ let handlers info gconn =
       match gconn.gconn_handler with
       | BTHeader h ->
           (* dump (String.sub b.buf b.pos (min b.len 100)); *)
-          let slen = get_int8 b.buf b.pos in
+          let slen = get_int8 (Bytes.to_string b.buf) b.pos in
           if slen + 29 <= b.len then
             begin
               (* get proto and file_id from handshake,
@@ -552,14 +552,14 @@ let handlers info gconn =
                  *)
 (*              let proto = String.sub b.buf (b.pos+1) slen in *)
               let file_id = Sha1.direct_of_string
-                (String.sub b.buf (b.pos+9+slen) 20) in
-              let proto,pos = get_string8 b.buf b.pos in
-              let rbits = (String.sub b.buf (b.pos+pos) 8) in
+                (Bytes.sub_string b.buf (b.pos+9+slen) 20) in
+              let proto,pos = get_string8 (Bytes.to_string b.buf) b.pos in
+              let rbits = (Bytes.sub_string b.buf (b.pos+pos) 8) in
               buf_used b (slen+29);
               h gconn sock (proto, rbits, file_id);
             end
           else
-            if (String.sub b.buf b.pos (min b.len 100)) = "NATCHECK_HANDSHAKE" then
+            if (Bytes.sub_string b.buf b.pos (min b.len 100)) = "NATCHECK_HANDSHAKE" then
                 write_string sock (Printf.sprintf "azureus_rand_%d" !azureus_porttest_random)
           else if (TcpBufferedSocket.closed sock) then
               let (ip,port) = (TcpBufferedSocket.peer_addr sock) in
@@ -609,4 +609,3 @@ let send_client client_sock msg =
       lprintf_nl "CLIENT : Error %s in send_client"
         (Printexc2.to_string e)
 )
-

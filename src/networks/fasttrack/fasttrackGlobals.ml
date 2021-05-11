@@ -532,7 +532,9 @@ let client_name () =
       let len = String.length name in
       ft_client_name := String.sub name 0 (min 32 len);
       old_client_name := name;
-      String2.replace_char !ft_client_name ' ' '_';
+      let name_bytes = Bytes.of_string !ft_client_name in
+      String2.replace_char name_bytes ' ' '_';
+      ft_client_name := Bytes.unsafe_to_string name_bytes
     end;
   !ft_client_name
 

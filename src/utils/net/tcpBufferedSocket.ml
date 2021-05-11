@@ -81,7 +81,7 @@ and connection_manager = {
   }
 
 type buf = {
-    mutable buf : string;
+    mutable buf : bytes;
     mutable pos : int;
     mutable len : int;
     mutable max_buf_size : int;
@@ -346,34 +346,34 @@ let best_packet_size nbytes =
 let copy_read_buffer = ref true
 
 let big_buffer_len = 65536
-let big_buffer = String.create big_buffer_len
+let big_buffer = Bytes.create big_buffer_len
 
 let min_buffer_read = 2000
 let min_read_size = min_buffer_read - 100
 
 let old_strings_size = 20
-let old_strings = Array.make old_strings_size ""
+let old_strings = Array.make old_strings_size Bytes.empty
 let old_strings_len = ref 0
 
 let new_string () =
   if !old_strings_len > 0 then begin
       decr old_strings_len;
       let s = old_strings.(!old_strings_len) in
-      old_strings.(!old_strings_len) <- "";
+      old_strings.(!old_strings_len) <- Bytes.empty;
       s
     end else
-    String.create min_buffer_read
+    Bytes.create min_buffer_read
 
 let delete_string s =
   if !old_strings_len < old_strings_size &&
-    String.length s = min_buffer_read then begin
+    Bytes.length s = min_buffer_read then begin
       old_strings.(!old_strings_len) <- s;
       incr old_strings_len;
     end
 
 let buf_create max =
   {
-    buf = "";
+    buf = Bytes.empty;
     pos = 0;
     len = 0;
     max_buf_size = max;
@@ -386,14 +386,14 @@ let buf_used b nused =
     ( b.len <- 0;
       b.pos <- 0;
       delete_string b.buf;
-      b.buf <- "";
+      b.buf <- Bytes.empty;
       )
   else
     (b.len <- b.len - nused; b.pos <- b.pos + nused)
 
 let buf_size  t =
-  (String.length t.rbuf.buf),
-  (String.length t.wbuf.buf)
+  (Bytes.length t.rbuf.buf),
+  (Bytes.length t.wbuf.buf)
 
 (*************************************************************************)
 (*                                                                       *)
@@ -404,17 +404,17 @@ let buf_size  t =
 let buf_add t b s pos1 len =
   let curpos = b.pos + b.len in
   let max_len =
-    if b.buf = "" then
+    if Bytes.length b.buf = 0 then
       begin
         b.buf <- new_string ();
         min_buffer_read
       end else
-      String.length b.buf in
+      Bytes.length b.buf in
   if max_len - curpos < len then (* resize before blit *)
     if b.len + len < max_len then (* just move to 0 *)
       begin
-        String.blit b.buf b.pos b.buf 0 b.len;
-        String.blit s pos1 b.buf b.len len;
+        Bytes.blit b.buf b.pos b.buf 0 b.len;
+        Bytes.blit_string s pos1 b.buf b.len len;
         b.len <- b.len + len;
         b.pos <- 0;
       end
@@ -424,7 +424,7 @@ let buf_add t b s pos1 len =
 
         lprintf "MESSAGE: [";
         for i = pos1 to pos1 + (min len 20) - 1 do
-          lprintf "(%d)" (int_of_char s.[i]);
+          lprintf "(%d)" (int_of_char (String.get s i));
         done;
         if len > 20 then lprintf "...";
         lprintf "]\n";
@@ -437,9 +437,9 @@ let buf_add t b s pos1 len =
     let new_len = min (max (2 * max_len) (b.len + len)) b.max_buf_size  in
 (*    if t.monitored then
       (lprintf "Allocate new for %d\n" len; ); *)
-    let new_buf = String.create new_len in
-    String.blit b.buf b.pos new_buf 0 b.len;
-    String.blit s pos1 new_buf b.len len;
+    let new_buf = Bytes.create new_len in
+    Bytes.blit b.buf b.pos new_buf 0 b.len;
+    Bytes.blit_string s pos1 new_buf b.len len;
     b.len <- b.len + len;
     b.pos <- 0;
     if max_len = min_buffer_read then delete_string b.buf;
@@ -447,7 +447,7 @@ let buf_add t b s pos1 len =
       (lprintf "new buffer allocated\n"; ); *)
     b.buf <- new_buf
   else begin
-      String.blit s pos1 b.buf curpos len;
+      Bytes.blit_string s pos1 b.buf curpos len;
       b.len <- b.len + len
     end
 
@@ -494,8 +494,8 @@ end;
         t.closing <- true;
         delete_string t.rbuf.buf;
         delete_string t.wbuf.buf;
-        t.rbuf.buf <- "";
-        t.wbuf.buf <- "";
+        t.rbuf.buf <- Bytes.empty;
+        t.wbuf.buf <- Bytes.empty;
         if t.nread > 0 then begin
             register_upload t 0;
             forecast_download t 0;
@@ -550,7 +550,7 @@ let write t s pos1 len =
         try
           let fd = fd t.sock_out in
 (*       lprintf "WRITE [%s]\n" (String.escaped (String.sub s pos1 len)); *)
-          let nw = MlUnix.write fd s pos1 len in
+          let nw = MlUnix.write fd (Bytes.of_string s) pos1 len in
           if !verbose_bandwidth > 1 then
             lprintf_nl "[BW2 %6d] immediate write %d/%d on %s:%d"
               (last_time ()) nw len t.name (sock_num t.sock_out);
@@ -614,16 +614,16 @@ let can_read_handler t sock max_len =
       big_buffer, 0, big_buffer_len
     else
     let can_write_in_buffer =
-      if b.buf = "" then
+      if b.buf = Bytes.empty then
         if b.min_buf_size <= min_buffer_read then begin
             b.buf <- new_string ();
             min_buffer_read
           end else begin
-            b.buf <- String.create b.min_buf_size;
+            b.buf <- Bytes.create b.min_buf_size;
             b.min_buf_size
           end
       else
-      let buf_len = String.length b.buf in
+      let buf_len = Bytes.length b.buf in
       if buf_len - curpos < min_read_size then
         if b.len + min_read_size > b.max_buf_size then
           (
@@ -635,7 +635,7 @@ let can_read_handler t sock max_len =
         else
         if b.len + min_read_size < buf_len then
           (
-            String.blit b.buf b.pos b.buf 0 b.len;
+            Bytes.blit b.buf b.pos b.buf 0 b.len;
             b.pos <- 0;
             buf_len - b.len
           )
@@ -644,8 +644,8 @@ let can_read_handler t sock max_len =
             (max
               (2 * buf_len) (b.len + min_read_size)) b.max_buf_size
         in
-        let new_buf = String.create new_len in
-        String.blit b.buf b.pos new_buf 0 b.len;
+        let new_buf = Bytes.create new_len in
+        Bytes.blit b.buf b.pos new_buf 0 b.len;
         b.pos <- 0;
         b.buf <- new_buf;
         new_len - b.len
@@ -687,7 +687,7 @@ let can_read_handler t sock max_len =
 
 
     if !copy_read_buffer then
-        buf_add t b big_buffer 0 nread
+        buf_add t b (Bytes.to_string big_buffer) 0 nread
     else
       b.len <- b.len + nread;
 (*    lprintf " %d\n" nread; *)
@@ -774,7 +774,7 @@ let can_write_handler t sock max_len =
         if b.len = 0 then begin
             b.pos <- 0;
             delete_string b.buf;
-            b.buf <- "";
+            b.buf <- Bytes.empty;
           end
       with
         Unix.Unix_error((Unix.EWOULDBLOCK | Unix.EAGAIN ), _,_) as e -> raise e
@@ -1052,19 +1052,19 @@ let set_reader t f =
           let rcode, rstr, rstr_end =
             try
               let rcode_pos = 8 (*String.index_from b.buf b.pos ' '*) in
-              let rcode = String.sub b.buf (rcode_pos+1) 3 in
+              let rcode = Bytes.sub b.buf (rcode_pos+1) 3 in
               let rstr_pos = 12 (*String.index_from b.buf (rcode_pos+1) ' '*) in
-              let rstr_end = String.index_from b.buf (rstr_pos+1) '\n' in
-              let rstr = String.sub b.buf (rstr_pos+1) (rstr_end-rstr_pos-1) in
+              let rstr_end = Bytes.index_from b.buf (rstr_pos+1) '\n' in
+              let rstr = Bytes.sub b.buf (rstr_pos+1) (rstr_end-rstr_pos-1) in
               lprintf "From proxy for %s: %s %s\n"
-                (Ip.to_string sock.host) rcode rstr;
-              rcode, rstr, rstr_end
+                (Ip.to_string sock.host) (Bytes.to_string rcode) (Bytes.to_string rstr);
+              Bytes.to_string rcode, Bytes.to_string rstr, rstr_end
             with _ ->
                 "", "", 0
           in
           (match rcode with
               "200" -> (*lprintf "Connect to client via proxy ok\n";*)
-                let pos = String.index_from b.buf (rstr_end+1) '\n' in
+                let pos = Bytes.index_from b.buf (rstr_end+1) '\n' in
                 let used = pos + 1 - b.pos in
                 sock_used sock used;
                 if nread != used then
@@ -1147,14 +1147,14 @@ let dump_socket t buf =
   print_socket buf t.sock_in;
   print_socket buf t.sock_out;
   Printf.bprintf buf "rbuf: %d/%d wbuf: %d/%d\n" t.rbuf.len
-    (String.length t.rbuf.buf) t.wbuf.len (String.length t.wbuf.buf)
+    (Bytes.length t.rbuf.buf) t.wbuf.len (Bytes.length t.wbuf.buf)
 
 let stats buf t =
   BasicSocket.stats buf t.sock_in;
   BasicSocket.stats buf t.sock_out;
-  Printf.bprintf buf "  rbuf size: %d/%d\n" (String.length t.rbuf.buf)
+  Printf.bprintf buf "  rbuf size: %d/%d\n" (Bytes.length t.rbuf.buf)
   t.rbuf.max_buf_size;
-  Printf.bprintf buf "  wbuf size: %d/%d\n" (String.length t.wbuf.buf)
+  Printf.bprintf buf "  wbuf size: %d/%d\n" (Bytes.length t.wbuf.buf)
   t.wbuf.max_buf_size
 
 (*************************************************************************)
@@ -1354,7 +1354,7 @@ let connect token name host port handler =
         end;
         Printf.bprintf buf "User-Agent: MLdonkey/%s\n" Autoconf.current_version;
         Printf.bprintf buf "\n";
-        ignore (MlUnix.write s (Buffer.contents buf) 0 (Buffer.length buf))
+        ignore (MlUnix.write s (Buffer.to_bytes buf) 0 (Buffer.length buf))
       end;
     let t = create token name s handler in
 
@@ -1479,11 +1479,11 @@ let value_handler f sock nread =
   let b = buf sock in
   try
     while b.len >= 5 do
-      let msg_len = get_int b.buf (b.pos+1) in
+      let msg_len = get_int (Bytes.to_string b.buf) (b.pos+1) in
       if b.len >= 5 + msg_len then
         begin
-          let s = String.sub b.buf (b.pos+5) msg_len in
-          let t = Marshal.from_string  s 0 in
+          let s = Bytes.sub b.buf (b.pos+5) msg_len in
+          let t = Marshal.from_bytes s 0 in
           buf_used b  (msg_len + 5);
           f t sock;
           ()
@@ -1535,7 +1535,7 @@ let to_deflate = ref []
 let to_deflate_len = ref 0
 
 let compression_buffer_len = !max_buffer_size / 10
-let compression_buffer = String.create compression_buffer_len
+let compression_buffer = Bytes.create compression_buffer_len
 
 let deflate_connection sock =
   (* lprintf "Creating deflate connection\n"; *)
@@ -1554,7 +1554,7 @@ let rec iter_deflate sock zs wbuf =
      lprintf "deflated %d/%d -> %d\n" used_in wbuf.len used_out;
       lprintf "[%s]\n" (String.escaped (String.sub compression_buffer 0 used_out));
 *)
-      write sock compression_buffer 0 used_out;
+      write sock (Bytes.to_string compression_buffer) 0 used_out;
       buf_used wbuf used_in;
       if used_in > 0 || used_out > 0 then
         iter_deflate sock zs wbuf
@@ -1594,7 +1594,7 @@ lprintf "[%s]\n" (String.escaped (String.sub b.buf b.pos b.len));
       lprintf "inflated %d/%d -> %d\n" used_in b.len used_out;
       lprintf "[%s]\n" (String.escaped (String.sub compression_buffer 0 used_out));
 *)
-      buf_add sock rbuf compression_buffer 0 used_out;
+      buf_add sock rbuf (Bytes.to_string compression_buffer) 0 used_out;
       buf_used b used_in;
       if used_in > 0 || used_out > 0 then
         iter_inflate zs sock b rbuf
@@ -1800,7 +1800,7 @@ let output_buffered t = t.wbuf.len
 let _ =
   Heap.add_memstat "tcpBufferedSocket" (fun level buf ->
       Printf.bprintf buf "  %d latencies\n" (Hashtbl.length latencies);
-      Printf.bprintf buf "  String.length big_buffer: %d\n" (String.length big_buffer);
+      Printf.bprintf buf "  String.length big_buffer: %d\n" (Bytes.length big_buffer);
       Printf.bprintf buf "  connection_managers: %d\n" (List.length !connection_managers);
       Printf.bprintf buf "  read_bandwidth_controlers: %d\n" (List.length !read_bandwidth_controlers);
       Printf.bprintf buf "  write_bandwidth_controlers: %d\n" (List.length !write_bandwidth_controlers);
