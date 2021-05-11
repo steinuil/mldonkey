@@ -1,0 +1,3 @@
+(library
+ (name mp3tag)
+ (libraries mldonkey_lib))

@@ -7,6 +7,7 @@
   autoconf
   ; bzip2
   ; bzlib
+  charset
   date
   file
   filename2
@@ -14,35 +15,65 @@
   filepath
   ; gd
   genlex2
+  gettext
+  gzip
   hashtbl2
   heap
   http_lexer
   int64ops
   intmap
+  intset
   list2
+  md4
+  misc
   mlUnix
   options
   printexc2
   printf2
+  queues
+  set2
+  store
   string2
   syslog
   tar
   unix2
   unix32
-  url)
- (libraries IO camlp4.lib str unix camlzip)
+  url
+  verificationBitmap
+  zip
+  zlib)
+ (libraries IO camlp4.lib str unix)
  (inline_tests)
  (preprocess
   (pps ppx_inline_test))
  (foreign_stubs
   (language c)
-  (names heap_c md4 md5_c os_stubs_c sha1_c stubs_c tiger))
- (c_library_flags -lpthread))
+  (names
+   charsetstubs
+   fst_hash
+   heap_c
+   md4
+   md4_c
+   md5_c
+   os_stubs_c
+   sha1_c
+   stubs_c
+   tiger
+   zlibstubs))
+ (c_library_flags -lz -lpthread))
 
 (ocamllex http_lexer)
 
 (rule
+ (alias camlp4of)
  (deps options.camlp4.ml)
  (targets options.ml)
+ (action
+  (run camlp4of -impl %{deps} -o %{targets})))
+
+(rule
+ (alias camlp4of)
+ (deps gettext.camlp4.ml)
+ (targets gettext.ml)
  (action
   (run camlp4of -impl %{deps} -o %{targets})))

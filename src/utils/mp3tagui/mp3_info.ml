@@ -95,7 +95,7 @@ let for_channel ic =
   really_input ic buf 0 4;
   while not (check_head buf) do
     Bytes.blit buf 1 buf 0 3;
-    buf.[3] <- input_char ic
+    Bytes.set buf (3) @@ input_char ic
   done;
   let header = 
     (Char.code (Bytes.get buf 1) lsl 16) lor

@@ -69,7 +69,7 @@ let users_by_num = H.create 1027
 
       
 let _ = 
-  Heap.add_memstat "CommonUser" (fun level buf ->
+  Heap.add_memstat "CommonUser" (fun _level buf ->
       let counter = ref 0 in
       H.iter (fun _ -> incr counter) users_by_num;
       Printf.bprintf buf "  users: %d\n" !counter;
@@ -104,9 +104,9 @@ let set_user_state c state =
     end
       *)
 
-let user_network (user : user) =
+(* let user_network (user : user) =
   let user = as_user_impl user in
-  user.impl_user_ops.op_user_network
+  user.impl_user_ops.op_user_network *)
 
   (*
 let user_remove (user : user) =
@@ -154,5 +154,3 @@ let new_user_ops network = {
 let user_find num = 
   H.find users_by_num (as_user {  dummy_user_impl with
       impl_user_num = num })
-    
-  

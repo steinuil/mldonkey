@@ -1,0 +1,6 @@
+(library
+ (name mldonkey_common)
+ (libraries mldonkey_lib mldonkey_net mp3tag rss xml-light bitv))
+
+(menhir
+ (modules giftParser))

@@ -166,10 +166,10 @@ let dump_dec s =
   bdump_dec buf s;
   lprintf "%s" (Buffer.contents buf)
 
-let dump s =
+(* let dump s =
   dump_ascii s;
   dump_dec s;
-  dump_hex s
+  dump_hex s *)
 
 let bdump_sub buf s pos len =
   Printf.bprintf buf "dec: [";

@@ -235,7 +235,7 @@ let rec get_page r content_handler f ferr =
     let err_done = ref false in (* call not more than once *)
     fun c -> if not !err_done then begin err_done := true; ferr c; end 
   in
-  let rec get_url level r =
+  let rec get_url _level r =
   try
     let url = r.req_url in
     let level = r.req_retry in
@@ -253,7 +253,7 @@ let rec get_page r content_handler f ferr =
 (*         lprintf "IP done %s:%d\n" (Ip.to_string ip) port;*)
         let token = create_token unlimited_connection_manager in
         let sock = TcpBufferedSocket.connect token "http client connecting"
-          (try Ip.to_inet_addr ip with e -> raise Not_found) port
+          (try Ip.to_inet_addr ip with _ -> raise Not_found) port
           (fun sock e -> 
 (*             if !verbose then lprintf_nl "Event %s" (string_of_event e); *)
             match e with (* FIXME content-length check *)
@@ -273,11 +273,11 @@ let rec get_page r content_handler f ferr =
         set_lifetime sock r.req_max_total_time;
     )
     (fun () -> ferr `DNS);
-  with e -> 
+  with _ -> 
     lprintf_nl "error in get_url"; 
     raise Not_found
 
-  and default_headers_handler old_url level sock ans_code headers =
+  and default_headers_handler old_url _level sock ans_code headers =
     let print_headers () =
       List.iter (fun (name, value) ->
           lprintf_nl "[%s]=[%s]" name value;
@@ -289,14 +289,14 @@ let rec get_page r content_handler f ferr =
         ok := true;
         let content_length = ref (-1L) in
         List.iter (fun (name, content) ->
-            match String.lowercase name with
+            match String.lowercase_ascii name with
             | "content-length" ->
                 (try
                   content_length := Int64.of_string content
                 with _ ->
                   lprintf_nl "bad content length [%s]" content)
             | "content-encoding" ->
-                if String.lowercase content = "gzip" then r.req_gzip <- true
+                if String.lowercase_ascii content = "gzip" then r.req_gzip <- true
             | _ -> ()
         ) headers;
         let location = "Location", Url.to_string old_url in
@@ -313,7 +313,7 @@ let rec get_page r content_handler f ferr =
             try
               let url = ref "" in
             List.iter (fun (name, content) ->
-                  if String.lowercase name = "location" then
+                  if String.lowercase_ascii name = "location" then
                     url := content;
                 ) headers;
             if !verbose then print_headers ();
@@ -335,7 +335,7 @@ let rec get_page r content_handler f ferr =
             } in
             get_page r content_handler f ferr
             
-            with e ->
+            with _ ->
                 lprintf_nl "error understanding redirect response %d" ans_code;
                 print_headers ();
                 raise Not_found
@@ -371,7 +371,7 @@ let rec get_page r content_handler f ferr =
           let r = { r with 
             req_retry = retrynum+1 
           } in
-          add_timer (float(seconds)) (fun t -> get_page r content_handler f ferr)
+          add_timer (float(seconds)) (fun _ -> get_page r content_handler f ferr)
     end
         else begin
           lprintf_nl "more than %d retries, aborting." r.req_max_retry;
@@ -406,7 +406,7 @@ let wget r f =
   let file_size = ref 0L in
 
   try
-  get_page r (fun maxlen headers sock nread ->
+  get_page r (fun maxlen _headers sock nread ->
 (*      lprintf "received %d\n" nread; *)
       let buf = TcpBufferedSocket.buf sock in
       
@@ -476,9 +476,9 @@ let wget r f =
 
 let whead2 r f ferr = 
   get_page r
-    (fun maxlen headers ->
+    (fun _maxlen headers ->
       (try f headers with _ -> ());
-      fun sock nread -> 
+      fun sock _nread -> 
         close sock Closed_by_user
     )
   (fun _ ->  ())
@@ -492,7 +492,7 @@ let wget_string r f ?(ferr=def_ferr) progress =
   let file_size = ref 0L in
 
   get_page r
-    (fun maxlen headers sock nread ->
+    (fun maxlen _headers sock nread ->
         let buf = TcpBufferedSocket.buf sock in
         
         if nread > 0 then begin
@@ -527,13 +527,13 @@ let wget_string r f ?(ferr=def_ferr) progress =
 let split_header header =
   let header = Bytes.of_string header in
   for i = 0 to Bytes.length header - 1 do
-    if Bytes.get header i = '\r' then header.[i] <- '\n';
+    if Bytes.get header i = '\r' then Bytes.set header (i) '\n';
   done;
   for i = Bytes.length header - 1 downto 1 do
     if Bytes.get header (i-1) = '\n' then 
-      if Bytes.get header i = ' ' then (header.[i] <- ','; header.[i-1] <- ',')
+      if Bytes.get header i = ' ' then (Bytes.set header (i) ','; Bytes.set header (i-1) ',')
       else
-      if Bytes.get header i = ',' then header.[i-1] <- ',';
+      if Bytes.get header i = ',' then Bytes.set header (i-1) ',';
   done;
   String2.split_simplify (Bytes.unsafe_to_string header) '\n'
 
@@ -543,7 +543,7 @@ let cut_headers headers =
         let pos = String.index s ':' in
         let len = String.length s in
         let key = String.sub s 0 pos in
-        String.lowercase key, if pos+1 < len && s.[pos+1] = ' ' then
+        String.lowercase_ascii key, if pos+1 < len && s.[pos+1] = ' ' then
           String.sub s (pos+2) (len-pos-2), key
         else
           String.sub s (pos+1) (len-pos-1), key

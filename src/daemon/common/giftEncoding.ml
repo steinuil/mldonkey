@@ -99,7 +99,7 @@ let translate gui t =
               ]
             )) list)
       
-  | Search_result (search_num, id, Some r) ->
+  | Search_result (search_num, _id, Some r) ->
       let num = r.result_num in
       GiftCommand("ITEM", Some (string_of_int search_num), [
           GiftCommand("user", Some "no user", []);

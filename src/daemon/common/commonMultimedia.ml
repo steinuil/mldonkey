@@ -36,17 +36,17 @@ let input_int32 ic =
   let i1 = Int64.of_int i1 in
   or64 i0 (left64 i1 16)
   
-let input_int ic =
+(* let input_int ic =
   let i0 = input_int16 ic in
   let i1 = input_int16 ic in
-  i0 lor (i1 lsl 16)
+  i0 lor (i1 lsl 16) *)
 
 let input_string4 ic =
   let s = Bytes.create 4 in
   really_input ic s 0 4;
   s
 
-let print_string4 v s =
+(* let print_string4 v s =
   lprintf "%s :" v;
   for i = 0 to 3 do
     let c = s.[i] in
@@ -55,13 +55,13 @@ let print_string4 v s =
       lprint_char c
     else lprintf "[%d]" int
   done;
-  lprint_newline ()
+  lprint_newline () *)
 
-let print_int32 s i=
+(* let print_int32 s i=
   lprintf_nl "%s: %Ld" s i
 
 let print_int16 s i=
-  lprintf_nl "%s: %d" s i
+  lprintf_nl "%s: %d" s i *)
 
 (**********************************************************************************)
 (*                                                                                *)
@@ -89,12 +89,12 @@ let read16 s =
 (*                                                                                *)
 (**********************************************************************************)
 
-let read24 s = 
+(* let read24 s = 
   let a = int_of_char s.[0] in
   let b = int_of_char s.[1] in
   let c = int_of_char s.[2] in
   let s' = Printf.sprintf "0x%02X%02X%02X" c b a in
-  int_of_string s'
+  int_of_string s' *)
 
 (**********************************************************************************)
 (*                                                                                *)
@@ -134,11 +134,11 @@ let read64 s =
 (*                                                                                *)
 (**********************************************************************************)
 
-let read16B s =
+(* let read16B s =
   let a = int_of_char s.[0] in
   let b = int_of_char s.[1] in
   let s' = Printf.sprintf "0x%02X%02X" a b in
-  int_of_string s'
+  int_of_string s' *)
 
 (**********************************************************************************)
 (*                                                                                *)
@@ -173,7 +173,7 @@ let read32B s =
 (*                                                                                *)
 (**********************************************************************************)
 
-let read64B s =
+(* let read64B s =
   let a = int_of_char s.[0] in
   let b = int_of_char s.[1] in
   let c = int_of_char s.[2] in
@@ -183,7 +183,7 @@ let read64B s =
   let g = int_of_char s.[6] in
   let h = int_of_char s.[7] in
   let s' = Printf.sprintf "0x%02X%02X%02X%02X%02X%02X%02X%02X" a b c d e f g h in
-  Int64.to_float (Int64.of_string s')
+  Int64.to_float (Int64.of_string s') *)
 
 (**********************************************************************************)
 (*                                                                                *)
@@ -302,7 +302,7 @@ let rec next_ogg_stream ic ogg_infos str stream_number =
 and get_ogg_video_info  ic ogg_infos str sizeof_packet stream_number =
   let s = Bytes.create sizeof_packet in
   really_input ic s 0 sizeof_packet;
-  let codec = String.lowercase (Bytes.sub_string s 0 4) in
+  let codec = String.lowercase_ascii (Bytes.sub_string s 0 4) in
   let time_unit = read64 (Bytes.sub_string s 8 8) in
   let video_width =
     if sizeof_packet >= sizeof_old_ogm_packet
@@ -606,7 +606,7 @@ let search_info_avi ic =
 (*  lprintf "DONE\n";  *)
     ()
   with
-  | FormatFound f as e -> raise e
+  | FormatFound _ as e -> raise e
   | _ -> ()
 
 let search_info_mp3 filename =
@@ -618,7 +618,7 @@ let search_info_mp3 filename =
   with
   | FormatFound _ as e -> raise e
   | Not_found -> () (* The file couldn't be found *)
-  | x -> ()
+  | _ -> ()
       (*
       lprintf "error while looking for mp3file %s: %s\n" filename
         (Printexc2.to_string x); 
@@ -638,7 +638,7 @@ let get_info file =
       search_info_ogg ic);
     let es = 
       try 
-        List.map String.lowercase (Filename2.extensions file) 
+        List.map String.lowercase_ascii (Filename2.extensions file) 
       with _ -> []
     in
     match List.rev es with

@@ -275,7 +275,7 @@ let open_geoip_db filename =
   try
     let f = open_in filename in
     let size = in_channel_length f in
-    let map = Misc.map_file f in
+    let map = Misc2.map_file f in
 
     let new_database ?offset dbtype =
       let read_segment_size () =
@@ -436,7 +436,7 @@ let get_country_code_name cc =
   | None -> unknown_country
 
 let _ =
-  Heap.add_memstat "GeoIp" (fun _level buf ->
+  Heap.add_memstat "GeoIp" (fun level buf ->
     match !current_db with
     | Some db ->
         Printf.bprintf buf "  countries: %d\n" (Array.length country_code_array);

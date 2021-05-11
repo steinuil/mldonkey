@@ -28,8 +28,8 @@ let log_prefix = "[udpSock]"
 let lprintf_nl fmt =
   lprintf_nl2 log_prefix fmt
 
-let lprintf_n fmt =
-  lprintf2 log_prefix fmt
+(* let lprintf_n fmt =
+  lprintf2 log_prefix fmt *)
 
 let exn_log name f x = 
   try 
@@ -407,7 +407,7 @@ let create addr port handler =
   Unix.setsockopt fd Unix.SO_REUSEADDR true;
   Unix.bind fd (Unix.ADDR_INET ( (*Unix.inet_addr_any*) addr, port));
   let port = match Unix.getsockname fd with
-      Unix.ADDR_INET (ip, port) -> port
+      Unix.ADDR_INET (_ip, port) -> port
     |_ -> port in
   let t = {
       rlist = [];
@@ -550,7 +550,7 @@ let set_socks_proxy t ss =
 let get_latencies verbose =
   let b = Buffer.create 300 in
   let counter = ref 0 in  
-  Hashtbl.iter (fun ip (latency, samples) ->
+  Hashtbl.iter (fun _ip (_latency, _samples) ->
       incr counter;
   ) latencies;
   LittleEndian.buf_int b !counter;
@@ -564,7 +564,7 @@ let get_latencies verbose =
   Buffer.contents b
       
 let _ =
-  Heap.add_memstat "udpSocket" (fun level buf ->
+  Heap.add_memstat "udpSocket" (fun _level buf ->
       Printf.bprintf buf "  %d latencies\n" (Hashtbl.length latencies);
       Printf.bprintf buf "  %d entries in pings_fifo\n" (Fifo.length pings_fifo);
       Printf.bprintf buf "  %d entries in pings_hashtbl\n" (Hashtbl.length pings_hashtbl);

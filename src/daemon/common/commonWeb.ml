@@ -91,7 +91,7 @@ let mldonkey_wget_url w f =
     begin try
     H.whead2 r1 (fun headers ->
       List.iter (fun (name, content) ->
-        if String.lowercase name = "last-modified" then
+        if String.lowercase_ascii name = "last-modified" then
           try
             date := Some content
           with _ -> ()

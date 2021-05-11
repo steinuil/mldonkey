@@ -70,7 +70,7 @@ let room_counter = ref (-1)
 let rooms_by_num = H.create 1027
     
 let _ = 
-  Heap.add_memstat "CommonRoom" (fun level buf ->
+  Heap.add_memstat "CommonRoom" (fun _level buf ->
       let counter = ref 0 in
       H.iter (fun _ -> incr counter) rooms_by_num;
       Printf.bprintf buf "  rooms: %d\n" !counter;
@@ -181,7 +181,7 @@ let room_close (room : room) =
 let rooms_iter (f : CommonTypes.room -> unit) =
   H.iter f rooms_by_num
   
-let com_rooms_by_num = rooms_by_num
+(* let com_rooms_by_num = rooms_by_num *)
 let rooms_by_num = ()
 
   
@@ -275,5 +275,3 @@ let private_history = Private.private_room.Private.messages
 let private_message_from c s =
   room_send_message private_room
     (PrivateMessage (CommonClient.client_num c, s))
-
-  

@@ -314,7 +314,7 @@ let list_directory_files tree =
   let rec iter list items =
     match items with
       [] -> list
-    | (TreeDirectory tree) :: items -> iter list items
+    | (TreeDirectory _tree) :: items -> iter list items
     | (TreeFile r) :: items -> iter (r :: list) items        
   in
   iter [] tree.file_tree_list
@@ -372,4 +372,3 @@ let file_info_test =
     file_group = "";
     file_release = false;
  } 
-  

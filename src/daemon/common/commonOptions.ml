@@ -465,8 +465,8 @@ let _ =
               | false, false, false,  true -> Ip.RangeCIDR ((Ip.of_string (Printf.sprintf "%d.%d.%d.0" a b c)), 24)
               | false, false, false, false -> i
               | _ -> i)
-          | Ip.RangeRange (ip1, ip2) -> i
-          | Ip.RangeCIDR (ip, shift) -> i
+          | Ip.RangeRange (_ip1, _ip2) -> i
+          | Ip.RangeCIDR (_ip, _shift) -> i
         in
         if i <> new_range then
           lprintf_nl "allowed_ips: converted %s to %s" (Ip.string_of_range i) (Ip.string_of_range new_range);
@@ -1752,7 +1752,7 @@ let filter_search_delay = 5.0
 
 (* Infer which nets to start depending on the name used *)
 let _ =
-  let name = String.lowercase (Filename.basename Sys.argv.(0)) in
+  let name = String.lowercase_ascii (Filename.basename Sys.argv.(0)) in
   let name = try
       let pos = String.index name '+' in
       String.sub name 0 pos
@@ -2103,7 +2103,7 @@ exception Found_web_infos of web_infos
 let web_infos_find url =
   let found = ref None in
   (try
-    Hashtbl.iter (fun key w ->
+    Hashtbl.iter (fun _key w ->
       if w.url = url then raise (Found_web_infos w)
     ) web_infos_table
   with Found_web_infos w -> found := Some w);
@@ -2129,7 +2129,7 @@ let web_infos_add kind period url =
     }
 
 let web_infos_replace old_url new_url =
-  Hashtbl.iter (fun key w -> 
+  Hashtbl.iter (fun _key w -> 
     if w.url = old_url then w.url <- new_url
   ) web_infos_table
 

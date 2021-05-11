@@ -2,22 +2,22 @@
  (name mldonkey_net)
  (wrapped false)
  (modules
-  ; anyEndian
+  anyEndian
   base64
   basicSocket
-  ; bigEndian
+  bigEndian
   ; cobs
-  ; geoip
-  ; http_client
-  ; http_server
-  ; ip_set
-  ; ip
-  ; littleEndian
+  geoip
+  http_client
+  http_server
+  ip_set
+  ip
+  littleEndian
   ; mailer
-  ; tcpBufferedSocket
-  ; tcpServerSocket
+  tcpBufferedSocket
+  tcpServerSocket
   ; terminal
-  ; udpSocket
+  udpSocket
   ; upnpClient
   )
  (libraries mldonkey_lib))

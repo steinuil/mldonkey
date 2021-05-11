@@ -25,8 +25,8 @@ let log_prefix = "[cHa]"
 let lprintf_nl fmt =
   lprintf_nl2 log_prefix fmt
 
-let lprintf_n fmt =
-  lprintf2 log_prefix fmt
+(* let lprintf_n fmt =
+  lprintf2 log_prefix fmt *)
 
 type hash_method = MD4 | MD5 | SHA1 | TIGER
 

@@ -144,7 +144,7 @@ let pred t =
   else
     { hi = t.hi - 1; lo = 0xffff; }
 
-let banned = ref (fun (ip:t * int option) -> None)
+let banned = ref (fun (_:t * int option) -> None)
 
 let localhost = of_string "127.0.0.1"
 
@@ -312,7 +312,7 @@ let async_ip name f ferr =
 
 (* We check for names every 1/10 second. Too long ? *)
 let _ =
-  Heap.add_memstat "Ip" (fun level buf ->
+  Heap.add_memstat "Ip" (fun _level buf ->
       Printf.bprintf buf "  %d IPs in ip_cache\n" (Hashtbl.length ip_cache);
       Printf.bprintf buf "  %d entries in hostname_table\n" (Hashtbl.length hostname_table);
       Printf.bprintf buf "  %d entries in ip_fifo\n" (Fifo.length ip_fifo);

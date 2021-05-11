@@ -1762,7 +1762,7 @@ let intervals_to_string s intervals =
       let st = VB.create (Array.length s.s_blocks) VB.State_missing in
       iter_intervals s (fun i _ _ _ _ -> VB.set st i VB.State_partial) intervals;
       VB.to_string st
-  | AvailableBitv b -> Bitv.to_string b
+  | AvailableBitv b -> Bitv.to_bytes b |> Bytes.to_string
 
 (*************************************************************************)
 (*                                                                       *)
@@ -3386,7 +3386,7 @@ module SwarmerOption = struct
         ("file_size", int64_to_value s.s_size);
         ("file_name", string_to_value s.s_filename);
         ("file_disk_allocation_bitmap", string_to_value
-          (Bitv.to_string s.s_disk_allocated));
+          (Bitv.to_bytes s.s_disk_allocated |> Bytes.to_string));
         ("file_chunk_sizes", list_to_value int64_to_value
             (List.map (fun t -> t.t_chunk_size) s.s_networks));
         ("file_priorities_intervals", List

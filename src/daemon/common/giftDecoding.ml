@@ -6,7 +6,7 @@ open GuiProto
 open GuiTypes
 open TcpBufferedSocket
 
-let gui_cut_messages f sock nread =
+let gui_cut_messages f sock _nread =
   let b = buf sock in
   try
     let rec iter pos len =
@@ -27,7 +27,7 @@ let gui_cut_messages f sock nread =
   with Not_found -> ()
 
 let print_indent indent =
-  for i = 0 to indent do
+  for _ = 0 to indent do
     lprintf " "
   done
       

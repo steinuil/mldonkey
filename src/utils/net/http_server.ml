@@ -72,9 +72,9 @@ let decode64 s =
     let v3 = (val64 s.[i1 + 2]) lsl 6 in
     let v4 = val64 s.[i1 + 3] in
     let v = v1 lor v2 lor v3 lor v4 in
-    res.[i2] <- Char.chr (v lsr 16);
-    res.[i2 + 1] <- Char.chr (v lsr 8 land 0xFF);
-    res.[i2 + 2] <- Char.chr (v land 0xFF)
+    Bytes.set res (i2) @@ Char.chr (v lsr 16);
+    Bytes.set res (i2 + 1) @@ Char.chr (v lsr 8 land 0xFF);
+    Bytes.set res (i2 + 2) @@ Char.chr (v land 0xFF)
   done;
   let nb_cut =
     if s.[len-1] = '=' then
@@ -155,12 +155,12 @@ and config = {
   }
 
 
-let escaped s =
+(* let escaped s =
   String2.convert () (fun b _ c ->
       match c with
         '\r' -> Buffer.add_string b "\\r"
       | '\n' -> Buffer.add_string b "\\n\n"
-      | _ -> Buffer.add_char b c) s
+      | _ -> Buffer.add_char b c) s *)
 
 
 let default_options = {
@@ -278,7 +278,7 @@ let parse_head sock s =
       let options = List.fold_left (fun options
               (name, value (* , head, args *)) ->
             try
-              match String.lowercase name with
+              match String.lowercase_ascii name with
                 "authorization" ->
                 let _, pass = String2.cut_at value ' ' in
                 let pass = decode64 pass in
@@ -744,7 +744,7 @@ let manage config sock head =
   let request = parse_head sock head in
   let rec iter reqs =
     match reqs with
-      (file, handler) :: reqs when file = request.get_url.Url.short_file ->
+      (file, handler) :: _reqs when file = request.get_url.Url.short_file ->
         handler sock request
     | _ :: reqs -> iter reqs
     | [] ->
@@ -820,11 +820,11 @@ let request_handler config sock nread =
         (Printexc2.to_string e);
       close sock (Closed_for_exception e)
 
-let request_closer sock msg =
+let request_closer _sock _msg =
   ()
 
 
-let handler config t event =
+let handler config _ event =
   match event with
     TcpServerSocket.CONNECTION (s, Unix.ADDR_INET(from_ip, from_port)) ->
     (* check here if ip is OK *)

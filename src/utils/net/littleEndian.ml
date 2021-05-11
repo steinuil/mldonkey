@@ -50,8 +50,8 @@ let buf_int24 buf i =
   Buffer.add_char buf (char_of_int ((i lsr 16) land 255))
 
 let str_int16 s pos i =
-  s.[pos] <- char_of_int (i land 255);
-  s.[pos+1] <- char_of_int ((i lsr 8) land 255)
+  Bytes.set s (pos) @@ char_of_int (i land 255);
+  Bytes.set s (pos+1) @@ char_of_int ((i lsr 8) land 255)
 
 let get_int16 s pos =
   check_string s (pos+1);
@@ -60,9 +60,9 @@ let get_int16 s pos =
   c1 lor (c2 lsl 8)
   
 let str_int24 s pos i =
-  s.[pos] <- char_of_int (i land 255);
-  s.[pos+1] <- char_of_int ((i lsr 8) land 255);
-  s.[pos+2] <- char_of_int ((i lsr 16) land 255)
+  Bytes.set s (pos) @@ char_of_int (i land 255);
+  Bytes.set s (pos+1) @@ char_of_int ((i lsr 8) land 255);
+  Bytes.set s (pos+2) @@ char_of_int ((i lsr 16) land 255)
 
 let get_int24 s pos =
   check_string s (pos+1);
@@ -80,10 +80,10 @@ let buf_int buf i =
   buf_int8 buf (x lor ((x lsl 1) land 0x80))
 
 let str_int s pos i =
-  s.[pos] <- char_of_int (i land 255);
-  s.[pos+1] <- char_of_int ((i lsr 8) land 255);
-  s.[pos+2] <- char_of_int ((i lsr 16) land 255);
-  s.[pos+3] <- char_of_int ((i lsr 24) land 255)
+  Bytes.set s (pos) @@ char_of_int (i land 255);
+  Bytes.set s (pos+1) @@ char_of_int ((i lsr 8) land 255);
+  Bytes.set s (pos+2) @@ char_of_int ((i lsr 16) land 255);
+  Bytes.set s (pos+3) @@ char_of_int ((i lsr 24) land 255)
 
 let get_int s pos =
   let c1 = get_uint8 s pos in
@@ -127,11 +127,11 @@ let buf_int64 oc i =
   buf_int64_8 oc (right64 i  48);
   buf_int64_8 oc (right64 i  56)
 
-let buf_int64_32 oc i =
+(* let buf_int64_32 oc i =
   buf_int64_8 oc i;
   buf_int64_8 oc (right64 i  8);
   buf_int64_8 oc (right64 i  16);
-  buf_int64_8 oc (right64 i  24)
+  buf_int64_8 oc (right64 i  24) *)
   
 let get_uint64_32 s pos =
   let c1 = get_uint8 s pos in
@@ -209,4 +209,3 @@ let get_string32 s pos =
 let buf_string32 buf s =
   buf_int buf (String.length s);
   Buffer.add_string buf s
-

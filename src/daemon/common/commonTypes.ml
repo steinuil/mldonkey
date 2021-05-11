@@ -89,7 +89,7 @@ exception Torrent_started of string
 exception Torrent_already_exists of string
 
 let uid_of_string s =
-  let s = String.lowercase s in
+  let s = String.lowercase_ascii s in
   let urn = String2.before s 4 in
   let rem = String2.after s 4 in
   let sep = ref ':' in
@@ -923,11 +923,11 @@ let short_string_of_connection_state s =
   | NotConnected (_,-1) -> ""
   | NotConnected (_,0) ->    "Qout"
   | Connected  0 ->      "Qued"
-  | NotConnected (_,n) ->    "Rout" 
-  | Connected  n ->      "Rank" 
+  | NotConnected (_,_) ->    "Rout" 
+  | Connected _ ->      "Rank" 
   | Connecting ->        "Cing"
   | Connected_initiating -> "Init"
-  | Connected_downloading n -> "Down"
+  | Connected_downloading _ -> "Down"
       
   | RemovedHost -> "Rem"
   | BlackListedHost -> "BL"
@@ -956,8 +956,8 @@ type arg_kind =
 let string_of_kind kind =
   try
     match kind with
-    | Known_location (ip,port) -> Ip.to_string ip
-    | Indirect_location (server_ip, server_port, ip, port) -> Ip.to_string ip
+    | Known_location (ip,_port) -> Ip.to_string ip
+    | Indirect_location (_server_ip, _server_port, ip, _port) -> Ip.to_string ip
   with _ -> ""
 
 let string_of_kind_geo kind cc =
@@ -973,9 +973,9 @@ let string_of_kind_geo kind cc =
   in
   try
     match kind with
-    | Known_location (ip,port) -> 
+    | Known_location (ip,_port) -> 
         ip_cn_cc ip
-    | Indirect_location (server_ip, server_port, ip, port) ->
+    | Indirect_location (_server_ip, _server_port, ip, _port) ->
         ip_cn_cc ip
   with _ -> "","X","Country error"
 
@@ -1051,4 +1051,3 @@ let string_of_web_infos_state state =
   | None -> "unknown"
   | Some DownloadStarted -> "DL started"
   | Some FileLoaded -> "File loaded"
-

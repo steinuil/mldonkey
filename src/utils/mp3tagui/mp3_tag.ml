@@ -95,7 +95,7 @@ let read_channel ic =
       let put s len =
         let l = String.length s in
         for i = 0 to min l len - 1 do output_char oc s.[i] done;
-        for i = l to len - 1 do output_byte oc 0 done in
+        for _ = l to len - 1 do output_byte oc 0 done in
       output_string oc "TAG";
       put title 30;
       put artist 30;
@@ -137,10 +137,10 @@ module Id3v2 = struct
   let last_byte_read = ref 0
 
   let input_byte ic =
-    let b = Pervasives.input_byte ic in
+    let b = Stdlib.input_byte ic in
     let b =
       if b = 0 && !unsynchronization && !last_byte_read = 0xFF
-      then Pervasives.input_byte ic
+      then Stdlib.input_byte ic
       else b in
     last_byte_read := b;
     b
@@ -148,7 +148,7 @@ module Id3v2 = struct
   let input_buffer ic len =
     let buff = Bytes.create len in
     for i = 0 to len - 1 do
-      buff.[i] <- Char.chr (input_byte ic)
+      Bytes.set buff (i) @@ Char.chr (input_byte ic)
     done;
     Bytes.unsafe_to_string buff
 
@@ -158,7 +158,7 @@ module Id3v2 = struct
     (b4 lsl 24) lor (b3 lsl 16) lor (b2 lsl 8) lor b1
 
   let skip_bytes ic n =
-    for i = 1 to n do ignore(input_byte ic) done
+    for _ = 1 to n do ignore(input_byte ic) done
 
   let valid_header header =
        String.sub header 0 3 = "ID3"
@@ -232,9 +232,9 @@ module Id3v2 = struct
   let output_byte oc b =
     if !last_byte_written = 0xFF then begin
       if b = 0 || b land 0b11100000 = 0b11100000 then
-        Pervasives.output_byte oc 0
+        Stdlib.output_byte oc 0
     end;
-    Pervasives.output_byte oc b;
+    Stdlib.output_byte oc b;
     last_byte_written := b
 
   let output_int4 oc n =
@@ -244,10 +244,10 @@ module Id3v2 = struct
     output_byte oc n
 
   let output_encoded_int4 oc n =
-    Pervasives.output_byte oc (((n lsr 21) land 0x7F) lsl 24);
-    Pervasives.output_byte oc (((n lsr 14) land 0x7F) lsl 16);
-    Pervasives.output_byte oc (((n lsr 7) land 0x7F) lsl 8);
-    Pervasives.output_byte oc (n land 0x7F)
+    Stdlib.output_byte oc (((n lsr 21) land 0x7F) lsl 24);
+    Stdlib.output_byte oc (((n lsr 14) land 0x7F) lsl 16);
+    Stdlib.output_byte oc (((n lsr 7) land 0x7F) lsl 8);
+    Stdlib.output_byte oc (n land 0x7F)
 
   let output_string oc s =
     for i = 0 to String.length s - 1 do output_byte oc (Char.code s.[i]) done
@@ -281,7 +281,7 @@ module Id3v2 = struct
     let ic = open_in_bin filename in
     try
       begin try
-        let header = String.create 10 in
+        let header = Bytes.create 10 in
         really_input ic header 0 10;
         let header = Bytes.unsafe_to_string header in
         if not (valid_header header) then raise Not_found;
@@ -327,17 +327,17 @@ module Id3v2 = struct
       close_out oc;
       begin match srcname with
         None -> Sys.remove origname
-      | Some s -> ()
+      | Some _ -> ()
       end
     with x ->
       begin match srcname with
         None -> Unix2.rename origname filename
-      | Some s -> ()
+      | Some _ -> ()
       end;
       raise x
 
   let merge t1 t2 =
-    t1 @ List.filter (fun (tag, data) -> not (List.mem_assoc tag t1)) t2
+    t1 @ List.filter (fun (tag, _data) -> not (List.mem_assoc tag t1)) t2
   
   let no_tag = []
 

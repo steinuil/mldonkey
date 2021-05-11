@@ -82,8 +82,8 @@ val update_file_state : 'a file_impl -> CommonTypes.file_state -> unit
 val file_to_option : CommonTypes.file -> (string * Options.option_value) list
 val file_save_as : CommonTypes.file -> string -> unit
 val file_shared : CommonTypes.file -> CommonTypes.shared option
-val file_comment : CommonTypes.file -> string
-val file_network : CommonTypes.file -> CommonTypes.network
+(* val file_comment : CommonTypes.file -> string *)
+(* val file_network : CommonTypes.file -> CommonTypes.network *)
 val file_info : CommonTypes.file -> GuiTypes.file_info
 val file_pause : CommonTypes.file -> CommonTypes.userdb -> unit
 val file_queue : CommonTypes.file -> unit
@@ -155,8 +155,7 @@ val set_file_owner : CommonTypes.file -> CommonTypes.userdb -> unit
 val file_owner : CommonTypes.file -> CommonTypes.userdb
 val set_file_group : CommonTypes.file -> CommonTypes.groupdb option -> unit
 val file_group : CommonTypes.file -> CommonTypes.groupdb option
-val lprintf_file_nl : ?exn:exn -> CommonTypes.file -> ('a, unit, string, unit) Pervasives.format4 -> 'a
+val lprintf_file_nl : ?exn:exn -> CommonTypes.file -> ('a, unit, string, unit) Stdlib.format4 -> 'a
 
 (** [concat_file dir filename] sanitizes [filename] and appends it to [dir] *)
 val concat_file : string -> string -> string
-

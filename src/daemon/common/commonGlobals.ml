@@ -118,7 +118,7 @@ let shorten str limit =
   let len =
     try
       Charset.utf8_length str
-    with e -> slen
+    with _ -> slen
   in
   let diff_len_utf8_ascii = slen - len in
   let max_len = max limit 10 in
@@ -220,7 +220,7 @@ let check_ul_dl_ratio () =
     | 0 -> None
     | x when x < 4 -> Some (x * 3)
     | x when x < 10 -> Some (x * 4)
-    | x -> None in
+    | _ -> None in
   match max_max_hard_download_rate with
   | None -> ()
   | Some limit ->
@@ -251,11 +251,11 @@ let udp_read_controler = UdpSocket.new_bandwidth_controler download_control
 let pid = Unix.getpid ()
 
 let do_at_exit f =
-  Pervasives.at_exit (fun _ ->
+  Stdlib.at_exit (fun _ ->
       if Unix.getpid () = pid then
-        try f () with e -> ())
+        try f () with _ -> ())
 
-let exit_properly n = Pervasives.exit n
+let exit_properly n = Stdlib.exit n
 
 let user_socks = ref ([] : TcpBufferedSocket.t list)
 let dialog_history = ref ([] : (int * string * string) list )
@@ -367,7 +367,7 @@ let string_of_field t =
   | Field_UNKNOWN s -> s
 
 let field_of_string t =
-  match String.lowercase t with
+  match String.lowercase_ascii t with
   | "artist" -> Field_Artist
   | "title" -> Field_Title
   | "album" -> Field_Album
@@ -522,7 +522,7 @@ let update_link_stats () =
       Int64.to_float !udp_downloaded_bytes;|] in
 
   (match derive (last_count_time, last_sample) (time, sample) with
-      _, [|tur; tdr; cur; cdr; uur; udr|] ->
+      _, [|_tur; _tdr; cur; cdr; uur; udr|] ->
 
 (*
   tcp_upload_rate := tur;
@@ -861,9 +861,9 @@ let discover_ip force =
     end
 
 let _ =
-  Heap.add_memstat "CommonGlobals" (fun level buf ->
+  Heap.add_memstat "CommonGlobals" (fun _level buf ->
       let counter = ref 0 in
-      StringIntern.iter (fun f -> incr counter;) intern_table;
+      StringIntern.iter (fun _ -> incr counter;) intern_table;
       Printf.bprintf buf "  intern_table: %d\n" !counter;
       Printf.bprintf buf " core_gui_fifo: %d\n" (Fifo.length core_gui_fifo);
       Printf.bprintf buf " gui_core_fifo: %d\n" (Fifo.length gui_core_fifo);

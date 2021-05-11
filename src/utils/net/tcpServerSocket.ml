@@ -46,7 +46,7 @@ let connections_controlers = ref []
 let nconnections_last_second = ref 0
 let debug = ref false
 
-let set_handler t event handler =
+(* let set_handler t event handler =
   let old_handler = t.event_handler in
   let handler t ev =
     if ev = event then
@@ -54,11 +54,11 @@ let set_handler t event handler =
     else
       old_handler t ev
   in
-  t.event_handler <- handler
+  t.event_handler <- handler *)
 
 let sock t = t.sock
   
-let closed t = closed t.sock
+(* let closed t = closed t.sock *)
 let close t reason = 
   if not t.closed then begin
       close t.sock reason;
@@ -113,7 +113,7 @@ let create name addr port ?(backlog = 3) handler =
       Unix.Unix_error (Unix.EADDRINUSE, _, _) -> 
         lprintf "This is normally caused by another application currently using this port.\n";
         lprintf "Close that application and restart MLDonkey, exiting...\n";
-        Pervasives.exit 69
+        Stdlib.exit 69
       | _ -> raise e
   
 let create_connections_controler name f =

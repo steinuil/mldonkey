@@ -74,7 +74,7 @@ val shutdown : t -> BasicSocket.close_reason -> unit
 val error: t -> BasicSocket.close_reason
 (* val tcp_handler: t -> BasicSocket.t -> BasicSocket.event -> unit *)
 val set_closer : t -> (t -> BasicSocket.close_reason -> unit) -> unit
-val nread : t -> int
+(* val nread : t -> int *)
 val set_max_input_buffer : t -> int -> unit  
 val set_max_output_buffer : t -> int -> unit  
 val can_write : t -> bool  

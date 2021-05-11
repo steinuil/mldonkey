@@ -47,8 +47,8 @@ let add_wanted_chunk file chunk declare_available_chunk =
   List.iter (fun file ->
       declare_available_chunk file chunk) w.w_available
 
-let remove_wanted_chunk file chunk_descr = ()
-let find_wanted_chunks file = []
+let remove_wanted_chunk _file _chunk_descr = ()
+let find_wanted_chunks _file = []
 
 let declare_available_chunk file chunk =
   let w = find_chunk chunk in

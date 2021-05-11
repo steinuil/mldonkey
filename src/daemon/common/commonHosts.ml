@@ -82,7 +82,7 @@ module Make(M: sig
         end
 
     let host_queue_take q =
-      let (time,h) = Queue.take q in
+      let (_time,h) = Queue.take q in
       if List.memq q h.host_queues then begin
           h.host_queues <- List2.removeq q h.host_queues
         end;
@@ -91,7 +91,7 @@ module Make(M: sig
     let hosts_by_key = Hashtbl.create 103
 
     let _ =
-     Heap.add_memstat "CommonHosts" (fun level buf ->
+     Heap.add_memstat "CommonHosts" (fun _level buf ->
       Printf.bprintf buf "  hosts_by_key: %d\n" (Hashtbl.length hosts_by_key);
      )
 

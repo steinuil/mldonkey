@@ -38,7 +38,7 @@ let mtu_packet_size = ref 1500
 let minimal_packet_size = ref 600
 let packet_frame_size = 1
 
-let proc_net_fs = ref true
+(* let proc_net_fs = ref true *)
 
 let tcp_uploaded_bytes = ref Int64.zero
 let tcp_downloaded_bytes = ref Int64.zero
@@ -232,7 +232,7 @@ let schedule_connections () =
 let cancel_token token =
   token.token_used <- true
 
-let used_token token = token.token_used
+(* let used_token token = token.token_used *)
 
 let unlimited_connection_manager = create_connection_manager "Unlimited"
 
@@ -820,7 +820,7 @@ let tcp_handler_write t sock =
 let get_latencies verbose =
   let b = Buffer.create 300 in
   let counter = ref 0 in
-  Hashtbl.iter (fun ip (latency, samples) ->
+  Hashtbl.iter (fun _ip (_latency, _samples) ->
       incr counter;
   ) latencies;
   LittleEndian.buf_int b !counter;
@@ -915,7 +915,7 @@ let change_rate bc rate =
 let bandwidth_controler t sock =
   (match t.read_control with
       None -> ()
-    | Some bc ->
+    | Some _ ->
 (*         must_read sock (bc.total_bytes = 0 || bc.remaining_bytes > 0)); *)
         (* bandwidth_controler is called before socket is engaged into data transfer.
            This can be either upload or download connection, but when download speed
@@ -1020,9 +1020,9 @@ let set_handler t event handler =
   in
   t.event_handler <- handler
 
-let set_refill t f =
+(* let set_refill t f =
   set_handler t CAN_REFILL f;
-  (try f t with _ -> ())
+  (try f t with _ -> ()) *)
 
 let close_after_write t =
   if t.wbuf.len = 0 then begin
@@ -1049,7 +1049,7 @@ let set_reader t f =
         fun sock nread ->
 (* HTTP/1.0 200 OK\n\n *)
           let b = buf sock in
-          let rcode, rstr, rstr_end =
+          let rcode, _rstr, rstr_end =
             try
               let rcode_pos = 8 (*String.index_from b.buf b.pos ' '*) in
               let rcode = Bytes.sub b.buf (rcode_pos+1) 3 in
@@ -1132,8 +1132,8 @@ let monitored t = t.monitored
 let set_rtimeout s t = set_rtimeout s.sock_in t
 let set_wtimeout s t = set_wtimeout s.sock_out t
 
-let set_write_power t p = (* t.write_power <- p *) ()
-let set_read_power t p = (* t.read_power <- p *) ()
+let set_write_power _ _ = (* t.write_power <- p *) ()
+let set_read_power _ _ = (* t.read_power <- p *) ()
 
 let set_lifetime s = set_lifetime s.sock_in
 
@@ -1195,7 +1195,7 @@ let create token name fd handler =
     } in
   let sock = BasicSocket.create name fd (fun _ event ->
         tcp_handler t event) in
-  set_printer sock (fun sock ->
+  set_printer sock (fun _sock ->
         Printf.sprintf "%s (nread: %d nwritten: %d) [U %s,D %s]" name t.nread t.nwrite
         (string_of_bool (t.read_control <> None)) (string_of_bool (t.write_control <> None));
         ;
@@ -1305,7 +1305,7 @@ let create_blocking token name fd handler =
       connect_time = 0.;
       compression = None;
     } in
-  let sock = create_blocking name fd (fun sock event ->
+  let sock = create_blocking name fd (fun _sock event ->
         tcp_handler t event) in
   t.sock_in <- sock;
   t.sock_out <- sock;
@@ -1419,7 +1419,7 @@ let my_ip t =
   if t.my_ip = Ip.null then
     let fd = fd t.sock_in in
     match Unix.getsockname fd with
-      Unix.ADDR_INET (ip, port) ->
+      Unix.ADDR_INET (ip, _port) ->
         let ip = Ip.of_inet_addr ip in
         t.my_ip <- ip;
         ip
@@ -1475,7 +1475,7 @@ let value_send sock m =
   Buffer.add_string internal_buf (Marshal.to_string m []);
   simple_send_buf internal_buf sock
 
-let value_handler f sock nread =
+let value_handler f sock _nread =
   let b = buf sock in
   try
     while b.len >= 5 do
@@ -1702,7 +1702,7 @@ to an option 'packet_unit' (default 250). Ask Simon if it makes sense.
                     (try
 (*                    lprintf "allow to read %d\n" can_read; *)
                         can_read_handler t t.sock_in can_read
-                      with e ->
+                      with _ ->
 (*                          lprintf "Exception %s in can_read_handler %s:%d\n"
                             (Printexc2.to_string e)
                           t.name (sock_num t.sock_in) *) ()
@@ -1798,7 +1798,7 @@ let must_write t bool = must_write t.sock_out bool
 let output_buffered t = t.wbuf.len
 
 let _ =
-  Heap.add_memstat "tcpBufferedSocket" (fun level buf ->
+  Heap.add_memstat "tcpBufferedSocket" (fun _level buf ->
       Printf.bprintf buf "  %d latencies\n" (Hashtbl.length latencies);
       Printf.bprintf buf "  String.length big_buffer: %d\n" (Bytes.length big_buffer);
       Printf.bprintf buf "  connection_managers: %d\n" (List.length !connection_managers);
