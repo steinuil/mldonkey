@@ -14,7 +14,6 @@
   filepath
   ; gd
   genlex2
-  gzip
   hashtbl2
   heap
   http_lexer
@@ -30,18 +29,15 @@
   tar
   unix2
   unix32
-  url
-  zip
-  zlib)
- (libraries IO camlp4.lib str unix)
+  url)
+ (libraries IO camlp4.lib str unix camlzip)
  (inline_tests)
  (preprocess
   (pps ppx_inline_test))
  (foreign_stubs
   (language c)
-  (names heap_c md4 md5_c os_stubs_c sha1_c stubs_c tiger zlibstubs))
- (c_library_flags
-  (-lz -lpthread)))
+  (names heap_c md4 md5_c os_stubs_c sha1_c stubs_c tiger))
+ (c_library_flags -lpthread))
 
 (ocamllex http_lexer)
 
