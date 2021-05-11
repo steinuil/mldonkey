@@ -108,27 +108,6 @@ let rec unsplit l c =
       Printf.sprintf "%s%c%s" x c (unsplit tail c)
 ;;
 
-let words s = 
-  let len = String.length s in
-  let rec iter_out pos =
-    if pos = len then [] else
-    let c = s.[pos] in
-    match c with
-      ' ' | '\009' | '\010' | '\013' -> iter_out (pos+1)
-      | _ -> iter_in pos (pos+1)
-        
-  and iter_in pos0 pos =
-    if pos = len then [String.sub s pos0 (len-pos0)] else
-    let c = s.[pos] in
-    match c with
-      ' ' | '\009' | '\010' | '\013' -> 
-        (String.sub s pos0 (pos - pos0))::
-        (iter_out (pos+1))
-      | _ -> iter_in pos0 (pos+1)
-  in
-  iter_out 0
-;;
-
 let convert init f s =
   let len = String.length s in
   let b = Buffer.create len in
@@ -199,13 +178,6 @@ let resize s newlen =
   Bytes.blit s 0 str 0 len;
   str
   
-let init len f =
-  let s = Bytes.create len in
-  for i = 0 to len - 1 do
-    s.[i] <- f i
-  done;
-  Bytes.unsafe_to_string s
-
 let is_space c = c = ' ' || c = '\n' || c = '\r' || c = '\t'
   
 let tokens s =

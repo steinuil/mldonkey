@@ -31,7 +31,7 @@ Boston, MA  02110-1301, USA.
 
 /* Stub code to interface with Zlib */
 
-#include "../../../config/config.h"
+// #include "config.h"
 
 #include <stdint.h>
 #include <zlib.h>
@@ -48,7 +48,7 @@ Boston, MA  02110-1301, USA.
 
 #define ZStream_val(v) ((z_stream *) (v))
 
-static value * camlzip_error_exn = NULL;
+static const value * camlzip_error_exn = NULL;
 
 static void camlzip_error(char * fn, value vzs)
 {

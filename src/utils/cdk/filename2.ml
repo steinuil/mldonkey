@@ -20,7 +20,7 @@
 open String2
 
   
-let win32 = Sys.os_type = "Win32"
+let win32 = Sys.win32
 let slash = if win32 then '\\' else '/'
 let slash_s = String.make 1 slash
   

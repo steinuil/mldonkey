@@ -92,11 +92,11 @@ type timer = {
 (*                                                                       *)
 (*************************************************************************)
 
-external change_fd_event_setting : t -> unit = "ml_change_fd_event_setting"  "noalloc"
-external add_fd_to_event_set : t -> unit = "ml_add_fd_to_event_set"  "noalloc"
-external remove_fd_from_event_set : t -> unit = "ml_remove_fd_from_event_set"  "noalloc"
+external change_fd_event_setting : t -> unit = "ml_change_fd_event_setting"  [@@noalloc]
+external add_fd_to_event_set : t -> unit = "ml_add_fd_to_event_set"  [@@noalloc]
+external remove_fd_from_event_set : t -> unit = "ml_remove_fd_from_event_set"  [@@noalloc]
 
-external get_fd_num : Unix.file_descr -> int = "ml_get_fd_num" "noalloc"
+external get_fd_num : Unix.file_descr -> int = "ml_get_fd_num" [@@noalloc]
 
 external select: t list -> float -> unit = "ml_select"
 external use_poll : bool -> unit = "ml_use_poll"
@@ -278,9 +278,7 @@ let close t msg =
       decr nb_sockets
     end
 
-let default_before_select t = ()
-
-let dump_basic_socket buf = ()
+let dump_basic_socket _ = ()
 
 
 (*************************************************************************)
@@ -592,7 +590,7 @@ let shutdown t s =
 
 let nb_sockets () = !nb_sockets
 
-let stats buf t =
+let stats _buf t =
   lprintf_nl "Socket %d" (get_fd_num t.fd)
 
 let sock_num t = get_fd_num t.fd

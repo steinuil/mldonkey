@@ -26,7 +26,7 @@ let b64_pattern plus slash =
 
 
 let rfc_pattern = b64_pattern '+' '/';;
-let url_pattern = b64_pattern '-' '/';;
+(* let url_pattern = b64_pattern '-' '/';; *)
 
 let encode_with_options b64 equal s pos len linelen crlf =
 (* encode using "base64".
@@ -36,7 +36,7 @@ let encode_with_options b64 equal s pos len linelen crlf =
    * s, pos, len, linelen: See the interface description of encode_substring.
    *)
   assert (Array.length b64 = 64);
-  if len < 0 or pos < 0 or pos > String.length s or linelen < 0 then
+  if len < 0 || pos < 0 || pos > String.length s || linelen < 0 then
     invalid_arg "Netencoding.Base64.encode_with_options";
   if pos + len > String.length s then
     invalid_arg "Netencoding.Base64.encode_with_options";
@@ -87,12 +87,12 @@ let encode_with_options b64 equal s pos len linelen crlf =
            * a line ending.
            *)
             if crlf then begin
-                t.[ !j ] <- '\013';
-                t.[ !j+1 ] <- '\010';
+                Bytes.set t !j '\013';
+                Bytes.set t (!j+1) '\010';
                 j := !j + 2;
               end
             else begin 
-                t.[ !j ] <- '\010';
+                Bytes.set t !j '\010';
                 incr j
               end;
             q := 0;
@@ -106,16 +106,16 @@ let encode_with_options b64 equal s pos len linelen crlf =
       0 -> ()
     | 1 ->
         let bits = Char.code (s.[pos + len - 1]) in
-        t.[ !j     ] <- b64.( bits lsr 2);
-        t.[ !j + 1 ] <- b64.( (bits land 0x03) lsl 4);
+        Bytes.set t  !j    b64.( bits lsr 2);
+        Bytes.set t (!j+1) b64.( (bits land 0x03) lsl 4);
         j := !j + 4;
         q := !q + 4;
     | 2 ->
         let bits = (Char.code (s.[pos + len - 2]) lsl 8) lor
             (Char.code (s.[pos + len - 1])) in
-        t.[ !j     ] <- b64.( bits lsr 10);
-        t.[ !j + 1 ] <- b64.((bits lsr  4) land 0x3f);
-        t.[ !j + 2 ] <- b64.((bits lsl  2) land 0x3f);
+        Bytes.set t  !j    b64.( bits lsr 10);
+        Bytes.set t (!j+1) b64.((bits lsr  4) land 0x3f);
+        Bytes.set t (!j+2) b64.((bits lsl  2) land 0x3f);
         j := !j + 4;
         q := !q + 4;
     | _ -> assert false
@@ -125,12 +125,12 @@ let encode_with_options b64 equal s pos len linelen crlf =
   
   if linelen > 3 && !q > 0 then begin
       if crlf then begin
-          t.[ !j ] <- '\013';
-          t.[ !j+1 ] <- '\010';
+          Bytes.set t  !j '\013';
+          Bytes.set t (!j+1) '\010';
           j := !j + 2;
         end
       else begin 
-          t.[ !j ] <- '\010';
+          Bytes.set t !j '\010';
           incr j
         end;	
     end;
@@ -147,13 +147,13 @@ let encode_substring s pos len =
   encode_with_options rfc_pattern '=' s pos len 0 false;;
 
 
-let url_encode ?(pos=0) ?len ?(linelength=0) ?(crlf=false) s =
+(* let url_encode ?(pos=0) ?len ?(linelength=0) ?(crlf=false) s =
   let l = match len with None -> String.length s - pos | Some x -> x in
-  encode_with_options url_pattern '.' s pos l linelength crlf;;
+  encode_with_options url_pattern '.' s pos l linelength crlf;; *)
 
 
 let decode_substring t ~pos ~len ~url_variant:p_url ~accept_spaces:p_spaces =
-  if len < 0 or pos < 0 or pos > String.length t then
+  if len < 0 || pos < 0 || pos > String.length t then
     invalid_arg "Netencoding.Base64.decode_substring";
   if pos + len > String.length t then
     invalid_arg "Netencoding.Base64.decode_substring";
@@ -285,21 +285,21 @@ let decode_substring t ~pos ~len ~url_variant:p_url ~accept_spaces:p_spaces =
       let c2 = next_char() in
       let c3 = next_char() in
       
-      if (c2 = '=' && c3 = '=') or (p_url && c2 = '.' && c3 = '.') then begin
+      if (c2 = '=' && c3 = '=') || (p_url && c2 = '.' && c3 = '.') then begin
           let n0 = decode_char c0 in
           let n1 = decode_char c1 in
           let x0 = (n0 lsl 2) lor (n1 lsr 4) in
-          s.[ q ]   <- Char.chr x0;
+          Bytes.set s q (Char.chr x0);
         end
       else
-      if (c3 = '=') or (p_url && c3 = '.') then begin
+      if (c3 = '=') || (p_url && c3 = '.') then begin
           let n0 = decode_char c0 in
           let n1 = decode_char c1 in
           let n2 = decode_char c2 in
           let x0 = (n0 lsl 2) lor (n1 lsr 4) in
           let x1 = ((n1 lsl 4) land 0xf0) lor (n2 lsr 2) in
-          s.[ q ]   <- Char.chr x0;
-          s.[ q+1 ] <- Char.chr x1;
+          Bytes.set s q (Char.chr x0);
+          Bytes.set s (q+1) (Char.chr x1)
         end
       else begin
           let n0 = decode_char c0 in
@@ -309,9 +309,9 @@ let decode_substring t ~pos ~len ~url_variant:p_url ~accept_spaces:p_spaces =
           let x0 = (n0 lsl 2) lor (n1 lsr 4) in
           let x1 = ((n1 lsl 4) land 0xf0) lor (n2 lsr 2) in
           let x2 = ((n2 lsl 6) land 0xc0) lor n3 in
-          s.[ q ]   <- Char.chr x0;
-          s.[ q+1 ] <- Char.chr x1;
-          s.[ q+2 ] <- Char.chr x2;
+          Bytes.set s q (Char.chr x0);
+          Bytes.set s (q+1) (Char.chr x1);
+          Bytes.set s (q+2) (Char.chr x2);
         end
     
     end;
@@ -321,4 +321,4 @@ let decode_substring t ~pos ~len ~url_variant:p_url ~accept_spaces:p_spaces =
 
 
 let decode s =
-  decode_substring s 0 (String.length s) false false
+  decode_substring s ~pos:0 ~len:(String.length s) ~url_variant:false ~accept_spaces:false

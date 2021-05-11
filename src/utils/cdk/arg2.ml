@@ -39,7 +39,7 @@ open Printf
 let rec assoc3 x l =
   match l with
   | [] -> raise Not_found
-  | (y1, y2, y3)::t when y1 = x -> y2
+  | (y1, y2, _)::_ when y1 = x -> y2
   | _::t -> assoc3 x t
 ;;
 
@@ -123,7 +123,7 @@ let parse_argv argv speclist anonfun errmsg =
                 let args = Array.sub argv (!current+1) n in
                 f args;
                 current := !current + n
-            | Array (n, f)  ->
+            | Array (n, _)  ->
                 stop (Missing (l - !current - n, s))
             | Rest f ->
                 while !current < l-1 do
@@ -259,7 +259,7 @@ let parse2_argv argv speclist anonfun errmsg =
                 let args = Array.sub argv (!current+1) n in
                 f args;
                 current := !current + n
-            | Array (n, f)  ->
+            | Array (n, _)  ->
                 stop (Missing (n - (l - !current) + 1, s))                
             | Rest f ->
                 while !current < l-1 do

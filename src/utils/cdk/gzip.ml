@@ -43,12 +43,12 @@ let open_in ic =
     let flags = IO.read_byte ic in
     if flags land 0xE0 <> 0 then
       raise(Error("bad flags, not a gzip file"));
-    for i = 1 to 6 do ignore(IO.read_byte ic) done;
+    for _ = 1 to 6 do ignore(IO.read_byte ic) done;
     if flags land 0x04 <> 0 then begin
       (* Skip extra data *)
       let len1 = IO.read_byte ic in
       let len2 = IO.read_byte ic in
-      for i = 1 to len1 + len2 lsl 8 do ignore(IO.read_byte ic) done
+      for _ = 1 to len1 + len2 lsl 8 do ignore(IO.read_byte ic) done
     end;
     if flags land 0x08 <> 0 then begin
       (* Skip original file name *)
@@ -76,10 +76,10 @@ let open_in ic =
     char_buffer = Bytes.create 1 }
 
 let open_in_file filename =
-  let ic = Pervasives.open_in_bin filename in
+  let ic = Stdlib.open_in_bin filename in
   try
     open_in (IO.input_channel ic)
-  with e -> Pervasives.close_in ic; raise e
+  with e -> Stdlib.close_in ic; raise e
 
 let read_byte iz =
   if iz.in_avail = 0 then begin
@@ -182,7 +182,7 @@ let open_out ?(level = 6) oc =
   IO.write_byte oc 0x8B;                  (* ID2 *)
   IO.write_byte oc 8;                     (* compression method *)
   IO.write_byte oc 0;                     (* flags *)
-  for i = 1 to 4 do IO.write_byte oc 0 done; (* mtime *)
+  for _ = 1 to 4 do IO.write_byte oc 0 done; (* mtime *)
   IO.write_byte oc 0;                     (* xflags *)
   IO.write_byte oc 0xFF;                  (* OS (unknown) *)
   { out_chan = oc;
@@ -195,11 +195,11 @@ let open_out ?(level = 6) oc =
     char_buffer = Bytes.create 1 }
 
 let open_out_file ?level filename =
-  let oc = Pervasives.open_out_bin filename in
+  let oc = Stdlib.open_out_bin filename in
   try
     open_out ?level (IO.output_channel oc)
   with
-    exn -> Pervasives.close_out oc; raise exn
+    exn -> Stdlib.close_out oc; raise exn
 
 let rec output oz buf pos len =
   if pos < 0 || len < 0 || pos + len > Bytes.length buf then
@@ -224,7 +224,7 @@ let rec output oz buf pos len =
   if used_in < len then output oz buf (pos + used_in) (len - used_in)
 
 let output_char oz c =
-  oz.char_buffer.[0] <- c;
+  (Bytes.set oz.char_buffer (0) (c));
   output oz oz.char_buffer 0 1
 
 let output_byte oz b =
@@ -232,7 +232,7 @@ let output_byte oz b =
 
 let write_int32 oc n =
   let r = ref n in
-  for i = 1 to 4 do
+  for _ = 1 to 4 do
     IO.write_byte oc (Int32.to_int !r);
     r := Int32.shift_right_logical !r 8
   done
@@ -280,6 +280,3 @@ let output_io io =
     ~output:(fun s o l -> output oz s o l; l)
     ~flush:(fun () -> IO.flush io)
     ~close:(fun () -> close_out oz)
-
-let input_channel ch = input_io (IO.input_channel ch)
-let output_channel ch = output_io (IO.output_channel ch)

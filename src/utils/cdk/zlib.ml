@@ -116,7 +116,7 @@ let gzip_string ?(level = 6) inbuf =
   in
   let write_int32 wbuf n =
     let r = ref n in
-    for i = 1 to 4 do
+    for _ = 1 to 4 do
       Buffer.add_char wbuf (char_of_int (Int32.to_int (Int32.logand !r 0xffl)));
       r := Int32.shift_right_logical !r 8
     done
@@ -125,7 +125,7 @@ let gzip_string ?(level = 6) inbuf =
   write_int buf 0x8B;
   write_int buf 8;
   write_int buf 0;
-  for i = 1 to 4 do write_int buf 0 done;
+  for _ = 1 to 4 do write_int buf 0 done;
   write_int buf 0;
   write_int buf 0xFF;
   Buffer.add_bytes buf res;

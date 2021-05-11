@@ -54,7 +54,7 @@ let to_string_alt name =
   let chan = open_in_bin name in
   read_whole_chan chan
 
-let to_copy in_name out_name =
+(* let to_copy in_name out_name =
   Unix2.tryopen_read_bin in_name (fun in_chan ->
   Unix2.tryopen_write_bin out_name (fun out_chan ->
   try
@@ -65,7 +65,7 @@ let to_copy in_name out_name =
       rcpy ()
     in
     rcpy ()
-  with End_of_file -> ()))
+  with End_of_file -> ())) *)
 
 let from_string name s =
   Unix2.tryopen_write_bin name (fun oc -> output_string oc s)
