@@ -65,14 +65,14 @@ let _ =
         
         let segment = kilobytes 10 in
         let bufferlen = Int64.to_int segment in
-        let buffer = String.create bufferlen in
+        let buffer = Bytes.create bufferlen in
         let rec iter begin_pos end_pos =
           let len = end_pos -- begin_pos in
           if len > zero then
             let len64 = min segment len in
             let len = Int64.to_int len64 in
             Unix32.read t begin_pos buffer 0 len;
-            let encoded = Base64.encode_substring buffer 0 len in
+            let encoded = Base64.encode_substring (Bytes.unsafe_to_string buffer) 0 len in
             Printf.printf "[SEGMENT %s %Ld %d %d]\n" file_num begin_pos len (
               String.length encoded);
             output_string Pervasives.stdout encoded;
@@ -91,14 +91,14 @@ let _ =
         
         let segment = kilobytes 10 in
         let bufferlen = Int64.to_int segment in
-        let buffer = String.create bufferlen in
+        let buffer = Bytes.create bufferlen in
         let rec iter begin_pos end_pos =
           let len = end_pos -- begin_pos in
           if len > zero then
             let len64 = min segment len in
             let len = Int64.to_int len64 in
             Unix32.read t begin_pos buffer 0 len;
-            let encoded = String.sub buffer 0 len in
+            let encoded = Bytes.sub_string buffer 0 len in
             Printf.printf "[SEGMENT 8bits %s %Ld %d %d]\n" file_num begin_pos len (
               String.length encoded);
             output_string Pervasives.stdout encoded;
@@ -111,4 +111,3 @@ let _ =
   with e ->
       lprintf "Exception %s\n" (Printexc2.to_string e);
       exit 2
-      
