@@ -1,54 +1,7 @@
 (library
  (name mldonkey_lib)
  (wrapped false)
- (modules
-  arg2
-  array2
-  autoconf
-  ; bzip2
-  ; bzlib
-  charset
-  date
-  file
-  filename2
-  fifo
-  filepath
-  ; gd
-  genlex2
-  gettext
-  gzip
-  hashtbl2
-  heap
-  http_lexer
-  indexer
-  indexer2
-  int64ops
-  intmap
-  intset
-  levenshtein
-  list2
-  magic
-  magic_nomagic
-  md4
-  misc2
-  mlUnix
-  options
-  printexc2
-  printf2
-  queues
-  rss_date
-  set2
-  store
-  string2
-  syslog
-  tar
-  unix2
-  unix32
-  url
-  verificationBitmap
-  zip
-  zlib)
- (libraries IO camlp4.lib str unix)
+ (libraries camlp4.lib str unix)
  (inline_tests)
  (preprocess
   (pps ppx_inline_test))

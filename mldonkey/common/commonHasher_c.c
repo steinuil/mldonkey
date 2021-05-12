@@ -18,8 +18,8 @@
 */
 
 #include <stdio.h>
-#include "../../../config/config.h"
-#include "../../utils/lib/os_stubs.h"
+// #include "config.h"
+#include "../lib/os_stubs.h"
 
 #include <caml/mlvalues.h>
 #include <caml/fail.h>
@@ -38,10 +38,10 @@
 #define JOB_HANDLER     5
 #define JOB_ERROR       6
 
-#include "../../utils/lib/md4.h"
-#include "../../utils/lib/md5.h"
-#include "../../utils/lib/sha1_c.h"
-#include "../../utils/lib/tiger.h"
+#include "../lib/md4.h"
+#include "../lib/md5.h"
+#include "../lib/sha1_c.h"
+#include "../lib/tiger.h"
 
 
 
@@ -405,4 +405,3 @@ value ml_job_start(value job_v, value fd_v)
 }
 
 #endif
-

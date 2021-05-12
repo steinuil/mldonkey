@@ -37,7 +37,6 @@
 /src/daemon/common/giftLexer.ml
 /src/daemon/common/giftParser.ml
 /src/daemon/common/giftParser.mli
-/src/daemon/driver/driverGraphics.ml
 /src/networks/bittorrent/bTUdpTracker.ml
 /src/networks/donkey/donkeyNodesDat.ml
 /src/networks/donkey/donkeySui.ml
@@ -61,7 +60,6 @@
 /src/networks/opennap/napigator.ml
 /src/utils/bitstring/bitstring_persistent.ml
 /src/utils/bitstring/bitstring.ml
-/src/utils/cdk/tar.ml
 /src/utils/lib/autoconf.ml
 /src/utils/lib/autoconf.ml.new
 /src/utils/lib/gAutoconf.ml
