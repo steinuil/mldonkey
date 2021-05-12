@@ -596,7 +596,7 @@ let download_file o arg =
     try
       match user.ui_last_search with
         None -> "no last search"
-      | Some s ->
+      | Some _ ->
           let result = List.assoc (int_of_string arg) user.ui_last_results in
           let files = CommonResult.result_download
             result [] false user.ui_user in
@@ -737,7 +737,7 @@ let send_custom_query user buf query args =
             with Not_found -> r1
           end
 
-      | Q_MODULE (s, q) -> iter q
+      | Q_MODULE (_, q) -> iter q
 
       | Q_MINSIZE _ ->
           let minsize = get_arg "minsize" in
@@ -879,7 +879,7 @@ let some_simple_options num =
 let all_active_network_opfile_network_names () =
        let names = ref [] in
        networks_iter_all (fun r ->
-               List.iter (fun opfile ->
+               List.iter (fun _opfile ->
                        names := !names @ [r.network_name]
                ) r.network_config_file
        );
@@ -914,7 +914,7 @@ let apply_on_fully_qualified_options name f =
 let get_fully_qualified_options name =
   let value = ref None in
   (try
-      apply_on_fully_qualified_options name (fun opfile old_name old_value ->
+      apply_on_fully_qualified_options name (fun opfile old_name _old_value ->
       value := Some (get_simple_option opfile old_name)
       );
     with _ -> ());
@@ -925,7 +925,7 @@ let get_fully_qualified_options name =
 let set_fully_qualified_options name value ?(user = None) ?(ip = None) ?(port = None) ?(gui_type = None) () =
   let old_value = get_fully_qualified_options name in
   apply_on_fully_qualified_options name
-    (fun opfile old_name old_value -> set_simple_option opfile old_name value);
+    (fun opfile old_name _old_value -> set_simple_option opfile old_name value);
   if !verbose && old_value <> get_fully_qualified_options name then
     begin
       let ip_port_text =
@@ -951,7 +951,7 @@ let keywords_of_query query =
     match q with
     | QOr (q1,q2)
     | QAnd (q1, q2) -> iter q1; iter q2
-    | QAndNot (q1,q2) -> iter q1
+    | QAndNot (q1,_) -> iter q1
     | QHasWord w -> keywords := (String2.split_simplify w ' ') @ !keywords
     | QHasField(field, w) ->
         begin
@@ -961,14 +961,14 @@ let keywords_of_query query =
           | Field_Artist
           | _ -> keywords := (String2.split_simplify w ' ') @ !keywords
         end
-    | QHasMinVal (field, value) ->
+    | QHasMinVal (field, _) ->
         begin
           match field with
             Field_KNOWN "bitrate"
           | Field_Size
           | _ -> ()
         end
-    | QHasMaxVal (field, value) ->
+    | QHasMaxVal (field, _) ->
         begin
           match field with
             Field_KNOWN "bitrate"

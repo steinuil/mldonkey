@@ -20,12 +20,16 @@
   hashtbl2
   heap
   http_lexer
+  indexer
+  indexer2
   int64ops
   intmap
   intset
   list2
+  magic
+  magic_nomagic
   md4
-  misc
+  misc2
   mlUnix
   options
   printexc2

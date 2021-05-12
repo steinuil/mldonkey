@@ -72,7 +72,7 @@ let rec rec_simplify_query q =
       (
        match (rec_simplify_query q1, rec_simplify_query q2) with
          QNone, QNone -> QNone
-       | QNone, q2' -> QNone
+       | QNone, _ -> QNone
        | q1', QNone -> q1'
        | q1', q2' -> QAndNot (q1',q2')
       )
@@ -262,7 +262,7 @@ module Make(Stored : sig
                 (fun doc -> 
                     let r = doc_value doc in
                     (Stored.result_size r) >= size)
-              else (fun doc -> true))
+              else (fun _ -> true))
         
         | QHasMaxVal (f,size) ->
             Indexer.Predicate (
@@ -270,7 +270,7 @@ module Make(Stored : sig
                 (fun doc -> 
                     let r = doc_value doc in
                     (Stored.result_size r) <= size)
-              else (fun doc -> true))
+              else (fun _ -> true))
         | QNone ->
             failwith "query_to_indexer: QNone in query"
       in

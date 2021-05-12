@@ -32,8 +32,8 @@ let log_prefix = "[cF]"
 let lprintf_nl fmt =
   lprintf_nl2 log_prefix fmt
 
-let lprintf_n fmt =
-  lprintf2 log_prefix fmt
+(* let lprintf_n fmt =
+  lprintf2 log_prefix fmt *)
             
 (*************************************************************************)
 (*                                                                       *)
@@ -216,13 +216,13 @@ let file_shared (file : file) =
   let file = as_file_impl file in
   file.impl_file_ops.op_file_shared file.impl_file_val
 
-let file_comment (file : file) =
+(* let file_comment (file : file) =
   let file = as_file_impl file in
-  file.impl_file_ops.op_file_comment file.impl_file_val
+  file.impl_file_ops.op_file_comment file.impl_file_val *)
 
-let file_network (file : file) =
+(* let file_network (file : file) =
   let file = as_file_impl file in
-  file.impl_file_ops.op_file_network
+  file.impl_file_ops.op_file_network *)
 
 let file_info (file : file) =
   let file = as_file_impl file in
@@ -862,7 +862,7 @@ parent.fstatus.location.href='submit?q=chgrp+'+v+'+%d';
 
     end else
     begin
-      Printf.bprintf buf "[%-s %5d]\n%s\n%s%s\nTotal   %10s\nPartial %10s\npriority %d\nOwner/Group: %s/%s\n"
+      Printf.bprintf buf "[%s %5d]\n%s\n%s%s\nTotal   %10s\nPartial %10s\npriority %d\nOwner/Group: %s/%s\n"
         n.network_name
         (file_num file)
         (shorten (file_best_name file) 80)
@@ -1047,7 +1047,7 @@ let new_file_ops network =
       op_file_print = (fun _ _ -> ni_ok network "file_print_html");
       op_file_print_sources = (fun _ _ -> fni network "file_print_sources");
       op_file_debug = (fun _ -> "");
-      op_file_proposed_filenames = (fun impl -> []);
+      op_file_proposed_filenames = (fun _ -> []);
     }
   in
   let ff = (Obj.magic f : int file_ops) in
@@ -1145,15 +1145,15 @@ let file_verify file key begin_pos end_pos =
     end;
   try
     let computed = match key with
-      | Ed2k md4 ->
+      | Ed2k _ ->
           let result = Md4.digest_subfile (file_fd file)
             begin_pos (end_pos -- begin_pos) in
           Ed2k result
-      | Sha1 sha1 ->
+      | Sha1 _ ->
           let result = Sha1.digest_subfile (file_fd file)
             begin_pos (end_pos -- begin_pos) in
           Sha1 result
-      | TigerTree ttr ->
+      | TigerTree _ ->
           let result = TigerTree.digest_subfile (file_fd file)
             begin_pos (end_pos -- begin_pos) in
           TigerTree result
@@ -1227,8 +1227,8 @@ let forceable_download = ref []
 (*                                                                       *)
 (*************************************************************************)
 
-let com_files_by_num = files_by_num
-let files_by_num = ()
+(* let com_files_by_num = files_by_num *)
+(* let files_by_num = () *)
 
 let impl_file_info impl =
   let module T = GuiTypes in

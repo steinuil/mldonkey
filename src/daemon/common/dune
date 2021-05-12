@@ -1,6 +1,9 @@
 (library
  (name mldonkey_common)
- (libraries mldonkey_lib mldonkey_net mp3tag rss xml-light bitv))
+ (libraries mldonkey_lib mldonkey_net mp3tag rss xml-light bitv)
+ (foreign_stubs
+  (language c)
+  (names commonHasher_c)))
 
 (menhir
  (modules giftParser))

@@ -18,10 +18,10 @@ type ml_port_map = {
 val string_of_map_status : int -> string
 val strings_port_map : ml_port_map -> string
         
-external init_maps : unit -> unit = "ml_upnpInitMaps" "noalloc"
+external init_maps : unit -> unit = "ml_upnpInitMaps" [@@noalloc]
 (*external set_maps  : unit -> unit = "ml_upnpSetMaps" *)
-external dump_maps : unit -> unit = "ml_upnpDumpMaps" "noalloc"
-external job_start : unit -> unit = "ml_upnp_job_start" "noalloc"
+external dump_maps : unit -> unit = "ml_upnpDumpMaps" [@@noalloc]
+external job_start : unit -> unit = "ml_upnp_job_start" [@@noalloc]
 external job_stop  : int -> unit = "ml_upnp_job_stop"
 external maps_add_item     : int -> int -> int -> int -> string -> unit  = "ml_upnpAddMap" 
 external maps_remove_item  : int -> int -> int -> int -> string -> unit  = "ml_upnpRemoveMap" 

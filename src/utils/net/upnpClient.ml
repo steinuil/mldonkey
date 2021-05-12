@@ -49,10 +49,10 @@ let strings_port_map map =
         map.enabled map.intPort map.extPort map.isTcp (string_of_map_status map.natpmpStatus) (string_of_map_status map.upnpStatus) map.notes
         
 
-external init_maps : unit -> unit = "ml_upnpInitMaps" "noalloc"
+external init_maps : unit -> unit = "ml_upnpInitMaps" [@@noalloc]
 (*external set_maps  : unit -> unit = "ml_upnpSetMaps" *)
-external dump_maps : unit -> unit = "ml_upnpDumpMaps" "noalloc"
-external job_start : unit -> unit = "ml_upnp_job_start" "noalloc"
+external dump_maps : unit -> unit = "ml_upnpDumpMaps" [@@noalloc]
+external job_start : unit -> unit = "ml_upnp_job_start" [@@noalloc]
 
 (* job_stop max_wait_seconds, 0=system default wait seconds *)
 external job_stop  : int -> unit = "ml_upnp_job_stop"

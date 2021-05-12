@@ -221,14 +221,14 @@ let network_commands = ref ([] : (string * string * CommonTypes.arg_kind * strin
 let commands_by_kind = Hashtbl.create 11
 
 let () =
-  Heap.add_memstat "CommonNetwork" (fun level buf ->
+  Heap.add_memstat "CommonNetwork" (fun _level buf ->
       Printf.bprintf buf "  networks_by_name: %d\n" (Hashtbl.length networks_by_name);
       Printf.bprintf buf "  networks_by_num: %d\n" (Hashtbl.length networks_by_num);
       Printf.bprintf buf "  commands_by_kind: %d\n" (Hashtbl.length commands_by_kind);
      )
   
 let register_commands list = 
-  List.iter (fun (s, n, f, h) ->
+  List.iter (fun (s, n, _, h) ->
       try
         let ss = Hashtbl.find commands_by_kind n in
         ss := (s,h) :: !ss
@@ -240,10 +240,10 @@ let register_commands list =
 let network_connect_servers n = n.op_network_connect_servers ()
 let network_forget_search n s = n.op_network_forget_search s
 let network_close_search n s = n.op_network_close_search s  
-let network_private_message n id s = n.op_network_private_message id s
+(* let network_private_message n id s = n.op_network_private_message id s *)
   
 let network_extend_search n e = n.op_network_extend_search e
-let network_connected n = n.op_network_connected ()
+(* let network_connected n = n.op_network_connected () *)
   
 let network_clean_servers r = r.op_network_clean_servers ()
 

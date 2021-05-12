@@ -651,7 +651,7 @@ let swarmer_recompute_priorities_bitmap s =
         let priochar = Char.chr (max 0 (min priority 255)) in
   (*       String.fill s.s_priorities_bitmap i_begin (i_end - i_begin + 1) priochar *)
         for i = i_begin to i_end do
-          s.s_priorities_bitmap.[i] <- priochar
+          Bytes.set s.s_priorities_bitmap i priochar
         done
       end
     else
@@ -953,7 +953,7 @@ the t_chunk_of_block and t_blocks_of_chunk fields. *)
        List.iter (fun tt ->
          set_file_fd tt.t_file (file_fd t.t_file)
        ) tail
-   | tprim :: tail ->
+   | tprim :: _ ->
        set_file_fd t.t_file (file_fd tprim.t_file)
    | [] -> assert false)
 
@@ -1015,7 +1015,7 @@ exception Not_preallocated_block_found
 
 let is_fully_preallocated t interval_begin interval_end =
   try
-    iter_disk_space (fun s fd disk_block ->
+    iter_disk_space (fun s _fd disk_block ->
       if not(Bitv.get s.s_disk_allocated disk_block) then
         raise Not_preallocated_block_found
     ) t interval_begin interval_end;
@@ -1034,7 +1034,7 @@ let preallocate_disk_space t interval_begin interval_end =
   ) t interval_begin interval_end
 
 let mark_disk_space_preallocated t interval_begin interval_end =
-  iter_disk_space (fun s fd disk_block ->
+  iter_disk_space (fun s _fd disk_block ->
     Bitv.set s.s_disk_allocated disk_block true
   ) t interval_begin interval_end
 
@@ -1050,7 +1050,7 @@ let check_finished t =
   | FilePaused -> 
       false
   | FileDownloading ->
-      if VB.existsi (fun i c -> c <> VB.State_verified)
+      if VB.existsi (fun _ c -> c <> VB.State_verified)
         t.t_converted_verified_bitmap then false
       else begin
         if file_size file <> file_downloaded t.t_file then
@@ -1960,14 +1960,14 @@ let print_uploaders s =
     | EmptyBlock -> lprintf "_"
     | CompleteBlock -> lprintf "C"
     | VerifiedBlock -> lprintf "V"
-    | PartialBlock b ->
+    | PartialBlock _ ->
         if s.s_nuploading.(i) > 9 then
           lprintf "X"
         else
           lprintf "%d" s.s_nuploading.(i)
   ) s.s_blocks;
   lprint_newline ();
-  Array.iteri (fun i b ->
+  Array.iteri (fun _ b ->
     match b with
     | EmptyBlock -> lprintf "_"
     | CompleteBlock -> lprintf "C"
@@ -2205,7 +2205,7 @@ let select_blocks up =
               List.fold_left (fun acc t ->
                 acc + 
                   (memoize memoize_remaining_blocks_in_chunk
-                    (fun (tnum, i) ->
+                    (fun (_tnum, i) ->
                       let chunk = t.t_chunk_of_block.(i) in
                       List.fold_left (fun acc b ->
                         if b <> i &&
@@ -2382,7 +2382,7 @@ let select_blocks up =
               else if cmp > 0 then [chunk_blocks_indexes], this_chunk_specimen
               else chunk_blocks_indexes :: best_choices, specimen in
         
-        let current_chunk_num, current_chunk_blocks_indexes, 
+        let _current_chunk_num, current_chunk_blocks_indexes, 
           best_choices, specimen =
           Array2.subarray_fold_lefti (fun 
             ((current_chunk_num, current_chunk_blocks_indexes, 
@@ -2400,7 +2400,7 @@ let select_blocks up =
                 | [] -> 
                     (* no previous chunk *)
                     (chunk_num, [n], best_choices, specimen)
-                | h :: q ->
+                | _ :: _ ->
                     let new_best_choices, new_specimen =
                       keep_best_chunks current_chunk_blocks_indexes best_choices specimen in
                     (chunk_num, [n], new_best_choices, new_specimen)
@@ -2939,7 +2939,7 @@ let present_intervals s =
             (last_interval_begin, interval_end) :: other_intervals in
 
   List.rev (
-    Array2.fold_lefti (fun acc i b -> 
+    Array2.fold_lefti (fun acc i _ -> 
       match s.s_blocks.(i) with
       | EmptyBlock -> acc
       | CompleteBlock | VerifiedBlock ->
@@ -3284,7 +3284,7 @@ let merge f1 f2 =
   in
 
   List.iter (fun (s, filename) ->
-    Array.iteri (fun i nuploading ->
+    Array.iteri (fun _ nuploading ->
       if nuploading > 0 then
         failwith (Printf.sprintf "%s is currently being downloaded" filename)
     ) s.s_nuploading
@@ -3355,8 +3355,8 @@ module SwarmerOption = struct
            in
            s.s_strategy <- if order then AdvancedStrategy else LinearStrategy);
           (try
-            let bitmap = Bitv.of_string (get_value "file_disk_allocation_bitmap"
-              value_to_string) in
+            let bitmap = Bitv.of_bytes (Bytes.of_string (get_value "file_disk_allocation_bitmap"
+              value_to_string)) in
             if Bitv.length bitmap = Bitv.length s.s_disk_allocated then
               s.s_disk_allocated <- bitmap
           with _ -> ());
@@ -3498,7 +3498,7 @@ let _ =
 
 let _ =
   BasicSocket.add_infinite_timer 300. duplicate_chunks;
-  Heap.add_memstat "CommonSwarming" (fun level buf ->
+  Heap.add_memstat "CommonSwarming" (fun _level buf ->
       let counter = ref 0 in
       let nchunks = ref 0 in
       let nblocks = ref 0 in

@@ -415,7 +415,7 @@ let load filename =
                     try
                       let file = Zip.find_entry ic h in
                       lprintf_nl (_b "%s found in zip file") h;
-                      ignore(Misc.archive_extract filename "zip");
+                      ignore(Misc2.archive_extract filename "zip");
                       let bl = load_merge bl_empty file.Zip.filename true in
                       if bl_length bl = 0 then
                         raise Not_found
@@ -444,7 +444,7 @@ let load filename =
             let filetype =
               if String2.check_suffix ext ".bz2" then "bz2" else "gz" in
             (try
-              let s = Misc.archive_extract filename filetype in
+              let s = Misc2.archive_extract filename filetype in
               load_merge bl_empty s true
             with e ->
               lprintf_nl "Exception %s while extracting from %s"

@@ -13,11 +13,13 @@
   ip_set
   ip
   littleEndian
-  ; mailer
+  mailer
   tcpBufferedSocket
   tcpServerSocket
   ; terminal
   udpSocket
-  ; upnpClient
-  )
- (libraries mldonkey_lib))
+  upnpClient)
+ (libraries mldonkey_lib)
+ (foreign_stubs
+  (language c)
+  (names upnp_stubs)))

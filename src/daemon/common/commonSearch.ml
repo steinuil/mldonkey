@@ -102,7 +102,7 @@ let search_of_args args =
         iter args ((QHasField(Field_Type, filetype)) :: q)
     | "-Video"  :: args ->
         iter args ((QHasField(Field_Type, "Video")) :: q)
-    | "-Audio"  :: filetype :: args ->
+    | "-Audio"  :: _filetype :: args ->
         iter args ((QHasField(Field_Type, "Audio")) :: q)
     | "-format"  :: format :: args ->
         iter args ((QHasField(Field_Format, format)) :: q)
@@ -459,55 +459,55 @@ let custom_query buf query =
           iter_hidden q1;
           iter_hidden q2;
       
-      | Q_KEYWORDS (label, default) ->
+      | Q_KEYWORDS (_label, default) ->
           Printf.bprintf buf 
             "<input type=hidden name=keywords value=\"%s\">"
             default
       
-      | Q_MINSIZE (label, default) ->
+      | Q_MINSIZE (_label, default) ->
           Printf.bprintf  buf 
             "<input type=hidden name=minsize value=\"%s\">
            <input type=hidden name=minsize_unit value=\"1\">" default
       
-      | Q_MAXSIZE (label, default) ->
+      | Q_MAXSIZE (_label, default) ->
           Printf.bprintf  buf 
             "<input type=hidden name=maxsize value=\"%s\">
            <input type=hidden name=maxsize_unit value=\"1\">" default
       
-      | Q_MP3_BITRATE (label, default) -> 
+      | Q_MP3_BITRATE (_label, default) -> 
           Printf.bprintf buf 
             "<input type=hidden name=bitrate value=\"%s\">"
             default
       
-      | Q_MP3_ALBUM (label, default) -> 
+      | Q_MP3_ALBUM (_label, default) -> 
           Printf.bprintf buf 
             "<input type=album name=bitrate value=\"%s\">"
             default
       
-      | Q_MP3_TITLE (label, default) -> 
+      | Q_MP3_TITLE (_label, default) -> 
           Printf.bprintf  buf 
             "<input type=hidden name=title value=\"%s\">"
             default
       
-      | Q_MP3_ARTIST (label, default) -> 
+      | Q_MP3_ARTIST (_label, default) -> 
           Printf.bprintf  buf 
             "<input type=hidden name=artist value=\"%s\">"
             default
       
-      | Q_MEDIA (label, default) -> 
+      | Q_MEDIA (_label, default) -> 
           Printf.bprintf  buf 
             "<input type=hidden name=media value=\"%s\">
           <input type=hidden name=media_propose value=\"\">"
             default
       
       
-      | Q_FORMAT (label, default) -> 
+      | Q_FORMAT (_label, default) -> 
           Printf.bprintf  buf 
             "<input type=hidden name=format value=\"%s\">
           <input type=hidden name=format_propose value=\"\">"
             default
       
-      | Q_MODULE (label, q) -> 
+      | Q_MODULE (_, q) -> 
           iter_hidden q
     
     in
@@ -933,7 +933,7 @@ let local_search s =
   Local.find s
   
 let result_format_of_name name = 
-  match String.lowercase (Filename2.last_extension name ) with
+  match String.lowercase_ascii (Filename2.last_extension name ) with
     ".mpeg" -> "mpg"
   | ".jpeg" -> "jpg"
   | "" -> ""
@@ -942,7 +942,7 @@ let result_format_of_name name =
       n
     
 let result_media_of_name name = 
-  match String.lowercase (Filename2.last_extension name ) with
+  match String.lowercase_ascii (Filename2.last_extension name ) with
     ".mpg" | ".mpeg" | ".avi" | ".ogm" | ".divx" | ".mov" -> "Video"
   | ".mp3" | ".wav" | ".ogg" -> "Audio"
   | ".txt" | ".doc" -> "Doc"
@@ -953,7 +953,7 @@ let result_media_of_name name =
 
   
 let _ =
-  Heap.add_memstat "CommonSearch" (fun level buf ->
+  Heap.add_memstat "CommonSearch" (fun _level buf ->
       let mem = Filter.stats () in
       Printf.bprintf buf "  Filtering index memory: %d\n" mem;
       

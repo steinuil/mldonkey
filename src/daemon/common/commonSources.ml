@@ -320,7 +320,7 @@ module Make(M:
 (*                                                                       *)
 (*************************************************************************)
 
-     let request_score r = r.request_score
+     (* let request_score r = r.request_score *)
 
      let set_score_part r score =
        r.request_score <- score
@@ -364,7 +364,7 @@ module Make(M:
          last_time () - !!min_reask_delay - throttle_delay in
        (try
           Queue.iter
-            (fun (time, s) ->
+            (fun (time, _) ->
                if time >= ready_threshold then raise BreakOutOfLoop;
                incr ready_count
             ) m.manager_sources.(q)
@@ -430,7 +430,7 @@ module Make(M:
        for i = good_sources_queue to old_sources1_queue do
          let lookin = file.manager_sources.(i) in
          try
-           Queue.iter (fun (time, s) ->
+           Queue.iter (fun (time, _) ->
               if time >= ready_threshold then raise BreakOutOfLoop;
               incr ready_count
            ) lookin
@@ -1213,8 +1213,8 @@ module Make(M:
 (*                                                                       *)
 (*************************************************************************)
      (* get number of sources for a file*)
-     let number_of_sources f =
-       f.manager_all_sources
+     (* let number_of_sources f =
+       f.manager_all_sources *)
 
 (*************************************************************************)
 (*                                                                       *)
@@ -1258,9 +1258,9 @@ module Make(M:
 (*                                                                       *)
 (*************************************************************************)
 
-     let find_source_by_num num =
+     (* let find_source_by_num num =
        let finder =  { dummy_source with source_num = num } in
-       H.find sources_by_num finder
+       H.find sources_by_num finder *)
 
 (*************************************************************************)
 (*                                                                       *)
@@ -1700,7 +1700,7 @@ module Make(M:
                  let f = m.manager_file () in
                  let q = m.manager_sources.(new_sources_queue) in
                  if file_state f = FileDownloading && Queue.length q > 0 then
-                   let (request_time, s) = Queue.head q in
+                   let (_request_time, s) = Queue.head q in
                    source_connecting s;
                    if M.direct_source s.source_uid then begin
                      incr extr;
@@ -2012,7 +2012,7 @@ connected if needed *)
 (*************************************************************************)
 
      let () =
-       Heap.add_memstat M.module_name (fun level buf ->
+       Heap.add_memstat M.module_name (fun _level buf ->
 
          let nsources_per_queue = Array.make nqueues 0 in
          let nready_per_queue = Array.make nqueues 0 in
@@ -2076,5 +2076,3 @@ connected if needed *)
        )
 
    end)
-
-

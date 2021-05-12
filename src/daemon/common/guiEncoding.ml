@@ -56,7 +56,8 @@ let gui_send writer sock t =
 
 ****************)
 
-let buf = () (* lots of buf variables here. Be sure not to use a previously
+(* let buf = () *)
+(* lots of buf variables here. Be sure not to use a previously
   defined one *)
     
 let buf_list buf f list =
@@ -404,7 +405,7 @@ let buf_kind proto buf k cc =
       buf_int8 buf 1; buf_hostname proto buf name; buf_md4 buf md4;
         if proto > 38 then begin buf_ip2 proto buf ip cc; buf_int16 buf port end
       
-let buf_partial_file proto buf f =
+(* let buf_partial_file proto buf f =
   buf_int buf f.file_num;
   if f.file_fields.Fields_file_info.file_network then begin
       buf_int8 buf 1;
@@ -482,9 +483,9 @@ let buf_partial_file proto buf f =
   if f.file_fields.Fields_file_info.file_comment then begin
       buf_int8 buf 18;
       buf_string buf f.file_comment
-    end          
+    end           *)
       
-let buf_file_field proto buf field =
+(* let buf_file_field proto buf field =
   match field with
   | Fields_file_info.File_network x ->
       buf_int8 buf 1;
@@ -542,7 +543,7 @@ let buf_file_field proto buf field =
       buf_int buf x
   | Fields_file_info.File_comment x ->
       buf_int8 buf 18;
-      buf_string buf x
+      buf_string buf x *)
     
 let magic_string m =
   match m with
@@ -754,7 +755,7 @@ let buf_shared_info proto buf s =
   if proto > 40 then
     buf_string buf (magic_string s.shared_magic)
 
-let buf_stat_info proto buf n =
+let buf_stat_info _proto buf n =
   buf_string buf n.string_long;
   buf_string buf n.string_short;
   buf_int buf n.seen;

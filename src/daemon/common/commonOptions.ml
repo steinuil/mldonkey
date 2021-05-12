@@ -1584,10 +1584,10 @@ let _ =
 
 let () =
   option_hook create_file_mode (fun _ ->
-      Unix32.create_file_mode := Misc.int_of_octal_string !!create_file_mode
+      Unix32.create_file_mode := Misc2.int_of_octal_string !!create_file_mode
   );
   option_hook create_dir_mode (fun _ ->
-      Unix32.create_dir_mode := Misc.int_of_octal_string !!create_dir_mode
+      Unix32.create_dir_mode := Misc2.int_of_octal_string !!create_dir_mode
   )
 
 let create_mlsubmit = define_expert_option current_section ["create_mlsubmit"]

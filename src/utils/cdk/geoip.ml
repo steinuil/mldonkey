@@ -238,7 +238,7 @@ let unpack filename =
                  (Printexc2.to_string e);
                raise e) in
          try
-           ignore(Misc.archive_extract filename "zip");
+           ignore(Misc2.archive_extract filename "zip");
            let geo_file = Filename.concat "web_infos" "GeoIP.dat" in
            (try Sys.remove geo_file with _ -> ());
            Unix2.rename file.Zip.filename geo_file;

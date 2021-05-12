@@ -223,7 +223,7 @@ let parse_bitzi_lookup file s =
 
 let query_bitzi_ticket ticket =
   match ticket.bitzi_state with
-    Bitzi_ticket xml -> ()
+    Bitzi_ticket _ -> ()
   | Bitzi_not_found -> ()
   | Bitzi_try_direct_lookup ->
       ticket.bitzi_state <- Bitzi_try_indirect_lookup;

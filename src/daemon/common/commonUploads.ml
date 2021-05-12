@@ -103,8 +103,8 @@ module IndexingSharedFiles = struct
 
     let result_names sh = [sh.shared_fullname]
     let result_size sh = sh.shared_size
-    let result_uids sh = []
-    let result_tags sh = []
+    let result_uids _ = []
+    let result_tags _ = []
 
 (* We should probably directly use the Store.index here so that all
 shared_infos are stored on disk. *)
@@ -222,7 +222,7 @@ let _ =
   network.op_network_connected <- (fun _ -> false);
   network.op_network_is_enabled <- (fun _ -> raise IgnoreNetwork);
   network.op_network_update_options <- (fun _ -> raise IgnoreNetwork);
-  network.op_network_info <- (fun n ->
+  network.op_network_info <- (fun _ ->
       {
         network_netnum = network.network_num;
         network_config_filename = (match network.network_config_file with
@@ -314,7 +314,7 @@ let rec tiger_of_array array pos block =
   let d1 = tiger_of_array array pos (block/2) in
   let d2 = tiger_of_array array (pos+block/2) (block/2) in
   let s = Bytes.create (1 + Tiger.length * 2) in
-  s.[0] <- '\001';
+  Bytes.set s 0 '\001';
   String.blit (TigerTree.direct_to_string d1) 0 s 1 Tiger.length;
   String.blit (TigerTree.direct_to_string d2) 0 s (1+Tiger.length) Tiger.length;
   let s = Bytes.unsafe_to_string s in
@@ -348,7 +348,7 @@ let rec tiger_pos2 nblocks =
 
 let tiger_node d1 d2 =
   let s = Bytes.create (1 + Tiger.length * 2) in
-  s.[0] <- '\001';
+  Bytes.set s (0) '\001';
   String.blit (TigerTree.direct_to_string d1) 0 s 1 Tiger.length;
   String.blit (TigerTree.direct_to_string d2) 0 s (1+Tiger.length) Tiger.length;
   let s = Bytes.unsafe_to_string s in
@@ -621,7 +621,7 @@ let ask_for_uid sh uid f =
 let rec add_shared_file node sh dir_list =
   match dir_list with
     [] -> assert false
-  | [filename] ->
+  | [_filename] ->
       node.shared_files <- sh :: node.shared_files
   | dirname :: dir_tail ->
       let node =
@@ -857,7 +857,7 @@ let add_pending_slot c =
     | None -> 0
     | Some sh -> if shared_size sh <= !!small_files_slot_limit then 1 else 0) in
   let allowed_release_slots =
-    ref (Misc.percentage_of_ints !!max_upload_slots !!max_release_slots) in
+    ref (Misc2.percentage_of_ints !!max_upload_slots !!max_release_slots) in
 
 (* check current upload slots for already used special slots *)
   Intmap.iter (fun _ c ->
@@ -1038,7 +1038,7 @@ let words_of_filename =
   get_name_keywords
 
 let _ =
-  Heap.add_memstat "CommonUploads" (fun level buf ->
+  Heap.add_memstat "CommonUploads" (fun _level buf ->
    Printf.bprintf buf "  infos_by_name: %d\n" (Hashtbl.length infos_by_name);
    Printf.bprintf buf "  shareds_by_uid: %d\n" (Hashtbl.length shareds_by_uid);
    Printf.bprintf buf "  shareds_by_id: %d\n" (Hashtbl.length shareds_by_id);

@@ -40,8 +40,8 @@ let log_prefix = "[cCO]"
 let lprintf_nl fmt =
   lprintf_nl2 log_prefix fmt
 
-let lprintf_n fmt =
-  lprintf2 log_prefix fmt
+(* let lprintf_n fmt =
+  lprintf2 log_prefix fmt *)
 
 (*************************************************************************)
 (*                                                                       *)
@@ -65,7 +65,7 @@ module FileOption = struct
       | _ -> StringValue "Downloading"
     
     
-    let value_to_file is_done v =
+    let value_to_file _is_done v =
       match v with
         Options.Module assocs ->
           let get_value name conv = conv (List.assoc name assocs) in
@@ -236,7 +236,7 @@ let tag_to_value =
       | Addr _ -> assert false
       | Fint64 i -> int64_to_value i
       | Uint16 n | Uint8 n -> int_to_value n
-      | Pair (n1,n2) -> assert false
+      | Pair _ -> assert false
   )
   
 module ResultOption = struct 
@@ -365,7 +365,7 @@ let servers = define_option servers_section
 
 let rec string_of_option v =
   match v with
-    Module m -> "{ MODULE }"
+    Module _ -> "{ MODULE }"
   | StringValue s -> Printf.sprintf "STRING [%s]" s
   | IntValue i -> Printf.sprintf "INT [%Ld]" i
   | FloatValue f -> Printf.sprintf "FLOAT [%f]" f
@@ -495,9 +495,9 @@ module QueryOption = struct
 
 let searches_section = file_section searches_ini [] ""
   
-let max_saved_searches = define_option searches_section
+(* let max_saved_searches = define_option searches_section
     ["max_saved_searches"] "Maximal number of saved searches"
-    int_option 10
+    int_option 10 *)
   
 let customized_queries = define_option searches_section
   ["customized_queries"] ""
@@ -980,7 +980,7 @@ let shared_directories_including_user_commit () =
   ) !!shared_directories;
   !list
 
-let incoming_dir usedir ?user ?needed_space ?network () =
+let incoming_dir usedir ?user ?needed_space ?network:_ () =
 
   let directories =
     if usedir then
@@ -1156,8 +1156,8 @@ let backup_tar archive files =
               t_devminor = 0;
               t_prefix = "";
               t_gnu = None;} in
-            let s = String.create size in
-            Pervasives.really_input ic s 0 size;
+            let s = Bytes.create size in
+            Stdlib.really_input ic s 0 size;
             header, s) in
         Tar.output otar header s
       with
@@ -1176,8 +1176,8 @@ let backup_options () =
   let backup_prefix = "backup-" in
   let old_backups = List.rev (List.sort (fun o -> compare o)
     (List.filter (fun o -> (
-        String.lowercase (Filename2.extension o) = ".tar.gz"
-        || String.lowercase (Filename2.extension o) = ".zip")
+        String.lowercase_ascii (Filename2.extension o) = ".tar.gz"
+        || String.lowercase_ascii (Filename2.extension o) = ".zip")
           && String.sub o 0 (String.length backup_prefix) = backup_prefix)
     (Unix2.list_directory "old_config")))
   in
@@ -1200,7 +1200,7 @@ let backup_options () =
       in
       let files =
         List.sort (fun o -> compare o) (List.filter (fun o ->
-          String.lowercase (Filename2.last_extension o) = ".ini"
+          String.lowercase_ascii (Filename2.last_extension o) = ".ini"
           && o <> "file_sources.ini")
             (Unix2.list_directory file_basedir))
       in
@@ -1316,7 +1316,7 @@ let _ =
 )
 
 let _ =
-  Heap.add_memstat "CommonComplexOptions" (fun level buf ->
+  Heap.add_memstat "CommonComplexOptions" (fun _level buf ->
       Printf.bprintf buf "  friends: %d\n" (List.length !!friends);
       Printf.bprintf buf "  contacts: %d\n" (List.length !contacts);
   )

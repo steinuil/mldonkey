@@ -186,7 +186,7 @@ let shared_state s o =
   try
     match impl.impl_shared_file with
     | None -> ""
-    | Some f -> impl.impl_shared_ops.op_shared_state impl.impl_shared_val o
+    | Some _ -> impl.impl_shared_ops.op_shared_state impl.impl_shared_val o
   with _ -> ""
 
 let shared_dir = function
@@ -374,15 +374,15 @@ let shared_info s =
   impl.impl_shared_ops.op_shared_info impl.impl_shared_val
         
 let _ = 
-  Heap.add_memstat "CommonShared" (fun level buf ->
+  Heap.add_memstat "CommonShared" (fun _level buf ->
       let counter = ref 0 in
       H.iter (fun _ -> incr counter) shareds_by_num;
       Printf.bprintf buf "  shared: %d\n" !counter;
       Printf.bprintf buf "  dirnames: %d\n" (Hashtbl.length dirnames);
   )
   
-let com_shareds_by_num = shareds_by_num
-let shareds_by_num = ()
+(* let com_shareds_by_num = shareds_by_num *)
+(* let shareds_by_num = () *)
 
 (* This won't fit nicely with priorities on upload.
   Maybe the pririties could be given in another option,

@@ -82,7 +82,7 @@ let set_geoip_dat filename =
 
 let set_ip_blocking_countries cl =
   let temp_list = ref [] in
-  let cl = List.map String.uppercase cl in
+  let cl = List.map String.uppercase_ascii cl in
   Array.fill country_blocking_list 0 
     (Array.length country_blocking_list) !country_blocking_block;
   List.iter (fun cc ->
@@ -109,7 +109,7 @@ let set_ip_blocking_countries_block v =
 let _ =
   CommonWeb.add_web_kind "guarding.p2p"
     "IP blocking lists (ipfilter and guardian v2 formats)"
-    (fun url filename ->
+    (fun _url filename ->
       web_ip_blocking_list :=
         if filename = "" then
           Ip_set.bl_empty
@@ -118,12 +118,12 @@ let _ =
       update_bans ()
   );
   CommonWeb.add_web_kind "geoip.dat" "IP to country mapping database"
-    (fun url filename ->
+    (fun _url filename ->
     Geoip.init (Geoip.unpack filename);
     update_bans ()
   );
 
-  Heap.add_memstat "CommonBlocking" (fun level buf ->
+  Heap.add_memstat "CommonBlocking" (fun _level buf ->
       Printf.bprintf buf "  local ranges: %d\n" 
         (Ip_set.bl_length !ip_blocking_list);
       Printf.bprintf buf "  web ranges: %d\n" 

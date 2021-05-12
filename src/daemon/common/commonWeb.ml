@@ -63,8 +63,8 @@ let mldonkey_wget_url w f =
       H.req_url = Url.of_string w.url;
       H.req_proxy = !CommonOptions.http_proxy;
       H.req_referer = (
-        let (rule_search,rule_value) =
-          try (List.find(fun (rule_search,rule_value) ->
+        let (_rule_search,rule_value) =
+          try (List.find(fun (rule_search,_rule_value) ->
             Str.string_match (Str.regexp rule_search) w.url 0
           ) !!referers )
           with Not_found -> ("", w.url) in
@@ -105,7 +105,7 @@ let mldonkey_wget_url w f =
         let file = Filename.concat "web_infos" (Filename.basename r.H.req_url.Url.short_file) in
         r.H.req_save_to_file_time <- (begin try
             Date.time_of_string date
-          with e ->
+          with _ ->
             Unix.time ()
           end);
         if not (Sys.file_exists file) then
@@ -161,7 +161,7 @@ let mldonkey_wget_url w f =
                   (* check if other jobs are still in downloading state to avoid calling
                      function f, which might hurt other downloads for expensive functions *)
                   let others_running = ref 0 in
-                  Hashtbl.iter (fun key w ->
+                  Hashtbl.iter (fun _ w ->
                     match w.state with
                     | Some DownloadStarted -> incr others_running
                     | _ -> ()
@@ -204,7 +204,7 @@ let load_url can_fail w =
   let f =
     try
       (List.assoc w.kind !file_kinds).f w.url
-    with e -> failwith (Printf.sprintf "Unknown kind [%s]" w.kind)
+    with _ -> failwith (Printf.sprintf "Unknown kind [%s]" w.kind)
   in
   try
     lprintf_nl (_b "request %s (%s)") w.kind w.url;
@@ -224,7 +224,7 @@ let load_url can_fail w =
 (*************************************************************************)
 
 let load_web_infos core_start force =
-  Hashtbl.iter (fun key w ->
+  Hashtbl.iter (fun _ w ->
     if (core_start && w.period = 0) || (w.period <> 0 && !hours mod w.period = 0) || force then
       begin
         try
@@ -248,7 +248,7 @@ let _ =
       lprintf_nl (_b "parsing feed %s (rss)") url;
       let c =
         (try
-          let rss_c = Rss.channel_of_file filename in
+          let rss_c, _ = Rss.channel_of_file filename in
           (try Sys.remove filename with _ -> ());
           rss_c
         with Xml.Error _ ->
@@ -269,7 +269,7 @@ let _ =
               done
              with 
              | End_of_file -> ()
-             | Unix.Unix_error (code, f, arg) ->
+             | Unix.Unix_error (code, _, _) ->
                  lprintf_nl "%s failed: %s" !!rss_preprocessor (Unix.error_message code));
             (try Unix.close pipe_out with _ -> ());
             (try Sys.remove filename with _ -> ());
@@ -279,8 +279,9 @@ let _ =
               lprintf_nl (_b "%s produced empty content for feed %s, program missing?") !!rss_preprocessor url;
               raise Not_found
             end;
-            Rss.channel_of_string result
-          with Unix.Unix_error (code, f, arg) ->
+            let rss_c, _ = Rss.channel_of_string result in
+            rss_c
+          with Unix.Unix_error (code, _, _) ->
             lprintf_nl (_b "%s failed: %s") !!rss_preprocessor (Unix.error_message code); raise Not_found))
       in
       let feed =

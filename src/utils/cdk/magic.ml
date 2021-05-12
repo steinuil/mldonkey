@@ -1,4 +1,4 @@
-(* Copyright 2001, 2002 b8_bavard, b8_fee_carabine, INRIA *)
+(* Copyright 2006 *)
 (*
     This file is part of mldonkey.
 
@@ -17,7 +17,10 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 
+module type MagicInfo =
+sig
+  val magic_works : unit -> bool
+  val magic_fileinfo : string -> bool -> string option
+end
 
-val gui_send : (Buffer.t -> 'a -> unit) -> TcpBufferedSocket.t -> 'a -> unit
-val from_gui : int array -> Buffer.t -> GuiProto.from_gui -> unit
-val to_gui : int array -> Buffer.t -> GuiProto.to_gui -> unit
+module M : MagicInfo = Magic_nomagic.MagicInfo

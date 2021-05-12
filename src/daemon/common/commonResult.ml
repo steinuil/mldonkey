@@ -140,7 +140,7 @@ let dummy_result = {
     result_source_network = 0;
   }
   
-let result_download rs names force user =
+let result_download rs _names _force user =
   let r = IndexedResults.get_result rs in
   let files = ref [] in
   CommonNetwork.networks_iter (fun n ->
@@ -173,7 +173,7 @@ let rec find_avail tags =
     [] -> raise Not_found
   | tag :: tail -> begin
     match tag with
-      { tag_name = Field_Availability ; tag_value = tag_value } ->
+      { tag_name = Field_Availability ; tag_value = _ } ->
       tag
     | _ -> find_avail tail
   end
@@ -202,7 +202,7 @@ let update_or_create_avail tags =
   tag :: tags
   
 let _ = 
-  Heap.add_memstat "CommonResult" (fun level buf ->
+  Heap.add_memstat "CommonResult" (fun _level buf ->
       let counter = ref 0 in
       Hashtbl.iter (fun _ _ -> incr counter) results_by_num;
       Printf.bprintf buf "  results_by_num: %d\n" !counter;

@@ -17,7 +17,24 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 
-
-val gui_send : (Buffer.t -> 'a -> unit) -> TcpBufferedSocket.t -> 'a -> unit
-val from_gui : int array -> Buffer.t -> GuiProto.from_gui -> unit
-val to_gui : int array -> Buffer.t -> GuiProto.to_gui -> unit
+open Indexer
+  
+    
+module FullMake (Doc : Doc) : sig
+    
+    type   index
+    val create : unit ->  index
+    
+    val add :  index -> string ->  Doc.t -> int -> unit
+    
+    val clear :  index -> unit
+    
+    val filter_words :  index -> string list -> unit
+    val clear_filter :  index -> unit
+    val filtered :  Doc.t -> bool
+    val query : index -> Doc.t query -> Doc.t array          
+    val query_map : index -> Doc.t query -> Doc.t Intmap.t
+      
+    val stats : index -> int
+  end
+  

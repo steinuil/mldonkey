@@ -111,7 +111,7 @@ let dummy_client_impl = {
     impl_client_ops = Obj.magic None;
   }
 
-let dummy_client = as_client dummy_client_impl
+(* let dummy_client = as_client dummy_client_impl *)
 
 module H = Weak.Make(struct
       type t = client
@@ -375,12 +375,12 @@ let set_client_disconnected c reason =
     Connected n -> set_client_state c (NotConnected (reason, n))
   | _ ->  set_client_state c (NotConnected (reason, -1))
 
-let new_client (client : 'a client_impl) =
+(* let new_client (client : 'a client_impl) =
   incr client_counter;
   client.impl_client_num <- !client_counter;
   let (client : client) = Obj.magic client in
   H.add clients_by_num client;
-  client_must_update client
+  client_must_update client *)
 
 let book_client_num () =
   incr client_counter;
@@ -404,7 +404,7 @@ let disconnect_all_clients () =
   Intmap.iter (fun _ c -> client_disconnect c) !uploaders
 
 let _ =
-  Heap.add_memstat "CommonClient" (fun level buf ->
+  Heap.add_memstat "CommonClient" (fun _level buf ->
       let counter = ref 0 in
       H.iter (fun _ -> incr counter) clients_by_num;
       Printf.bprintf buf "  clients: %d\n" !counter;
@@ -420,7 +420,7 @@ let clients_get_all () =
 (* the next line is to prevent any code after it from
    directly accessing the hashtable.
  *)
-let clients_by_num = ()
+(* let clients_by_num = () *)
 
 let client_new_file (client :client) (dirname:string) r =
   CommonEvent.add_event (Client_new_file_event
@@ -437,7 +437,7 @@ let client_print_html c o =
         ("", "sr", n.network_name);
         ("", "sr", (match info.G.client_kind with
           Indirect_location (_ , _, _, _) -> Printf.sprintf "I"
-        | Known_location (ip, port) -> Printf.sprintf "D") );
+        | Known_location (_, _) -> Printf.sprintf "D") );
         (String.escaped info.G.client_name, "sr", client_short_name info.G.client_name); ]
 
 let client_print c o =

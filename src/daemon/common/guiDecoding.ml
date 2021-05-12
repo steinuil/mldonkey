@@ -38,7 +38,7 @@ gui_cut_messages is a reader for TcpBufferedSocket.t that will cut the stream
   in GUI messages, and call f on each message.
 *)
   
-let gui_cut_messages f sock nread =
+let gui_cut_messages f sock _nread =
   let b = buf sock in
   try
     while b.len >= 4 do
@@ -698,7 +698,7 @@ let get_addr proto s pos =
       Ip.addr_of_string name, pos
   | _ -> assert false
   in
-  let blocked, pos = 
+  let _blocked, pos = 
     if proto > 33 then get_bool s pos, pos+1 
     else false, pos 
   in
@@ -1012,7 +1012,7 @@ let get_shared_info_version_10 proto s pos =
       get_sub_files proto s pos
     else [], pos
   in
-  let magic, pos = 
+  let magic, _ = 
     if proto > 40 then
       let ms, pos = get_string s (pos) in
       Some ms, pos
@@ -1061,12 +1061,12 @@ let from_gui (proto : int array) opcode s =
            let pass = fst (get_string s 2) in Password ((CommonUserDb.admin_user ()).CommonTypes.user_name, pass)
         else
         let pass,pos = get_string s 2 in
-        let login,pos = get_string s pos in
+        let login,_ = get_string s pos in
         Password (login, pass)
 
     | 6 ->
         let local = get_bool s 2 in
-        let search, pos = get_search get_query  proto s 3 in
+        let search, _ = get_search get_query  proto s 3 in
         search.search_type <- if local then LocalSearch else RemoteSearch;
         Search_query search
 
@@ -1075,14 +1075,14 @@ let from_gui (proto : int array) opcode s =
         let result_num = get_int s pos in
         Download_query (list, result_num, false)
 
-    | 8 -> let string, pos = get_string s 2 in
+    | 8 -> let string, _ = get_string s 2 in
         lprintf_nl "[gDe] Received string: [%s]" (String.escaped string);
         Url string 
 
     | 9 -> let int = get_int s 2 in RemoveServer_query int
 
     | 10 ->
-        let list, pos = get_list (fun s pos ->
+        let list, _ = get_list (fun s pos ->
               let s1, pos = get_string s pos in
               let s2, pos = get_string s pos in
               (s1,s2), pos) s 2 in
@@ -1098,7 +1098,7 @@ let from_gui (proto : int array) opcode s =
 
     | 13 ->
         let int = get_int s 2 in 
-        let s, pos = get_string s 6 in
+        let s, _ = get_string s 6 in
         SaveFile (int, s)
 
     | 14 ->
@@ -1116,7 +1116,7 @@ let from_gui (proto : int array) opcode s =
     | 17 -> RemoveAllFriends
 
     | 18 -> 
-        let string, pos = get_string s 2 in
+        let string, _ = get_string s 2 in
         FindFriend string
 
     | 19 -> 
@@ -1150,7 +1150,7 @@ let from_gui (proto : int array) opcode s =
 
     | 26 ->
         let int = get_int s 2 in
-        let tag, pos = get_mp3  s 6 in
+        let tag, _ = get_mp3  s 6 in
         ModifyMp3Tags (int, tag)
 
     | 27 ->
@@ -1159,11 +1159,11 @@ let from_gui (proto : int array) opcode s =
 
     | 28 ->
         let s1, pos = get_string s 2 in
-        let s2, pos = get_string s pos in
+        let s2, _ = get_string s pos in
         SetOption (s1, s2)
 
     | 29 ->
-        let s1, pos = get_string s 2 in
+        let s1, _ = get_string s 2 in
         Command s1
 
     | 30 ->
@@ -1204,7 +1204,7 @@ let from_gui (proto : int array) opcode s =
 
     | 39 ->
         let int = get_int s 2 in 
-        let room_message, pos = get_message  s 6 in        
+        let room_message, _ = get_message  s 6 in        
         let msg = SendMessage (int, room_message) in
         begin
           match msg with
@@ -1223,11 +1223,11 @@ let from_gui (proto : int array) opcode s =
         let int = get_int s 2 in 
         BrowseUser  int
 
-    | 42 -> let s, pos = get_search get_query  proto s 2 in Search_query s
+    | 42 -> let s, _ = get_search get_query  proto s 2 in Search_query s
 
     | 43 -> 
         let int = get_int s 2 in 
-        let message, pos = get_string s 6 in
+        let message, _ = get_string s 6 in
         MessageToClient (int, message)
 
     | 44 -> GetConnectedServers
@@ -1237,7 +1237,7 @@ let from_gui (proto : int array) opcode s =
     | 46 -> GetDownloadedFiles
 
     | 47 ->
-        let list, pos = get_list (fun s pos -> 
+        let list, _ = get_list (fun s pos -> 
               (get_int s pos, 1 = get_uint8 s (pos+4)), pos+5) s 2 in
         GuiExtensions list
 
@@ -1269,7 +1269,7 @@ let from_gui (proto : int array) opcode s =
         AddServer_query (net, ip, port) 
 
     | 55 ->
-        let list, pos = get_list  (fun s pos ->
+        let list, _ = get_list  (fun s pos ->
               let opcode = get_int16 s pos in
               let from_guip = get_bool s (pos+2) in
               let proto = get_int s (pos+3) in
@@ -1279,7 +1279,7 @@ let from_gui (proto : int array) opcode s =
 
     | 56 ->
         let num = get_int s 2 in
-        let new_name, pos = get_string s 6 in
+        let new_name, _ = get_string s 6 in
         RenameFile(num, new_name)
 
     | 57 ->
@@ -1302,7 +1302,7 @@ let from_gui (proto : int array) opcode s =
 
     | 63 ->
         let n = get_int s 2 in
-        let s, pos = get_string s 6 in
+        let s, _ = get_string s 6 in
         NetworkMessage (n, s)
 
     | 64 ->
@@ -1314,7 +1314,7 @@ let from_gui (proto : int array) opcode s =
     (* introduced with protocol 32 *)
     | 66 ->
          let num = get_int s 2 in
-         let name, pos = get_string s 6 in
+         let name, _ = get_string s 6 in
          ServerRename (num, name)
 
     | 67 ->
@@ -1376,7 +1376,7 @@ let to_gui (proto : int array)  opcode s =
         CoreProtocol (version, max_to_gui, max_from_gui)
     
     | 1 ->
-        let list, pos = get_list (fun s pos ->
+        let list, _ = get_list (fun s pos ->
               let module M = Options in
               let name, pos = get_string s pos in
               let value, pos = get_string s pos in
@@ -1388,14 +1388,14 @@ let to_gui (proto : int array)  opcode s =
         Options_info list
     
     | 3 ->
-        let list, pos = get_list (fun s pos ->
+        let list, _ = get_list (fun s pos ->
               let name, pos = get_string s pos in
               let q, pos = get_query  s pos in
               (name, q), pos) s 2 in
         DefineSearches list
     
     | 4 -> 
-        let r, pos = get_result proto  s 2 in
+        let r, _ = get_result proto  s 2 in
         Result_info r
     
     | 5 ->
@@ -1409,13 +1409,13 @@ let to_gui (proto : int array)  opcode s =
         Search_waiting (n1,n2)
     
     | 7 -> 
-        let file_info, pos = get_file proto  s 2 in
+        let file_info, _ = get_file proto  s 2 in
         File_info file_info
     
     | 8 ->
         let n = get_int s 2 in
         let size,pos = get_uint64_2 proto s 6 in
-        let rate, pos = get_float  s pos in
+        let rate, _ = get_float  s pos in
         File_downloaded (n, size, rate, BasicSocket.last_time ())
     
     | 9 ->
@@ -1432,7 +1432,7 @@ let to_gui (proto : int array)  opcode s =
     | 11 ->
         let n1 = get_int s 2 in
         let n2, pos = get_int64_28 proto s 6 in
-        let n3, pos = get_int64_28 proto s pos in
+        let n3, _ = get_int64_28 proto s pos in
         Server_busy (n1,n2,n3)
     
     | 12 -> 
@@ -1442,20 +1442,20 @@ let to_gui (proto : int array)  opcode s =
     
     | 13 -> 
         let int = get_int s 2 in
-        let host_state, pos = get_host_state proto s 6 in
+        let host_state, _ = get_host_state proto s 6 in
         Server_state (int,host_state)
     
     | 14 ->
-        let server_info, pos = get_server proto  s 2 in
+        let server_info, _ = get_server proto  s 2 in
         Server_info server_info
     
     | 15 -> 
-        let client_info, pos = get_client proto  s 2 in
+        let client_info, _ = get_client proto  s 2 in
         Client_info client_info
     
     | 16 -> 
         let int = get_int s 2 in
-        let host_state, pos = get_host_state proto s 6 in
+        let host_state, _ = get_host_state proto s 6 in
         Client_state (int, host_state)
     
     | 17 ->
@@ -1470,24 +1470,24 @@ let to_gui (proto : int array)  opcode s =
         Client_file (n1, s1, n2)
     
     | 19 -> 
-        let string, pos = get_string s 2 in
+        let string, _ = get_string s 2 in
         Console string
     
     | 20 -> 
-        let network_info, pos = get_network proto  s 2 in
+        let network_info, _ = get_network proto  s 2 in
         Network_info network_info
     
     | 21 ->
-        let user_info, pos = get_user proto s 2 in
+        let user_info, _ = get_user proto s 2 in
         User_info user_info
     
     | 22 ->
-        let room_info, pos = get_room proto  s 2 in
+        let room_info, _ = get_room proto  s 2 in
         Room_info room_info
     
     | 23 ->
         let int = get_int s 2 in
-        let room_message, pos = get_message  s 6 in
+        let room_message, _ = get_message  s 6 in
         Room_message (int, room_message) 
     
     | 24 ->
@@ -1514,26 +1514,26 @@ let to_gui (proto : int array)  opcode s =
           ndownloaded_files = 0;
         }
     
-    | 26 -> let s, pos = get_server proto  s 2 in Server_info s
+    | 26 -> let s, _ = get_server proto  s 2 in Server_info s
     | 27 -> 
         let int = get_int s 2 in 
-        let message, pos = get_string s 6 in
+        let message, _ = get_string s 6 in
         MessageFromClient (int, message)
     
     | 28 -> 
-        let list, pos = get_list (get_server proto ) s 2 in
+        let list, _ = get_list (get_server proto ) s 2 in
         ConnectedServers list
     
     | 29 ->
-        let list, pos = get_list (get_file proto ) s 2 in
+        let list, _ = get_list (get_file proto ) s 2 in
         DownloadFiles list
     
     | 30 ->
-        let list, pos = get_list (get_file proto ) s 2 in
+        let list, _ = get_list (get_file proto ) s 2 in
         DownloadedFiles list
     
     | 31 ->
-        let room_info, pos = get_room proto  s 2 in
+        let room_info, _ = get_room proto  s 2 in
         Room_info room_info
     
     | 32 -> 
@@ -1682,27 +1682,27 @@ let to_gui (proto : int array)  opcode s =
         }
     
     |  40 ->
-        let file, pos = get_file proto  s 2 in
+        let file, _ = get_file proto  s 2 in
         File_info file
     
     | 41 ->
-        let list, pos = get_list (get_file proto ) s 2 in
+        let list, _ = get_list (get_file proto ) s 2 in
         DownloadFiles list
     
     | 42 ->
-        let list, pos = get_list (get_file proto ) s 2 in
+        let list, _ = get_list (get_file proto ) s 2 in
         DownloadedFiles list
     
     | 43 ->
-        let file, pos = get_file proto  s 2 in
+        let file, _ = get_file proto  s 2 in
         File_info file
     
     | 44 ->
-        let list, pos = get_list (get_file proto ) s 2 in
+        let list, _ = get_list (get_file proto ) s 2 in
         DownloadFiles list
     
     | 45 ->
-        let list, pos = get_list (get_file proto ) s 2 in
+        let list, _ = get_list (get_file proto ) s 2 in
         DownloadedFiles list
     
     | 46 ->
@@ -1730,7 +1730,7 @@ let to_gui (proto : int array)  opcode s =
         let udp_download_rate = get_int s 42 in
         let ndownloading_files = get_int s 46 in
         let ndownloaded_files = get_int s 50 in
-        let connected_networks, pos = get_list
+        let connected_networks, _ = get_list
             (fun s pos -> 
               if proto > 17 then 
                 (get_int s pos, get_int s (pos+4)), pos+8
@@ -1760,33 +1760,33 @@ let to_gui (proto : int array)  opcode s =
     | 51 ->
         let clients,pos = get_list (fun s pos ->
               get_int s pos, pos+4) s 2 in
-        let servers,pos = get_list (fun s pos ->
+        let servers,_ = get_list (fun s pos ->
               get_int s pos, pos+4) s pos in
         CleanTables (clients, servers)
 
     | 52 -> 
-        let file, pos = get_file proto  s 2 in
+        let file, _ = get_file proto  s 2 in
         File_info file
     | 53 -> 
-        let list, pos = get_list (get_file proto ) s 2 in
+        let list, _ = get_list (get_file proto ) s 2 in
         DownloadFiles list
     | 54 -> 
-        let list, pos = get_list (get_file proto ) s 2 in
+        let list, _ = get_list (get_file proto ) s 2 in
         DownloadedFiles list
 
     | 55 ->
-        let list, pos = get_list get_int_pos s 2 in
+        let list, _ = get_list get_int_pos s 2 in
         Uploaders list
     | 56 ->
-        let list, pos = get_list get_int_pos s 2 in
+        let list, _ = get_list get_int_pos s 2 in
         Pending list
         
     | 57 ->
-        let s, pos = get_search get_string proto s 2 in
+        let s, _ = get_search get_string proto s 2 in
         Search s
         
     | 58 ->
-        let s, pos = get_string s 2 in 
+        let s, _ = get_string s 2 in 
         Version s
         
     | _ -> 

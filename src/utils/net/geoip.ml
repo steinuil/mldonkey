@@ -238,7 +238,7 @@ let unpack filename =
                  (Printexc2.to_string e);
                raise e) in
          try
-           ignore(Misc.archive_extract filename "zip");
+           ignore(Misc2.archive_extract filename "zip");
            let geo_file = Filename.concat "web_infos" "GeoIP.dat" in
            (try Sys.remove geo_file with _ -> ());
            Unix2.rename file.Zip.filename geo_file;
@@ -257,7 +257,7 @@ let unpack filename =
         if ext = ".bz2" || ext = ".dat.bz2" then "bz2" else "gz" in
       (try
          let geo_file = Filename.concat "web_infos" "GeoIP.dat" in
-         let s = Misc.archive_extract filename filetype in
+         let s = Misc2.archive_extract filename filetype in
          (try Sys.remove geo_file with _ -> ());
          Unix2.rename s geo_file;
          geo_file
@@ -275,7 +275,7 @@ let open_geoip_db filename =
   try
     let f = open_in filename in
     let size = in_channel_length f in
-    let map = Misc.map_file f in
+    let map = Misc2.map_file f in
 
     let new_database ?offset dbtype =
       let read_segment_size () =
