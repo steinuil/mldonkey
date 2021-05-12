@@ -42,7 +42,7 @@ let days = [| "Sun"; "Mon"; "Tue"; "Wed"; "Thu"; "Fri"; "Sat" |]
 let month = ref (fun n -> months.(n))
 let day = ref (fun n -> days.(n))
   
-let string_of_date formats tm _date =
+let string_of_date formats tm date =
   List.fold_left (fun s format ->
       match format with
         Second -> Printf.sprintf "%s%02d" s tm.Unix.tm_sec
@@ -58,7 +58,7 @@ let string_of_date formats tm _date =
       | Colon -> s ^ ":"
       | Dot -> s ^ "."
       | Minus -> s ^ "-"
-      | Zone -> s
+      | Zone -> Printf.sprintf "%s%s" s (Rss_date.mk_timezone date)
       | Gmt -> s ^ "GMT"
   ) "" formats
 

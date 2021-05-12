@@ -460,7 +460,7 @@ type telnet_conn = {
 let iac_will_8bit = "\255\253\000"
 let iac_will_naws = "\255\253\031"
 
-let user_reader o telnet sock nread =
+let user_reader o telnet sock _nread =
   let b = TcpBufferedSocket.buf sock in
   let rec iter () =
     if b.len > 0 then
@@ -559,11 +559,11 @@ let user_reader o telnet sock nread =
       after_telnet_output o sock
 
 
-let user_closed sock  msg =
+let user_closed sock _msg =
   user_socks := List2.removeq sock !user_socks;
   ()
 
-let telnet_handler t event =
+let telnet_handler _t event =
   match event with
     TcpServerSocket.CONNECTION (s, Unix.ADDR_INET (from_ip, from_port)) ->
       let from_ip = Ip.of_inet_addr from_ip in
@@ -634,7 +634,7 @@ let buf = Buffer.create 1000
 type http_file =
   BIN
 | HTM
-| MLHTM
+(* | MLHTM *)
 | TXT
 | UNK
 
@@ -859,9 +859,9 @@ let http_error_no_gd img_type =
       (match Autoconf.has_gd with
         true -> false
       | false -> lprintf_nl "Warning: GD support disabled"; true)
-let any_ip = Ip.of_inet_addr Unix.inet_addr_any
+let _any_ip = Ip.of_inet_addr Unix.inet_addr_any
 
-let html_open_page buf t r open_body =
+let html_open_page buf _t r open_body =
   Buffer.reset buf;
   http_add_html_header r;
 
@@ -924,7 +924,7 @@ let send_preview r file fd size filename exten =
   in
   let len = String.length exten in
   let exten = if len = 0 then exten
-      else String.lowercase (String.sub exten 1 (len - 1)) in
+      else String.lowercase_ascii (String.sub exten 1 (len - 1)) in
   http_add_bin_stream_header r (extension_to_file_ext exten);
 
   add_reply_header r "Content-Disposition"
@@ -1541,7 +1541,7 @@ let http_handler o t r =
                 read_theme_page this_page else
               if !!html_mods then !!CommonMessages.download_html_js_mods0
               else !!CommonMessages.download_html_js_old)
-        | s ->  http_send_bin_pictures r buf (String.lowercase s)
+        | s ->  http_send_bin_pictures r buf (String.lowercase_ascii s)
       with
       | Not_found ->
           let _, error_text_long, head = Http_server.error_page (Not_Found r.get_url.Url.full_file)
@@ -1560,7 +1560,7 @@ let http_handler o t r =
   let s =
     match !http_file_type with
       HTM -> html_close_page buf false; dollar_escape o true (Buffer.contents buf)
-    | MLHTM -> html_close_page buf true; dollar_escape o true (Buffer.contents buf)
+    (* | MLHTM -> html_close_page buf true; dollar_escape o true (Buffer.contents buf) *)
     | TXT
     | UNK
     | BIN -> Buffer.contents buf

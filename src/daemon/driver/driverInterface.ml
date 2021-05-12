@@ -47,8 +47,8 @@ let log_prefix = "[dIface]"
 let lprintf_nl fmt =
   lprintf_nl2 log_prefix fmt
 
-let lprintf_n fmt =
-  lprintf2 log_prefix fmt
+(* let lprintf_n fmt =
+  lprintf2 log_prefix fmt *)
 
 let binary_gui_send gui t =
   match gui.gui_sock with
@@ -195,9 +195,9 @@ let update_shared_info shared =
     end
 
   
-let catch m f =
+(* let catch m f =
   try f () with e ->
-      lprintf "Exception %s for message %s\n" (Printexc2.to_string e) m
+      lprintf "Exception %s for message %s\n" (Printexc2.to_string e) m *)
 
 let send_event gui ev = 
   match ev with
@@ -228,7 +228,7 @@ let send_event gui ev =
   | Server_new_user_event (s,u) ->
       gui_send gui (P.Server_user (server_num s, user_num u))
       
-  | Search_new_result_event (for_gui, events, int, r) ->      
+  | Search_new_result_event (for_gui, _events, int, r) ->      
       for_gui int r
 (*      gui_send gui (P.Search_result (int, result_num r)) *)
     
@@ -259,12 +259,12 @@ let send_update_file gui file_num update =
   gui_send gui file_info
   end
 
-let send_update_user gui user_num update =
+let send_update_user gui user_num _update =
   let user = user_find user_num in
   let user_info = P.User_info (user_info user) in
   gui_send gui user_info
   
-let send_update_network gui network_num update =
+let send_update_network gui network_num _update =
   let network = network_find_by_num network_num in
   let network_info = P.Network_info (network_info network) in
   gui_send gui network_info
@@ -291,12 +291,12 @@ let send_update_server gui server_num update =
   in
   gui_send gui server_info
 
-let send_update_room gui room_num update =
+let send_update_room gui room_num _update =
   let room = room_find room_num in
   let room_info = P.Room_info (room_info room) in
   gui_send gui room_info
 
-let send_update_result gui result_num update =
+let send_update_result gui result_num _update =
   let r = find_result result_num in
   let result_info = P.Result_info (IndexedResults.get_result r) in
   gui_send gui result_info  
@@ -382,7 +382,7 @@ send_update_old
 
 let console_messages = Fifo.create ()
         
-let gui_closed gui sock  msg =
+let gui_closed gui _sock  _msg =
 (*  lprintf "DISCONNECTED FROM GUI %s\n" msg; *)
   guis := List2.removeq gui !guis
 
@@ -744,7 +744,7 @@ let gui_reader (gui: gui_record) t _ =
                 if not (networks_iter_until_true
                     (fun n ->
                        try
-                         let s,r =
+                         let _s,r =
                             network_parse_url n url
                               gui.gui_conn.conn_user.ui_user
                               gui.gui_conn.conn_user.ui_user.user_default_group
@@ -1078,7 +1078,7 @@ let gui_reader (gui: gui_record) t _ =
               let l = network_stat_info_list n in
               gui_send gui (P.Stats (num, l))
 
-          | P.GiftAttach (profile, version, client) ->
+          | P.GiftAttach (profile, _version, _client) ->
               let user, pass =
                 try
                   let index = String.index profile ':' in
@@ -1189,9 +1189,9 @@ let new_gui gui_send gui_auth sock gui_type =
       GuiProto.from_gui_last_opcode));
   gui
   
-let gui_handler t event = 
+let gui_handler _t event = 
   match event with
-    TcpServerSocket.CONNECTION (s, Unix.ADDR_INET (from_ip, from_port)) ->
+    TcpServerSocket.CONNECTION (s, Unix.ADDR_INET (from_ip, _from_port)) ->
       let from_ip = Ip.of_inet_addr from_ip in
       if not !verbose_no_login then lprintf_nl "GUI connection from %s" (Ip.to_string from_ip);
       (match Ip_set.match_ip !allowed_ips_set from_ip with
@@ -1228,9 +1228,9 @@ let gui_handler t event =
           Unix.close s)
   | _ -> ()
         
-let gift_handler t event = 
+let gift_handler _t event = 
   match event with
-    TcpServerSocket.CONNECTION (s, Unix.ADDR_INET (from_ip, from_port)) ->
+    TcpServerSocket.CONNECTION (s, Unix.ADDR_INET (from_ip, _from_port)) ->
       let from_ip = Ip.of_inet_addr from_ip in
       lprintf "Gift: Connection from %s\n" (Ip.to_string from_ip);
       (match Ip_set.match_ip !allowed_ips_set from_ip with
@@ -1338,7 +1338,7 @@ let rec update_events list =
               update_client_info c;
               add_gui_event event
               
-          | File_remove_source_event (f,c) ->
+          | File_remove_source_event (f,_c) ->
               update_file_info f;
               add_gui_event event
               
@@ -1347,11 +1347,11 @@ let rec update_events list =
               update_user_info u;
               add_gui_event event
 
-          | Search_new_result_event (events, gui, int, r) ->
+          | Search_new_result_event (_events, gui, _int, r) ->
               update_result_info r;
               gui.gui_new_events <- event :: gui.gui_new_events
               
-          | Console_message_event msg | Root_console_message_event msg ->
+          | Console_message_event _ | Root_console_message_event _ ->
               Fifo.put console_messages event;
               if Fifo.length console_messages > !!gui_log_size then
                   ignore (Fifo.take console_messages);
@@ -1445,7 +1445,7 @@ let install_hooks () =
 
   ;
   
-  private_room_ops.op_room_send_message <- (fun s msg ->
+  private_room_ops.op_room_send_message <- (fun _ msg ->
       match msg with
         PrivateMessage (c, s) ->
             let ci = client_find c in

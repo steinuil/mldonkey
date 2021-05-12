@@ -61,7 +61,7 @@ let minute_timer () =
   with _ -> ());
   CommonClient.clear_upload_slots ()
 
-let hourly_timer timer =
+let hourly_timer _timer =
   incr CommonWeb.hours;
   CommonWeb.load_web_infos false false;
   if !CommonWeb.hours mod !!compaction_delay = 0 then Gc.compact ();
@@ -71,13 +71,13 @@ let hourly_timer timer =
   DriverControlers.check_calendar ();
   CommonFile.propose_filenames ()
 
-let ten_second_timer timer =
+let ten_second_timer _timer =
   if !!auto_commit then
     List.iter (fun file ->
         file_commit file
     ) !!CommonComplexOptions.done_files
 
-let second_timer timer =
+let second_timer _timer =
   (try
       update_link_stats ()
     with e ->
@@ -96,7 +96,7 @@ let start_interfaces () =
   ( 
   match !created_new_base_directory with
     None -> ()
-  | Some dir -> allowed_ips =:= !!allowed_ips
+  | Some _dir -> allowed_ips =:= !!allowed_ips
   );
 
   if !!http_port <> 0 then begin 
@@ -342,7 +342,7 @@ let load_config () =
       !more_args
       @
     !main_options)
-    (fun file -> ()
+    (fun _file -> ()
 (*      Files.dump_file file; exit 0 *)
   ) "";
 
@@ -442,7 +442,7 @@ or getting a binary compiled with glibc %s.\n\n")
 
 (* before activating network modules load all local files from web_infos/
    to avoid security holes, especially for IP blocking *)
-  Hashtbl.iter (fun key w ->
+  Hashtbl.iter (fun _key w ->
     let file = Filename.concat "web_infos" (Filename.basename w.url) in
     if Sys.file_exists file then
       try
@@ -510,7 +510,7 @@ or getting a binary compiled with glibc %s.\n\n")
   TcpBufferedSocket.set_max_connections_per_second
     (fun _ -> !!max_connections_per_second);
 
-  add_infinite_option_timer save_options_delay (fun timer ->
+  add_infinite_option_timer save_options_delay (fun _timer ->
       DriverInteractive.save_config ());
   start_interfaces ();
 
@@ -534,25 +534,25 @@ or getting a binary compiled with glibc %s.\n\n")
   history_size_for_h_graph := history_size * !!html_mods_vd_gfx_h_intervall / 60;
   history_h_step := 60 * !!html_mods_vd_gfx_h_intervall;
         
-  add_infinite_timer (float_of_int history_step) (fun timer -> 
+  add_infinite_timer (float_of_int history_step) (fun _timer -> 
     history_timeflag := (Unix.time()); 
     update_download_history (); 
     update_upload_history ());
 
-  add_infinite_timer (float_of_int !history_h_step) (fun timer -> 
+  add_infinite_timer (float_of_int !history_h_step) (fun _timer -> 
     history_h_timeflag := (Unix.time()); 
     update_h_download_history (); 
     update_h_upload_history ());
                 
   if Autoconf.system = "mingw" then
-    add_infinite_timer 1. (fun timer ->
+    add_infinite_timer 1. (fun _timer ->
         MlUnix.set_console_title (DriverInteractive.console_topic ()));
 
   List.iter
     CommonShared.shared_add_directory
   !!CommonComplexOptions.shared_directories;
 
-  add_infinite_timer 1800. (fun timer ->
+  add_infinite_timer 1800. (fun _timer ->
       DriverInteractive.browse_friends ());
 
   Options.prune_file downloads_ini;
@@ -687,8 +687,8 @@ for config files at the end. *)
         let len = 32768 in
         let s = String.make len ' ' in
         let pos = ref zero in
-        for i = 1 to !!config_files_security_space do
-          for j = 1 to 32 do (* 32 = 1 MB / 32kB *)
+        for _ = 1 to !!config_files_security_space do
+          for _ = 1 to 32 do (* 32 = 1 MB / 32kB *)
             ignore(Unix2.c_seek64 oc !pos Unix.SEEK_SET);
             Unix2.really_write oc (Bytes.unsafe_of_string s) 0 len;
             pos := !pos ++ (Int64.of_int len)

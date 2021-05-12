@@ -121,3 +121,5 @@ let map_file file =
   let open Bigarray in
   array1_of_genarray (Unix.map_file (Unix.descr_of_in_channel file)
     int8_unsigned c_layout false [|-1|])
+
+let bzlib_version_num () = ""

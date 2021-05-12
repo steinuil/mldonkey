@@ -25,6 +25,7 @@
   int64ops
   intmap
   intset
+  levenshtein
   list2
   magic
   magic_nomagic
@@ -35,6 +36,7 @@
   printexc2
   printf2
   queues
+  rss_date
   set2
   store
   string2

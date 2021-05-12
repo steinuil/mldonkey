@@ -51,8 +51,8 @@ let log_prefix = "[dCmd]"
 let lprintf_nl fmt =
   lprintf_nl2 log_prefix fmt
 
-let lprintf_n fmt =
-  lprintf2 log_prefix fmt
+(* let lprintf_n fmt =
+  lprintf2 log_prefix fmt *)
 
 let _s x = _s "DriverCommands" x
 let _b x = _b "DriverCommands" x
@@ -276,12 +276,12 @@ let _ =
   register_commands "Driver/General"
     [
 
-    "dump_heap", Arg_none (fun o ->
+    "dump_heap", Arg_none (fun _ ->
 (*        Gc.dump_heap (); *)
         "heap dumped"
     ), ":\t\t\t\tdump heap for debug";
 
-    "alias", Arg_multiple ( fun args o ->
+    "alias", Arg_multiple ( fun args _ ->
         let out = ref "" in
         if List.length args = 0 then begin
           out := "List of aliases\n\n";
@@ -314,7 +314,7 @@ let _ =
 
 
     "unalias", Arg_one (
-      fun arg o ->
+      fun arg _ ->
         (try
            let old_def = List.assoc arg !!alias_commands in
            alias_commands =:= List.remove_assoc arg !!alias_commands;
@@ -324,7 +324,7 @@ let _ =
     ), ":\t\t\t\t$bdelete a command alias\n"
        ^"\t\t\t\t\texample: \"unalias ca\"$n";
 
-    "q", Arg_none (fun o ->
+    "q", Arg_none (fun _ ->
         raise CommonTypes.CommandCloseSocket
     ), ":\t\t\t\t\t$bclose telnet$n";
     
@@ -359,7 +359,7 @@ let _ =
           _s "You are not allowed to kill MLDonkey"
         ), ":\t\t\t\t\t$bsave and kill the server$n";
 
-    "urladd", Arg_multiple (fun args o ->
+    "urladd", Arg_multiple (fun args _ ->
        let (kind, url, period) = match args with
           | [kind; url; period] -> kind, url, int_of_string period
           | [kind; url] -> kind, url, 0
@@ -374,20 +374,20 @@ let _ =
        ^"\t\t\t\t\tkind is either server.met (if the downloaded file is a server.met)\n"
        ^"\t\t\t\t\tperiod is the period between updates (in hours, default 0 = only loaded at startup)";
 
-    "urlremove", Arg_one (fun url o ->
+    "urlremove", Arg_one (fun url _ ->
         match web_infos_find url with
         | None -> "URL does not exists in web_infos"
         | Some w -> web_infos_remove w.url;
                       "removed URL from web_infos"
     ), "<url> :\t\t\tremove URL from web_infos";
 
-    "force_web_infos", Arg_multiple (fun args o ->
+    "force_web_infos", Arg_multiple (fun args _ ->
         (match args with
         | [] -> CommonWeb.load_web_infos false true;
                 "requesting all web_infos files"
         | args -> let list = ref [] in
                   List.iter (fun arg ->
-                    Hashtbl.iter (fun key w ->
+                    Hashtbl.iter (fun _key w ->
                       if w.kind = arg || w.url = arg then begin
                         CommonWeb.load_url false w;
                         list := arg :: !list
@@ -542,7 +542,7 @@ let _ =
         ""
     ), "<minutes> :\t\t\tprint activity in the last <minutes> minutes";
 
-    "clear_message_log", Arg_none (fun o ->
+    "clear_message_log", Arg_none (fun _ ->
         Fifo.clear chat_message_fifo;
         Printf.sprintf "Chat messages cleared"
      ), ":\t\t\t\tclear chat message buffer";
@@ -649,7 +649,7 @@ formID.msgText.value=\\\"\\\";
                 let fifo_list = Fifo.to_list chat_message_fifo in
                 let fifo_list = List.rev fifo_list in
                 let found_select = ref 0 in
-                List.iter (fun (t,i,num,n,s) ->
+                List.iter (fun (_,_,num,_,_) ->
                     if not (List.mem num !found_nums) then begin
 
                         found_nums := num :: !found_nums;
@@ -783,7 +783,7 @@ let _ =
           end;
     ""), ":\t\t\t\t\tlist all known servers";
 
-    "rem", Arg_multiple (fun args o ->
+    "rem", Arg_multiple (fun args _ ->
         let counter = ref 0 in
         match args with
           ["all"] ->
@@ -882,7 +882,7 @@ let _ =
           | Connected_initiating -> true
           | _ -> false
         in
-        let print_result v =
+        let print_result _ =
             print_command_result o
              (Printf.sprintf (_b "Disconnected %d server%s") !counter (Printf2.print_plural_s !counter))
         in
@@ -927,21 +927,21 @@ let _ =
         ""
     ), ":\t\t\t\t\tview friends";
 
-    "gfr", Arg_one (fun num o ->
+    "gfr", Arg_one (fun num _ ->
         let num = int_of_string num in
         let c = client_find num in
         client_browse c true;
         _s "client browse"
     ), "<client num> :\t\t\task friend files";
 
-    "friend_add", Arg_one (fun num o ->
+    "friend_add", Arg_one (fun num _ ->
         let num = int_of_string num in
         let c = client_find num in
         friend_add c;
         _s "Added friend"
     ), "<client num> :\t\tadd client <client num> to friends";
 
-    "friend_remove", Arg_multiple (fun args o ->
+    "friend_remove", Arg_multiple (fun args _ ->
         if args = ["all"] then begin
             List.iter (fun c ->
                 friend_remove c
@@ -1048,7 +1048,7 @@ let _ =
             if client_num c = n then begin
                 let rs = client_files c in
 
-                let rs = List2.tail_map (fun (s, rs) ->
+                let rs = List2.tail_map (fun (_s, rs) ->
                       let r = IndexedResults.get_result rs in
                       rs, r, 1
                   ) rs in
@@ -1098,7 +1098,7 @@ let _ =
           print_command_result o "You are not allowed to disable upload"; ""
     ), "<m> :\t\t\t\tdisable upload during <m> minutes, queue all files";
 
-    "vu", Arg_none (fun o ->
+    "vu", Arg_none (fun _ ->
         Printf.sprintf
           "Upload credits : %d minutes\nUpload disabled for %d minutes"
           !CommonGlobals.upload_credit !CommonGlobals.has_upload;
@@ -1160,7 +1160,7 @@ let _ =
         in
         if user2_is_admin o.conn_user.ui_user then begin
         (
-                match (List.map String.lowercase args) with
+                match (List.map String.lowercase_ascii args) with
                 | ["high"] ->
                         if !!max_opened_connections < !!max_opened_connections_2 then
                                 change_bw ()
@@ -1180,7 +1180,7 @@ let _ =
 
     "costats", Arg_multiple (fun args o ->
         let filter cs =
-          match (List.map String.lowercase args) with
+          match (List.map String.lowercase_ascii args) with
           | [] -> cs.country_total_upload <> 0L || cs.country_total_download <> 0L
           | ["all"] -> true
           | args ->
@@ -1191,7 +1191,7 @@ let _ =
                 ^ (Str.global_replace match_star ".*" a)) "" args)
                 ^ "\\)$") in
               let check_string s =
-                Str.string_match regexp (String.lowercase s) 0 in
+                Str.string_match regexp (String.lowercase_ascii s) 0 in
               check_string cs.country_code ||
               check_string cs.country_name ||
               check_string cs.country_continent
@@ -1310,7 +1310,7 @@ let _ =
               Printf.bprintf buf "\\<tr class=\\\"dl-%d\\\"\\>" (html_mods_cntr ());
               html_mods_td buf [
                 ("", "sr ar", Printf.sprintf "%d" i);
-                (Geoip.country_code_array.(i), "sr", CommonPictures.flag_html (String.lowercase Geoip.country_code_array.(i)));
+                (Geoip.country_code_array.(i), "sr", CommonPictures.flag_html (String.lowercase_ascii Geoip.country_code_array.(i)));
                 ("", "sr", Geoip.country_name_array.(i));
                 ("", "sr", Geoip.country_continent_code_array.(i));
                 ("", "sr", Geoip.country_continent_name_array.(i));
@@ -1375,7 +1375,7 @@ let _ =
           print_command_result o (_s "Gd support was not compiled");
       _s ""), ":\t\t\t\tremove graphical transfer statistics files";
 
-    "!", Arg_multiple (fun arg o ->
+    "!", Arg_multiple (fun arg _ ->
         if !!allow_any_command then
           match arg with
             c :: args ->
@@ -1426,7 +1426,7 @@ let _ =
             let output = File.to_string tmp in
             Sys.remove tmp;
             Printf.sprintf (_b "%s\n---------------- Exited with code %d") output ret
-            with e -> "For arbitrary commands, you must set 'allowed_any_command'")
+            with _ -> "For arbitrary commands, you must set 'allowed_any_command'")
         | [] ->
             _s "no command given"
         | _ -> "For arbitrary commands, you must set 'allowed_any_command'"
@@ -1582,7 +1582,7 @@ let _ =
         let buf = o.conn_buf in
         let user = o.conn_user in
         match args with
-          num :: _ ->
+          _num :: _ ->
             List.iter (fun num ->
                 let num = int_of_string num in
                 let s = search_find num in
@@ -1671,7 +1671,7 @@ let _ =
           Printf.bprintf buf "%d custom queries defined\n"
             (List.length (customized_queries ()));
         let custom_commands = ref [] in
-        List.iter (fun (name, q) ->
+        List.iter (fun (name, _) ->
             if o.conn_output = HTML then
               begin
                 if use_html_mods o then
@@ -1786,7 +1786,7 @@ let _ =
           _s "You are not allowed to change options"
     ), "<option_name> <option_value> :\t$bchange option value$n";
 
-    "save", Arg_multiple (fun args o ->
+    "save", Arg_multiple (fun args _ ->
         if !allow_saving_ini_files then begin
         match args with
           ["options"] -> DriverInteractive.save_config (); _s "options saved"
@@ -2286,7 +2286,7 @@ action=\\\"javascript:submitHtmlModsStyle();\\\"\\>";
               ] ;
 
               html_mods_cntr_init ();
-              Hashtbl.iter (fun key w ->
+              Hashtbl.iter (fun _key w ->
                 Printf.bprintf buf "\\<tr class=\\\"dl-%d\\\"\\>" (html_mods_cntr ());
                 Printf.bprintf buf "
         \\<td title=\\\"Click to remove URL\\\"
@@ -2334,7 +2334,7 @@ action=\\\"javascript:submitHtmlModsStyle();\\\"\\>";
         else
             begin
               Printf.bprintf buf "kind / period / url / state :\n";
-              Hashtbl.iter (fun key w ->
+              Hashtbl.iter (fun _key w ->
                   Printf.bprintf buf "%s ; %d ; %s; %s\n"
                     w.kind w.period w.url (string_of_web_infos_state w.state)
               ) web_infos_table;
@@ -3022,7 +3022,7 @@ let () =
 
     ), "<priority> <nums|all|where filter> :\tchange file priorities";
 
-    "download_order", Arg_two (fun num v o ->
+    "download_order", Arg_two (fun num v _ ->
         try
           let file = file_find (int_of_string num) in
           (match v with
@@ -3034,7 +3034,7 @@ let () =
     ), "<file number> <random|linear> :\tchange download order of file blocks (default random, with first and last block first)";
 
     "confirm", Arg_one (fun arg o ->
-        match String.lowercase arg with
+        match String.lowercase_ascii arg with
           "yes" | "y" | "true" ->
             List.iter (fun file ->
                 try
@@ -3238,7 +3238,7 @@ let () =
             ""
     ), "[<num>|queued|paused|downloading] :\t$bview file info for download <num>, or lists of queued, paused or downloading files, or all downloads if no argument given$n";
 
-    "preview", Arg_one (fun arg o ->
+    "preview", Arg_one (fun arg _ ->
 
         let num = int_of_string arg in
         let file = file_find num in
@@ -3246,7 +3246,7 @@ let () =
         _s "done"
     ), "<file number> :\t\t\tstart previewer for file <file number>";
 
-    "rename", Arg_two (fun arg new_name o ->
+    "rename", Arg_two (fun arg new_name _ ->
         let num = int_of_string arg in
         try
           let file = file_find num in
@@ -3292,7 +3292,7 @@ let _ =
     "useradd", Arg_multiple (fun args o ->
         let group_convert g =
           try
-            if String.lowercase g = "none" || g = "" then None
+            if String.lowercase_ascii g = "none" || g = "" then None
             else Some (user2_group_find g).group_name
           with Not_found -> None
         in
@@ -3425,7 +3425,7 @@ let _ =
               let u = user2_user_find user in
                 begin
                   try
-                    let g = if String.lowercase group = "none" then None else Some (user2_group_find group) in
+                    let g = if String.lowercase_ascii group = "none" then None else Some (user2_group_find group) in
                     let update_dgroup () =
                       match g with
                         None -> true
@@ -3799,7 +3799,7 @@ class=\\\"sr ac\\\"\\>%s\\</td\\>"
         let num = int_of_string filenum in
         begin try
           let file = file_find num in
-          if String.lowercase group = "none" then
+          if String.lowercase_ascii group = "none" then
             begin
               if user2_allow_file_admin file o.conn_user.ui_user then
                 begin
@@ -3930,7 +3930,7 @@ let _ =
     ), ":\t\t\t\t\tget file block priorities for a file, and show subfile completion status";
 
     "set_subfile_prio", Arg_multiple 
-      (fun args o ->
+      (fun args _ ->
         match args with
         | filenum :: priochar :: subfilestart :: q ->
             let filenum = int_of_string filenum in
@@ -3967,7 +3967,7 @@ let _ =
         | _ -> bad_number_of_args "" ""
     ), "set_subfile_prio <download id> <prio> <1st subfile (0-based)> <optional last subfile>";
 
-    "reload_messages", Arg_none (fun o ->
+    "reload_messages", Arg_none (fun _ ->
         CommonMessages.load_message_file ();
         "\\<script type=\\\"text/javascript\\\"\\>top.window.location.reload();\\</script\\>"
     ), ":\t\t\treload messages file";
@@ -3995,7 +3995,7 @@ let _ =
         "set"),
     "<width> <height> :\t\t\tset terminal width and height (devel)";
 
-    "stdout", Arg_one (fun arg o ->
+    "stdout", Arg_one (fun arg _ ->
         if (bool_of_string arg) then
           begin
             lprintf_nl "Enable logging to stdout...";
@@ -4017,7 +4017,7 @@ let _ =
         (if (bool_of_string arg) then _s "enabled" else _s "disabled")
     ), "<true|false> :\t\t\treactivate log to stdout";
 
-    "debug_client", Arg_multiple (fun args o ->
+    "debug_client", Arg_multiple (fun args _ ->
         List.iter (fun arg ->
             let num = int_of_string arg in
             debug_clients := Intset.add num !debug_clients;
@@ -4037,7 +4037,7 @@ let _ =
         _s "done"
     ), "<client nums> :\t\tdebug file state";
 
-    "clear_debug", Arg_none (fun o ->
+    "clear_debug", Arg_none (fun _ ->
 
         Intset.iter (fun num ->
             try let c = client_find num in
@@ -4047,14 +4047,14 @@ let _ =
         _s "done"
     ), ":\t\t\t\tclear the table of clients being debugged";
 
-    "merge", Arg_two (fun f1 f2 o ->
+    "merge", Arg_two (fun f1 f2 _ ->
         let file1 = file_find (int_of_string f1) in
         let file2 = file_find (int_of_string f2) in
         CommonSwarming.merge file1 file2;
         "The two files are now merged"
     ), "<num1> <num2> :\t\t\ttry to swarm downloads from file <num2> (secondary) to file <num1> (primary)";
 
-    "open_log", Arg_none (fun o ->
+    "open_log", Arg_none (fun _ ->
         if !!log_file <> "" then
           begin
             let log = !!log_file in
@@ -4065,13 +4065,13 @@ let _ =
           Printf.sprintf "works only if log_file is set"
     ), ":\t\t\t\tenable logging to file";
 
-    "close_log", Arg_none (fun o ->
+    "close_log", Arg_none (fun _ ->
   lprintf_nl "Stopped logging...";
         close_log ();
         _s "log stopped"
     ), ":\t\t\t\tclose logging to file";
 
-     "clear_log", Arg_none (fun o ->
+     "clear_log", Arg_none (fun _ ->
         if !!log_file <> "" then
           begin
             close_log ();
@@ -4084,7 +4084,7 @@ let _ =
           Printf.sprintf "works only if log_file is set"
      ), ":\t\t\t\tclear log_file";
 
-    "html_mods", Arg_none (fun o ->
+    "html_mods", Arg_none (fun _ ->
         if !!html_mods then
           begin
             html_mods =:= false;
@@ -4152,6 +4152,7 @@ let _ =
                   None, _
                 | _, None -> ()
                 | Some title, Some link ->
+                  let link = Neturl.string_of_url link in
                   if o.conn_output = HTML then begin
                       Printf.bprintf buf "\\<tr class=\\\"dl-%d\\\"\\>" (html_mods_cntr ());
                       html_mods_td buf [
@@ -4218,12 +4219,12 @@ let _ =
         ""
     ), ":\t\t\t\tprint memory stats [<verbosity #num>]";
 
-    "close_all_sockets", Arg_none (fun o ->
+    "close_all_sockets", Arg_none (fun _ ->
         BasicSocket.close_all ();
         _s "All sockets closed"
     ), ":\t\t\tclose all opened sockets";
 
-    "use_poll", Arg_one (fun arg o ->
+    "use_poll", Arg_one (fun arg _ ->
         let b = bool_of_string arg in
         BasicSocket.use_poll b;
         Printf.sprintf "poll: %s" (string_of_bool b)
@@ -4294,7 +4295,7 @@ let _ =
       _s ""
     ), ":\t\t\t\tdisplay the list of blocked IP ranges that were hit";
 
-    "block_test", Arg_one (fun arg o ->
+    "block_test", Arg_one (fun arg _ ->
       let ip = Ip.of_string arg in
       _s (match !Ip.banned (ip, None) with
           None -> "Not blocked"
@@ -4302,7 +4303,7 @@ let _ =
           Printf.sprintf "Blocked, %s\n" reason)
     ), "<ip> :\t\t\tcheck whether an IP is blocked";
 
-    "debug_pictures", Arg_two (fun dir output o ->
+    "debug_pictures", Arg_two (fun dir output _ ->
         CommonPictures.compute_ocaml_code dir output;
         _s "done"
     ), ":\t\t\tfor debugging only";

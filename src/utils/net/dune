@@ -1,24 +1,6 @@
 (library
  (name mldonkey_net)
  (wrapped false)
- (modules
-  anyEndian
-  base64
-  basicSocket
-  bigEndian
-  ; cobs
-  geoip
-  http_client
-  http_server
-  ip_set
-  ip
-  littleEndian
-  mailer
-  tcpBufferedSocket
-  tcpServerSocket
-  ; terminal
-  udpSocket
-  upnpClient)
  (libraries mldonkey_lib)
  (foreign_stubs
   (language c)

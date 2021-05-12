@@ -55,37 +55,37 @@ let really_remove_files () = ()
 
 (* main *)
 
-let do_draw_pic ttl vl hl gdown gup =
+let do_draw_pic _ _ _ _ _ =
 (
   show_nogd_debug_msg ()
 )
 
-let do_draw_down_pic ttl top_title vl hl gdown =
+let do_draw_down_pic _ _ _ _ _ =
 (
   show_nogd_debug_msg ()
 )
 
-let do_draw_up_pic ttl top_title vl hl gup =
+let do_draw_up_pic _ _ _ _ _ =
 (
   show_nogd_debug_msg ()
 )
 
-let do_draw_h_pic ttl vl hl gdown gup =
+let do_draw_h_pic _ _ _ _ _ =
 (
   show_nogd_debug_msg ()
 )
 
-let do_draw_down_h_pic ttl top_title vl hl gdown =
+let do_draw_down_h_pic _ _ _ _ _ =
 (
   show_nogd_debug_msg ()
 )
 
-let do_draw_up_h_pic ttl top_title vl hl gup =
+let do_draw_up_h_pic _ _ _ _ _ =
 (
   show_nogd_debug_msg ()
 )
 
-let do_draw_tag title gdown gup =
+let do_draw_tag _ _ _ =
 (
   show_nogd_debug_msg ()
 )

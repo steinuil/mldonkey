@@ -1,9 +1,12 @@
 (library
  (name mldonkey_common)
+ (wrapped false)
  (libraries mldonkey_lib mldonkey_net mp3tag rss xml-light bitv)
  (foreign_stubs
   (language c)
   (names commonHasher_c)))
+
+(ocamllex giftLexer)
 
 (menhir
  (modules giftParser))

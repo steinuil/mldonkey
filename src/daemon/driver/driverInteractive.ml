@@ -342,7 +342,7 @@ type table_align =
 
 let col_sep = " "
 let add buf s align max_len =
-  let slen = try Charset.utf8_length s with e -> String.length s in
+  let slen = try Charset.utf8_length s with _ -> String.length s in
   let diff = max_len - slen in
   match align with
     Align_Center ->
@@ -366,7 +366,7 @@ let print_table_text buf alignments titles lines =
   List.iter (fun line ->
       let len = Array.length line in
       for i = 0 to len-1 do
-        let slen = try Charset.utf8_length line.(i) with e -> String.length line.(i) in
+        let slen = try Charset.utf8_length line.(i) with _ -> String.length line.(i) in
         if cols.(i) <  slen then cols.(i) <- slen
       done;
   ) (titles :: lines);
@@ -662,7 +662,7 @@ end
 else "")
 (List.length guifiles) (size_of_int64 !tdl) (size_of_int64 !tsize) (!trate /. 1024.)
 (let unread = ref 0 in
-Fifo.iter (fun (t,i,num,n,s) -> if t > !last_message_log then incr unread) chat_message_fifo;
+Fifo.iter (fun (t,_,_,_,_) -> if t > !last_message_log then incr unread) chat_message_fifo;
 if !unread > 0 then Printf.sprintf "\\<td onMouseOver=\\\"mOvr(this);\\\" onMouseOut=\\\"mOut(this);\\\" class=downloaded title=\\\"%d unread messages\\\"\\>\\<a onClick=\\\"mSub('fstatus','version');mSub('output','message')\\\"\\>(+%d)\\</a\\>\\&nbsp;\\</td\\>" !unread !unread else "");
 
 if !!html_mods_vd_network then Printf.bprintf buf
@@ -1127,8 +1127,8 @@ let display_active_file_list buf o list =
                 if stalled f2 then -1 else
                   compare f2.file_download_rate f1.file_download_rate)
         | ByName -> (fun f1 f2 -> String.compare 
-                       (String.lowercase f1.file_name) 
-                       (String.lowercase f2.file_name))
+                       (String.lowercase_ascii f1.file_name) 
+                       (String.lowercase_ascii f2.file_name))
         | ByDone -> (fun f1 f2 -> 
                        compare f2.file_downloaded f1.file_downloaded)
         | ByPriority -> (fun f1 f2 -> 
@@ -1704,7 +1704,7 @@ let print_search buf s o =
   user.ui_last_search <- Some s;
   user.ui_last_results <- [];
   let results = ref [] in
-  Intmap.iter (fun r_num (avail,rs) ->
+  Intmap.iter (fun _r_num (avail,rs) ->
       let r = IndexedResults.get_result rs in
       results := (rs, r, !avail) :: !results) s.search_results;
   let results = List.sort (fun (_, r1,_) (_, r2,_) ->
@@ -1742,7 +1742,7 @@ let networks_header buf =
       ( Str, "srh", "Has multinet", "Multinet" ) ;
       ( Str, "srh", "Has porttest", "Porttest" ) ]
 
-let print_network_modules buf o =
+let print_network_modules _buf o =
   let buf = o.conn_buf in
   if use_html_mods o then
     begin
@@ -2057,7 +2057,7 @@ let runinfo html buf o =
         Sys.max_string_length
         Sys.word_size
         Sys.max_array_length
-        Pervasives.max_int
+        Stdlib.max_int
     );
   tack list
     (
@@ -2194,7 +2194,7 @@ let diskinfo html buf =
               \\<td class=\\\"sr ar\\\"\\>%s\\</td\\>\\<td class=\\\"sr\\\"\\>%s\\</td\\>\\</tr\\>"
             (html_mods_cntr ()) dir strategy diskused diskfree percentfree filesystem
         else
-          Printf.bprintf buf "%-*s|%-*s|%8s|%8s|%5s|%-s\n"
+          Printf.bprintf buf "%-*s|%-*s|%8s|%8s|%5s|%s\n"
             (max !len_dir (!len_dir - String.length dir)) dir
             (max !len_strategy (!len_strategy - String.length strategy)) strategy
             diskused diskfree percentfree filesystem
@@ -2275,8 +2275,8 @@ let dllink_parse html url user =
       H.req_request = H.HEAD;
       H.req_max_retry = 10;
       H.req_referer = (
-        let (rule_search,rule_value) =
-        try (List.find(fun (rule_search,rule_value) ->
+        let (_rule_search,rule_value) =
+        try (List.find(fun (rule_search,_rule_value) ->
           Str.string_match (Str.regexp rule_search) u.Url.server 0
         ) !!referers )
         with Not_found -> ("",Url.to_string u) in
@@ -2353,7 +2353,7 @@ let filenames_variability o list =
       if i < len then
         if not (is_alphanum s.[i]) then outside_word (i + 1) wl
         else begin (* start of a new word *)
-          Buffer.add_char current_word (Char.lowercase s.[i]);
+          Buffer.add_char current_word (Char.lowercase_ascii s.[i]);
           inside_word (i + 1) wl
         end
       else wl
@@ -2364,7 +2364,7 @@ let filenames_variability o list =
           Buffer.reset current_word;
           outside_word i wl
         end else begin
-          Buffer.add_char current_word (Char.lowercase s.[i]);
+          Buffer.add_char current_word (Char.lowercase_ascii s.[i]);
           inside_word (i + 1) wl
         end
       else Buffer.contents current_word :: wl
@@ -2423,7 +2423,7 @@ let filenames_variability o list =
     (List.map (fun (fileinfo, nc) ->
       let n = network_find_by_num fileinfo.file_network in
       [| 
-        Printf.sprintf "[%-s %5d]" n.network_name (fileinfo.file_num);
+        Printf.sprintf "[%s %5d]" n.network_name (fileinfo.file_num);
         shorten fileinfo.file_name 80;
         string_of_int nc |]
     ) sorted_score_list)

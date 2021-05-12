@@ -1,0 +1,3 @@
+(library
+ (name mldonkey_driver)
+ (libraries mldonkey_lib mldonkey_common mldonkey_net))
