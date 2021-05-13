@@ -9,6 +9,7 @@
   (language c)
   (names
    charsetstubs
+   CryptoPP_stubs
    fst_hash
    heap_c
    md4
@@ -19,7 +20,11 @@
    stubs_c
    tiger
    zlibstubs))
- (c_library_flags -lz -lpthread))
+ (foreign_stubs
+  (language cxx)
+  (names CryptoPP)
+  (flags -fexceptions -fPIC))
+ (c_library_flags -lz -lpthread -lstdc++))
 
 (ocamllex http_lexer)
 

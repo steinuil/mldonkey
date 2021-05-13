@@ -37,8 +37,6 @@
 /src/daemon/common/giftLexer.ml
 /src/daemon/common/giftParser.ml
 /src/daemon/common/giftParser.mli
-/src/networks/donkey/donkeyNodesDat.ml
-/src/networks/donkey/donkeySui.ml
 /src/networks/fasttrack/fasttrackClients.ml
 /src/networks/fasttrack/fasttrackComplexOptions.ml
 /src/networks/fasttrack/fasttrackFunctions.ml

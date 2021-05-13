@@ -1,0 +1,5 @@
+(library
+ (name donkey)
+ (libraries mldonkey_net mldonkey_lib mldonkey_common bitstring)
+ (preprocess
+  (pps ppx_bitstring)))
