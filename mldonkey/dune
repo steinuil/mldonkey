@@ -1,0 +1,13 @@
+(executable
+ (name mldonkey)
+ (libraries
+  threads
+  mldonkey_lib
+  mldonkey_net
+  mldonkey_common
+  bittorrent
+  fasttrack
+  filetp
+  donkey
+  mldonkey_driver)
+ (flags (-linkall)))
