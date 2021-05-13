@@ -318,9 +318,9 @@ let op_file_print file o =
       ("", "sr", value);
     ]
   in
-  let emit_file text ?(desc=text) ~value ~size ~progress ~extra =
+  let emit_file ?desc ~value ~size ~progress ~extra text =
     let l = List.map (fun v -> "", "sr", v) [value; size_of_int64 size; show_progress progress; extra] in
-    emit_tds ((desc, "sr br", text) :: l)
+    emit_tds ((Option.value ~default:text desc, "sr br", text) :: l)
   in
 
   emit (_s"Filename") file.file_name;
