@@ -208,7 +208,7 @@ and parse_option = parser
 | [< 'Int i >] -> IntValue i
 | [< 'Float f >] -> FloatValue  f
 | [< 'Kwd "@"; 'Int i; v = parse_once_value i >] -> OnceValue v
-| [< 'Char c >] -> StringValue (let s = String.create 1 in s.[0] <- c; s)    
+| [< 'Char c >] -> StringValue (let s = String.create 1 in s.[0] <- c; Bytes.unsafe_to_string s)    
 | [< 'Kwd "["; v = parse_list [] >] -> List v
 | [< 'Kwd "("; v = parse_list [] >] -> List v
 
@@ -1209,4 +1209,3 @@ let set_after_save_hook file f =
   
 let set_before_save_hook file f =
   file.file_before_save_hook <- f
-  

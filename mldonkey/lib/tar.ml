@@ -222,6 +222,7 @@ let read_body t =
             t.chan#really_input leftover 0 align
         end;
         Bytes.to_string buf
+
 let read_entry t =
   let head = read_header t in
     head, read_body t
@@ -337,7 +338,7 @@ let output t head body =
       if size > 0 then begin
     t.ochan#output body 0 size;
           let align = blocksize - (size mod blocksize) in
-            if align > 0 && align < blocksize then
+            if align > 0 && align < blocksize then 
               t.ochan#output (Bytes.of_string empty_block) 0 align
       end
 let flush t =
