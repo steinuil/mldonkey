@@ -73,7 +73,7 @@ let choose_next_uploaders files fun_comp =
         ) next in
       let notoptim = List.sort (fun a b -> compare a.client_last_optimist b.client_last_optimist) notoptim in
       (*add at least one optimistic uploader*)
-      let to_add,next =  keepn !max_list (optim) (!!max_uploaders_per_torrent) in
+      let to_add,_next =  keepn !max_list (optim) (!!max_uploaders_per_torrent) in
       max_list := to_add;
       (*fill up with not optimistic uploaders*)
       let to_add,_ = keepn !max_list (notoptim) (!!max_uploaders_per_torrent) in
@@ -121,7 +121,7 @@ let choose_best_uploaders files =
         a.client_upload_rate)
 
 
-let choose_uploaders files =
+let choose_uploaders _files =
   (*list of new uploaders from the files we download and the files we seed*)
   let next_uploaders =
        ( (choose_best_downloaders (List.filter
@@ -143,7 +143,7 @@ let choose_uploaders files =
           lprintf " ]\n";
         end;
     if (List.length next_uploaders) > !!max_bt_uploaders then
-        let keep,rest = List2.cut !!max_bt_uploaders next_uploaders in
+        let keep,_rest = List2.cut !!max_bt_uploaders next_uploaders in
         begin
           if !verbose_upload then
              begin

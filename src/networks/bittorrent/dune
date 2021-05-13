@@ -1,0 +1,3 @@
+(library
+ (name bittorrent)
+ (libraries mldonkey_net mldonkey_lib mldonkey_common num))

@@ -277,7 +277,7 @@ module TcpMessages = struct
       | BitField s -> Printf.sprintf "BitField %s" (String.escaped s)
       | Request (index, offset, len) ->
           Printf.sprintf "Request %d %Ld[%Ld]" index offset len
-      | Piece (index, offset, s, pos, len) ->
+      | Piece (index, offset, _s, _pos, len) ->
           Printf.sprintf "Piece %d %Ld[%d]" index offset len
       | Cancel (index, offset, len) ->
           Printf.sprintf "Cancel %d %Ld[%Ld]" index offset len
@@ -535,8 +535,8 @@ let bt_handler parse_fun handler c sock =
         lprintf_nl "Exception %s in bt_handler"
           (Printexc2.to_string e)
 
-let handlers info gconn =
-  let iter_read sock nread =
+let handlers _info gconn =
+  let iter_read sock _nread =
     (* lprintf "iter_read %d\n" nread; *)
     let b = TcpBufferedSocket.buf sock in
     if b.len > 0 then

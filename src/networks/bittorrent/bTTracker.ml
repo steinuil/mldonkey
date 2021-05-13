@@ -272,7 +272,7 @@ let reply_has_tracker r info_hash peer_id peer_ip peer_port peer_key peer_left p
                 else
                   !!max_tracker_reply
               in
-              for i = 1 to max_peer_replies do
+              for _ = 1 to max_peer_replies do
                 let peer = Fifo.take tracker.tracker_peers in
                 if !verbose_msg_servers then
                   lprintf_nl "   %s:%d" (Ip.to_string peer.peer_ip)peer.peer_port;
@@ -324,7 +324,7 @@ let reply_has_tracker r info_hash peer_id peer_ip peer_port peer_key peer_left p
 
   r.reply_content <- message
 
-let http_handler t r =
+let http_handler _ r =
   try
     add_reply_header r "Server" (Printf.sprintf "MLdonkey/%s" Autoconf.current_version);
     add_reply_header r "Connection" "close";
@@ -404,7 +404,7 @@ let http_handler t r =
         in
         match message_errors with _ ->
               reply_has_tracker r !info_hash !peer_id !ip !port !key (Int64.to_int !left) !event !numwant !no_peer_id
-        with e -> ())
+        with _ -> ())
 
     | "scrape" ->
         let files_tracked = ref [] in

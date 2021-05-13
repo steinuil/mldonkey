@@ -73,12 +73,12 @@ let inside node hash = not (cmp hash node.lo = LT || cmp hash node.hi = GT)
 
 let middle =
   let s = Bytes.make 20 (Char.chr 0xFF) in
-  s.[0] <- Char.chr 0x7F;
+  Bytes.set s 0 @@ Char.chr 0x7F;
   H.direct_of_string (Bytes.unsafe_to_string s)
 
 let middle' =
   let s = Bytes.make 20 (Char.chr 0x00) in
-  s.[0] <- Char.chr 0x80;
+  Bytes.set s 0 @@ Char.chr 0x80;
   H.direct_of_string (Bytes.unsafe_to_string s)
 
 let last =
@@ -100,7 +100,7 @@ let hash_of_big_int n =
   let div = big_int_of_int 256 in
   for i = Bytes.length s - 1 downto 0 do
     let (d,m) = quomod_big_int !n div in
-    s.[i] <- Char.chr (int_of_big_int m);
+    Bytes.set s i @@ Char.chr (int_of_big_int m);
     n := d
   done;
   assert (eq_big_int zero_big_int !n);
@@ -352,7 +352,7 @@ let rec fold f acc = function
   | L b -> f acc b
 
 let size t = fold (fun acc b -> acc + Array.length b.nodes) 0 t.root
-let buckets t = fold (fun acc b -> acc + 1) 0 t.root
+let buckets t = fold (fun acc _ -> acc + 1) 0 t.root
 
 (*
 module NoNetwork : Network = struct 
@@ -366,7 +366,7 @@ let tt () =
   show_table table; 
   let addr = Ip.of_string "127.0.0.1", 9000 in
   let ping addr k = k (if Random.bool () then Some (H.null,addr) else None) in
-  for i = 1 to 1_000_000 do
+  for _ = 1 to 1_000_000 do
     update ping table Good (H.random ()) addr
   done;
   show_table table

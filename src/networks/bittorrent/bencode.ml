@@ -77,7 +77,7 @@ let decode s =
    | _ -> assert false
   in
   assert (len > 0);
-  let (v,pos) = decode s 0 len in
+  let (v,_pos) = decode s 0 len in
   v
 
 let encode ?(strict=true) v =

@@ -142,7 +142,7 @@ let show_stats t =
   ]
 
 let create port enabler bw_control answer : t =
-  let socket = create Unix.inet_addr_any port (fun sock event ->
+  let socket = create Unix.inet_addr_any port (fun _sock event ->
       match event with
       | WRITE_DONE | CAN_REFILL -> ()
       | READ_DONE -> assert false (* set_reader prevents this *)
@@ -272,7 +272,7 @@ let parse_query_exn name args =
   | "find_node" -> FindNode (sha1 "target")
   | "get_peers" -> GetPeers (sha1 "info_hash")
   | "announce_peer" -> Announce (sha1 "info_hash", Int64.to_int & KRPC.int & get "port", KRPC.str & get "token")
-  | s -> failwith (sprintf "parse_query name=%s" name)
+  | _ -> failwith (sprintf "parse_query name=%s" name)
   in
   sha1 "id", p
 
@@ -309,7 +309,7 @@ let make_peer (ip,port) =
   let (a,b,c,d) = Ip.to_ints ip in
   let e = port lsr 8 and f = port land 0xff in
   let s = Bytes.create 6 in
-  let set i c = s.[i] <- char_of_int c in
+  let set i c = Bytes.set s i @@ char_of_int c in
   set 0 a; set 1 b; set 2 c; set 3 d; set 4 e; set 5 f;
   Bytes.unsafe_to_string s
 
@@ -542,7 +542,7 @@ let insert (left,set) elem =
         begin set := S.add elem (S.remove max !set); true end
       else 
         false
-    | n ->
+    | _ ->
       set := S.add elem !set;
       decr left;
       true
@@ -590,7 +590,7 @@ let lookup_node dht ?nodes target k =
         if not (Hashtbl.mem queried node) then begin incr n; query true node end)
     with Break -> () end;
     inserted
-  and query store (id,addr as node) =
+  and query store (_id,addr as node) =
     incr active;
     Hashtbl.add queried node true;
     if !debug then lprintf_nl "will query node %s" (show_node node);

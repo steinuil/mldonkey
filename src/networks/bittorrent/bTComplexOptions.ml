@@ -96,7 +96,7 @@ module ClientOption = struct
 
   end
 
-let value_to_file file_size file_state user group assocs =
+let value_to_file _file_size file_state user group assocs =
   let get_value name conv = conv (List.assoc name assocs) in
   let file_trackers =
     try
@@ -172,7 +172,7 @@ let value_to_file file_size file_state user group assocs =
 *)
             torrent_announce =
             (match file_trackers with
-              | h::q -> h
+              | h::_ -> h
               | [] -> "");
             torrent_announce_list = file_trackers;
           } in

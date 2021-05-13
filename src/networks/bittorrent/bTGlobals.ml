@@ -135,7 +135,7 @@ let must_share_file file = must_share_file file (file_best_name (as_file file)) 
 let unshare_file file =
   match file.file_shared with
     None -> ()
-  | Some s ->
+  | Some _ ->
       begin
         file.file_shared <- None;
         decr CommonGlobals.nshared_files;
@@ -167,7 +167,7 @@ let lprintf_n fmt =
   lprintf2 log_prefix fmt
 
 
-let check_if_interesting file c =
+let check_if_interesting _file c =
 
   if not c.client_alrd_sent_notinterested then
     let up = match c.client_uploader with
@@ -184,13 +184,13 @@ let check_if_interesting file c =
             x < y) c.client_ranges_sent = []) &&
       (match c.client_range_waiting with
           None -> true
-        | Some (x,y,r) ->
+        | Some (_,_,r) ->
             let x,y = CommonSwarming.range_range r in
             x < y) &&
 (* The current blocks are also useless *)
       (match c.client_chunk with
       | None -> true
-      | Some (chunk, blocks) ->
+      | Some (_chunk, blocks) ->
           List.for_all (fun b ->
             let chunk_num = CommonSwarming.block_chunk_num swarmer b.up_block in
             let bitmap = CommonSwarming.chunks_verified_bitmap swarmer in
@@ -228,10 +228,10 @@ let create_temp_file file_temp file_files file_state =
   file_fd
 
 let make_tracker_url url =
-  if String2.check_prefix (String.lowercase url) "http://" then 
+  if String2.check_prefix (String.lowercase_ascii url) "http://" then 
     `Http url (* do not change the case of the url *)
   else
-    try Scanf.sscanf (String.lowercase url) "udp://%s@:%d" (fun host port -> `Udp (host,port))
+    try Scanf.sscanf (String.lowercase_ascii url) "udp://%s@:%d" (fun host port -> `Udp (host,port))
     with _ -> `Other url
 
 (** invariant: [make_tracker_url (show_tracker_url url) = url] *)
@@ -926,14 +926,14 @@ Define a function to be called when the "mem_stats" command
 **************************************************************)
 
 let () =
-  Heap.add_memstat "BittorrentGlobals" (fun level buf ->
+  Heap.add_memstat "BittorrentGlobals" (fun _level buf ->
      Printf.bprintf buf "Number of old files: %d\n" (List.length !!old_files);
      let downloads = ref 0 in
      let tracked = ref 0 in
      let seeded = ref 0 in
-     Unix2.iter_directory (fun file -> incr downloads ) downloads_directory;
-     Unix2.iter_directory (fun file -> incr tracked ) tracked_directory;
-     Unix2.iter_directory (fun file -> incr seeded ) seeded_directory;
+     Unix2.iter_directory (fun _ -> incr downloads ) downloads_directory;
+     Unix2.iter_directory (fun _ -> incr tracked ) tracked_directory;
+     Unix2.iter_directory (fun _ -> incr seeded ) seeded_directory;
      Printf.bprintf buf "Files in downloads directory: %d\n" ! downloads;
      Printf.bprintf buf "Files in tracked directory: %d\n" ! tracked;
      Printf.bprintf buf "Files in seeded directory: %d\n" ! seeded;

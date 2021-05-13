@@ -191,7 +191,7 @@ let decode_torrent s =
                           file_ed2k_hash := string_ed2k;
                       (* TODO: Add new ed2k download if ed2k hash is available,
                                then merge it with current download *)
-                    | "sha1", String string_sha1 -> ()
+                    | "sha1", String _string_sha1 -> ()
                       (* TODO: Parse sha1 hash *)
 
                     | "publisher", String created_by ->
@@ -202,8 +202,8 @@ let decode_torrent s =
                     | "name.utf-8", String name_utf8 ->
                         file_name_utf8 := Some name_utf8
 
-                    | "publisher.utf-8", String publisher_utf8 -> ()
-                    | "publisher-url.utf-8", String publisher_url_utf8 -> ()
+                    | "publisher.utf-8", String _publisher_utf8 -> ()
+                    | "publisher-url.utf-8", String _publisher_url_utf8 -> ()
 
                     | "private", Int n ->
                         file_is_private := n <> 0L;
@@ -235,7 +235,7 @@ let decode_torrent s =
               file_codepage := codepage
             | "torrent filename", String torrent_filename ->
               file_torrent_filename := torrent_filename
-            | "nodes", nodes -> ()
+            | "nodes", _nodes -> ()
               (* TODO : nodes is a list of DHT Network nodes ,parse and use them *)
 
 (*
