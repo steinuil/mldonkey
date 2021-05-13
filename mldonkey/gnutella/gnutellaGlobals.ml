@@ -31,12 +31,10 @@ open CommonOptions
 open CommonClient
 open CommonUser
 open CommonTypes
-open CommonComplexOptions
 open CommonServer
 open CommonResult
 open CommonFile
 open CommonGlobals
-open CommonDownloads  
 open CommonNetwork
 open CommonSwarming
   
@@ -123,7 +121,7 @@ let (clients_by_uid ) = Hashtbl.create 127
 let (results_by_uid : (uid_type, result) Hashtbl.t) = Hashtbl.create 127 
 
 let max_upload_buffer_len = 102400
-let upload_buffer = String.create max_upload_buffer_len
+let upload_buffer = Bytes.create max_upload_buffer_len
   
 (***************************************************************
 
@@ -168,11 +166,11 @@ module H = CommonHosts.Make(struct
                 ]
             ));
           Udp_Connect,
-          (600, (fun kind ->
+          (600, (fun _kind ->
                    [waiting_udp_queue]
             ))]
 
-      let default_requests kind = [Tcp_Connect,0; Udp_Connect,0]
+      let default_requests _kind = [Tcp_Connect,0; Udp_Connect,0]
         
       let max_ultrapeers = max_known_ultrapeers
       let max_peers = max_known_peers
@@ -250,7 +248,7 @@ let add_source r (s : user) (index : file_uri) =
       ss := (key, last_time ()) :: !ss
     end
 
-let new_result file_name file_size (tags : CommonTypes.tag list) (uids : Uid.t list) sources =
+let new_result file_name file_size (tags : CommonTypes.tag list) (uids : Uid.t list) _sources =
   match uids with
     [] -> (*
         lprintf "New result by key\n"; 
@@ -270,7 +268,7 @@ let new_result file_name file_size (tags : CommonTypes.tag list) (uids : Uid.t l
             Hashtbl.add results_by_key key r;
     r) *)
       failwith "Result without UID dropped"
-  | uid :: other_uids ->
+  | uid :: _other_uids ->
       if !verbose then
         lprintf "New result by UID\n"; 
       let rs = 
@@ -429,7 +427,7 @@ let check_client_country_code c =
     match c.client_country_code with
     | None ->
         (match c.client_host with
-        | Some (ip,port) ->
+        | Some (ip,_port) ->
             c.client_country_code <- Geoip.get_country_code_option ip
         | _ -> ())
     | _ -> ()
@@ -632,8 +630,7 @@ Define a function to be called when the "mem_stats" command
 let _ =
 (*  let network_info = CommonNetwork.network_info network in *)
   let name = network.network_name ^ "Globals" in
-  Heap.add_memstat name (fun level buf ->
+  Heap.add_memstat name (fun _level buf ->
         Printf.bprintf buf "Number of old files: %d\n" (List.length !!old_files
   )
 );
-

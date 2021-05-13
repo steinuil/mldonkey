@@ -101,7 +101,7 @@ let value_to_int32pair v =
   | _ -> 
       failwith "Options: Not an int32 pair"
 
-let value_to_file file_size file_state user group assocs =
+let value_to_file file_size _file_state user group assocs =
   let get_value name conv = conv (List.assoc name assocs) in
   let file_name = get_value "file_name" value_to_string in
   let file_temp = 
@@ -280,4 +280,3 @@ let _ =
       ultrapeers =:= [];
       peers =:= [];
   )
-  

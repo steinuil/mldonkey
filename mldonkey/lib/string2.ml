@@ -305,3 +305,8 @@ let dehtmlize =
     s
     |> Str.global_replace br_regexp "\n"
     |> Str.global_replace tag_regexp ""
+
+let with_mutations f s =
+  let b = Bytes.of_string s in
+  f b;
+  Bytes.unsafe_to_string b

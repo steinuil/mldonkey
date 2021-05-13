@@ -29,7 +29,6 @@ open Autoconf
 
     
 external get_byte: string -> int -> int = "%string_safe_get"
-external set_byte: string -> int -> int -> unit = "%string_safe_set"
 
 let buf_int8 buf i =
   Buffer.add_char buf (char_of_int (i land 255))

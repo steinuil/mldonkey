@@ -46,7 +46,7 @@ open GnutellaProtocol
 (*************************************************************************)
 
 let max_upload_buffer_len = 102400
-let upload_buffer = String.create max_upload_buffer_len
+let upload_buffer = Bytes.create max_upload_buffer_len
 let current_downloads = ref ([] : TcpBufferedSocket.t list)
   
 (*************************************************************************)
@@ -192,13 +192,13 @@ let rec find_request c sock headers =
 (*        d.download_head <- Head  (first_line, headers); *)
           (fun _ _ _ -> ()), read_more d c sock
       
-      | RANGEReq (_,_,r) ->
+      | RANGEReq (_,_,_) ->
 (*    let size = file_size file in*)
           
           set_client_state c (Connected_downloading (file_num file));
 
 (* Send the next request !!! *)
-          for i = 1 to GnutellaNetwork.max_queued_ranges do
+          for _ = 1 to GnutellaNetwork.max_queued_ranges do
             if List.length d.download_ranges <= 
                 GnutellaNetwork.max_queued_ranges then
               (try get_from_client sock c with _ -> ());
@@ -214,7 +214,7 @@ save it on disk in the next version. *)
               print_head "" headers;
             end;
           let buf = Buffer.create 100 in
-          let read_ttr counter_pos b to_read_int =
+          let read_ttr _counter_pos b to_read_int =
             Buffer.add_subbytes buf b.buf b.pos to_read_int
           in
           let read_more () =
@@ -490,7 +490,7 @@ and get_from_client sock (c: client) =
                 lprintf "\n  Current ranges: ";
                 List.iter (fun req ->
                     match req with
-                      RANGEReq (x,y,r) ->
+                      RANGEReq (x,y,_r) ->
 (*              let (x,y) = CommonSwarming.range_range r               in *)
                         lprintf "%Ld-%Ld " x y
                     | HEADReq -> 
@@ -522,7 +522,7 @@ and get_from_client sock (c: client) =
                       
                       d.download_blocks <- blocks;
                       iter ()
-                  | blocks ->
+                  | _blocks ->
 (*
                 if !verbose_swarming then begin
                     lprintf "Current Block: "; CommonSwarming.print_block b;
@@ -916,7 +916,7 @@ let find_slot sock =
 (*                                                                       *)
 (*************************************************************************)
 
-let get_handler get_request cc gconn sock (first_line, headers) = 
+let get_handler get_request _cc gconn sock (first_line, headers) = 
   if !verbose_msg_clients then begin
       lprintf "[GUP] GET";
       print_head first_line headers;
@@ -1011,7 +1011,7 @@ let get_handler get_request cc gconn sock (first_line, headers) =
     if !verbose_msg_clients then
       lprintf "[GUP] refill: %d refillers\n" (List.length gconn.gconn_refill);
     match gconn.gconn_refill with
-      refill :: tail ->
+      refill :: _tail ->
 (* First refill handler, must be called immediatly *)
         refill sock
     | _ -> (* Already a refill handler, wait for it to finish its job *)
@@ -1037,10 +1037,10 @@ let listen () =
     let sock = TcpServerSocket.create "gnutella client server" 
         (Ip.to_inet_addr !!client_bind_addr)
         !!client_port
-        (fun sock event ->
+        (fun _sock event ->
           match event with
             TcpServerSocket.CONNECTION (s, 
-              Unix.ADDR_INET(from_ip, from_port)) ->
+              Unix.ADDR_INET(from_ip, _from_port)) ->
               if !verbose then
                 lprintf "CONNECTION RECEIVED FROM %s FOR PUSH\n%s"
                   (Ip.to_string (Ip.of_inet_addr from_ip))

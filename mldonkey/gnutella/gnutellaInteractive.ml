@@ -124,7 +124,7 @@ let ask_for_uids sh =
   if GnutellaNetwork.accept_ed2kuid then begin
       if !verbose then
         lprintf_nl "Ask for ED2K uid";
-      CommonUploads.ask_for_uid sh ED2K (fun sh uid ->
+      CommonUploads.ask_for_uid sh ED2K (fun _sh uid ->
           let uid = Uid.to_string uid in
           declare_word uid;
           declare_file ();
@@ -136,7 +136,7 @@ let ask_for_uids sh =
   if GnutellaNetwork.accept_md5ext then begin
       if !verbose then
         lprintf_nl "Ask for MD5EXT uid";
-      CommonUploads.ask_for_uid sh MD5EXT (fun sh uid ->
+      CommonUploads.ask_for_uid sh MD5EXT (fun _sh uid ->
           let uid = Uid.to_string uid in
           declare_word uid;
           declare_file ();          
@@ -148,7 +148,7 @@ let ask_for_uids sh =
   if GnutellaNetwork.accept_bitprint then begin
       if !verbose then
         lprintf_nl "Ask for BITPRINT uid";
-      CommonUploads.ask_for_uid sh BITPRINT (fun sh uid ->
+      CommonUploads.ask_for_uid sh BITPRINT (fun _sh uid ->
           declare_word uid;
           declare_file ();
           if !verbose then
@@ -156,7 +156,7 @@ let ask_for_uids sh =
               (Array.length info.CommonUploads.shared_tiger);
           ()
       );
-      CommonUploads.ask_for_uid sh TIGER (fun sh uid ->
+      CommonUploads.ask_for_uid sh TIGER (fun _sh uid ->
           let uid = Uid.to_string uid in
           declare_word uid;
           declare_file ();
@@ -164,7 +164,7 @@ let ask_for_uids sh =
             lprintf_nl "Tiger tree available (size %d)" 
               (Array.length info.CommonUploads.shared_tiger);
       );
-      CommonUploads.ask_for_uid sh SHA1 (fun sh uid -> 
+      CommonUploads.ask_for_uid sh SHA1 (fun _sh uid -> 
           let uid = Uid.to_string uid in
           if !verbose_share then
             lprintf_nl "Could share urn: %s" uid;
@@ -175,7 +175,7 @@ let ask_for_uids sh =
     end
     
 let _ =
-  network.op_network_search <- (fun search buf ->
+  network.op_network_search <- (fun search _buf ->
       match search.search_type with
         LocalSearch -> ()
       | _ ->
@@ -263,7 +263,7 @@ let _ =
       | Some swarmer ->
           match file.file_ttr with
             None -> failwith "No TTR for verification"
-          | Some ttt ->
+          | Some _ttt ->
               CommonSwarming.verify_all_chunks_immediately swarmer
   );  
   
@@ -293,14 +293,14 @@ let _ =
 module P = GuiTypes
   
 let _ =
-  file_ops.op_file_print <- (fun file buf -> ());
+  file_ops.op_file_print <- (fun _file _buf -> ());
   file_ops.op_file_cancel <- (fun file ->
       CommonSwarming.remove_swarmer file.file_swarmer;
       file.file_swarmer <- None;
       remove_file file;
       GnutellaProto.cancel_recover_files file
   );
-  file_ops.op_file_commit <- (fun file new_name ->
+  file_ops.op_file_commit <- (fun file _new_name ->
       CommonSwarming.remove_swarmer file.file_swarmer;
       file.file_swarmer <- None;
   );

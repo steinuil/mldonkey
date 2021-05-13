@@ -97,14 +97,14 @@ let enable () =
               (Printexc2.to_string e)
     ) !plugin_enable_hooks;
     
-    add_session_timer enabler 1.0 (fun timer ->
+    add_session_timer enabler 1.0 (fun _timer ->
         GnutellaServers.manage_hosts ();
         GnutellaProto.resend_udp_packets ();
     );
     
     GnutellaServers.ask_for_files ();
 
-    add_session_timer enabler 60.0 (fun timer ->
+    add_session_timer enabler 60.0 (fun _timer ->
         ( try 
         GnutellaServers.ask_for_files ();
           with e -> lprintf_nl "ASK_FOR_FILE FAILED: %s" (Printexc2.to_string e));
@@ -128,7 +128,7 @@ let enable () =
     );
 
     GnutellaInteractive.recover_files ();
-    add_session_timer enabler GnutellaProto.recover_files_delay (fun timer ->
+    add_session_timer enabler GnutellaProto.recover_files_delay (fun _timer ->
         GnutellaInteractive.recover_files ();
     );
 
@@ -164,9 +164,9 @@ let _ =
   *)
   network.op_network_enable <- enable;
   network.network_config_file <- [gnutella_ini];
-  network.op_network_recover_temp <- (fun s -> ());
+  network.op_network_recover_temp <- (fun _s -> ());
 
-  network.op_network_info <- (fun n ->
+  network.op_network_info <- (fun _n ->
       { 
         network_netnum = network.network_num;
         network_config_filename = (match network.network_config_file with
@@ -182,5 +182,4 @@ let _ =
   gui_gnutella_options_panel
   
   
-let main (toto: int) = ()
-    
+let main (_: int) = ()

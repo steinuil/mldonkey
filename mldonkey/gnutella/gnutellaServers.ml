@@ -25,12 +25,8 @@ open Options
 open BasicSocket
 open TcpBufferedSocket
   
-open CommonDownloads
 open CommonOptions
-open CommonSearch
 open CommonServer
-open CommonComplexOptions
-open CommonFile
 open CommonTypes
 open CommonGlobals
 open CommonHosts
@@ -40,7 +36,6 @@ open GnutellaTypes
 open GnutellaGlobals
 open GnutellaOptions
 open GnutellaProtocol
-open GnutellaComplexOptions  
 open GnutellaProto
 
 let exit = Exit
@@ -84,7 +79,7 @@ let extend_query f =
   
 let send_query ss =
   match ss.search_search with
-    UserSearch (uid, words, xml_query) ->
+    UserSearch (_uid, words, xml_query) ->
       let f s =
         server_send_query ss.search_uid words xml_query s.server_sock s in
       List.iter f !connected_servers;
@@ -103,7 +98,7 @@ let really_recover_file file =
       try
         List.iter (fun s ->
             match s.search_search with
-              FileUidSearch (ss,uid) when uid = fuid -> raise exit
+              FileUidSearch (_ss,uid) when uid = fuid -> raise exit
             | _ -> ()
         ) file.file_searches;
         
@@ -149,7 +144,7 @@ let send_pings () =
   new_shared_words := false;
   Queue.iter (fun (_,h) ->
       match h.host_server with
-      | None -> () | Some s -> ()
+      | None -> () | Some _s -> ()
    ) active_udp_queue;
 
   on_send_pings ();
@@ -185,7 +180,7 @@ let rec find_ultrapeer queue =
 (*************************************************************************)
       
 let try_connect_ultrapeer connect =
-  let (h, with_accept) = 
+  let (h, _with_accept) = 
     try
       find_ultrapeer ultrapeers_waiting_queue
     with _ ->
@@ -210,12 +205,12 @@ let connect_servers connect =
   (if !!max_ultrapeers > List.length !connected_servers then
       try
         let to_connect = 3 * (!!max_ultrapeers - !nservers) in
-        for i = 1 to to_connect do
+        for _ = 1 to to_connect do
           try_connect_ultrapeer connect
         done    
       with _ -> ());
   (try 
-      for i = 0 to 3 do
+      for _ = 0 to 3 do
         let h = H.host_queue_take waiting_udp_queue in
 (*        lprintf "waiting_udp_queue\n"; *)
         if (
@@ -268,7 +263,7 @@ let server_parse_headers first_line headers =
   let query_key = ref NoUdpSupport in
   List.iter (fun (header, (value, key)) ->
       try
-        match (String.lowercase header) with
+        match (String.lowercase_ascii header) with
         
         | "user-agent" ->  
             user_agent := value;
@@ -338,7 +333,7 @@ let server_parse_headers first_line headers =
             ) (String2.split_simplify value ',')
         
         | "x-ultrapeer" ->
-            if String.lowercase value = "true" then ultrapeer := true
+            if String.lowercase_ascii value = "true" then ultrapeer := true
         
         | "content-encoding" -> 
             if value = "deflate" then content_deflate := true
@@ -350,7 +345,7 @@ let server_parse_headers first_line headers =
           -> (* value = ip:port *) ()
         | "servent-id" -> (* servent in hexa *) ()
         | "x-ultrapeer-needed" -> 
-            if String.lowercase value = "true" then ultrapeer_needed := true
+            if String.lowercase_ascii value = "true" then ultrapeer_needed := true
         | "fp-auth-challenge" -> (* used by BearShare for auth *) ()
         | "machine" -> () (* unknown usage *)
 (* Swapper *)
@@ -590,7 +585,7 @@ let connect_server h =
 (*                h.host_tcp_request <- last_time (); *)
               let sock = connect token "gnutella to server"
                   (Ip.to_inet_addr ip) port
-                  (fun sock event -> 
+                  (fun _sock event -> 
                     match event with
                       BASIC_EVENT RTIMEOUT -> 
                         disconnect_from_server s Closed_for_timeout
@@ -800,4 +795,3 @@ let _ =
   server_ops.op_server_remove <- (fun s ->
       disconnect_server s Closed_by_user; 
   )
-  

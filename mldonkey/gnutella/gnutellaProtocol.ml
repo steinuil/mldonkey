@@ -19,10 +19,8 @@
 
 open Int64ops
 open Options
-open Md4
 open Printf2
 
-open BasicSocket
 open LittleEndian
 open AnyEndian
 open TcpBufferedSocket
@@ -33,7 +31,6 @@ open GnutellaGlobals
 open GnutellaOptions
 
 open CommonTypes
-open CommonGlobals
 open CommonOptions
 open CommonShared
 open CommonUploads
@@ -130,7 +127,7 @@ struct gnutella_qrp_patch {
             if t.compressor < 2 then
               let table = 
                 if t.compressor = 1 then
-                  Zlib.uncompress_string2 !patches
+                  Zlib.uncompress_string2 (Bytes.of_string !patches)
                 else
                   !patches
               in
@@ -221,7 +218,7 @@ let bloom_hash_full s pos len bits =
   let xor = ref Int32.zero in
   let j = ref 0 in
   for i = pos to len - 1 do
-    let b = Int32.of_int (int_of_char (Char.lowercase s.[i])) in
+    let b = Int32.of_int (int_of_char (Char.lowercase_ascii s.[i])) in
     let b = Int32.shift_left b (!j * 8) in
     xor := Int32.logxor !xor b;
     j := (!j+1) mod 4;
@@ -307,7 +304,7 @@ Content-Length: 2125]
 
 *)
  
-let parse_headers c first_line headers =
+let parse_headers c _first_line headers =
 
       try
         
@@ -543,7 +540,7 @@ let find_file_to_upload gconn url =
       
       | _ -> failwith "Cannot parse /uri-res/N2R request"
     else
-    let get = String.lowercase (String.sub file 0 5) in
+    let get = String.lowercase_ascii (String.sub file 0 5) in
     assert (get = "/get/");
     let pos = String.index_from file 5 '/' in
     let num = String.sub file 5 (pos - 5) in

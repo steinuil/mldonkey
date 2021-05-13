@@ -17,28 +17,13 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 
-open CommonDownloads
-open Printf2
-open Md4
 open CommonOptions
-open CommonSearch
-open CommonServer
-open CommonComplexOptions
-open CommonFile
 open BasicSocket
-open TcpBufferedSocket
 
 open CommonHosts
-open CommonTypes
-open CommonGlobals
 open Options
-open GnutellaTypes
 open GnutellaGlobals
 open GnutellaOptions
-open GnutellaProtocol
-open GnutellaComplexOptions
-
-open GnutellaProto
 
 let redirectors_urlfiles = ref []
 let redirectors_hostfiles = ref []
@@ -48,7 +33,9 @@ let parse_urlfile file url_string =
   (* Http_client.wget does not delete the temp file anymore *)
   (try Sys.remove file with _ -> ());
   if !verbose then lprintf_nl "Parsing urlfile from %s:\n%s" url_string s;
+  let s = Bytes.of_string s in
   clean_file s;
+  let s = Bytes.to_string s in
   let lines = String2.split_simplify s '\n' in
   List.iter (fun line ->
       if not (List.mem line !!gnutella_hostfiles) then begin
@@ -98,7 +85,9 @@ let parse_hostfile file url_string =
     end;
   end
   else begin
+    let s = Bytes.of_string s in
     clean_file s;
+    let s = Bytes.to_string s in
     let lines = String2.split_simplify s '\n' in
     if !verbose then lprintf_nl "Parsing response from %s:\n%s" url_string s;
     List.iter (fun line ->
@@ -143,4 +132,3 @@ let connect_hostfile _ =
       
 let connect _ = 
   connect_hostfile ()
-    

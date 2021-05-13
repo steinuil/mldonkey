@@ -1,0 +1,3 @@
+(library
+ (name gnutella)
+ (libraries mldonkey_common mldonkey_lib mldonkey_net))

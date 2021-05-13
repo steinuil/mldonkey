@@ -21,25 +21,19 @@ open Printf2
 open Md4
 open Options  
   
-open BasicSocket
 open TcpBufferedSocket
 
 open CommonUploads
 open CommonOptions
-open CommonSearch
 open CommonServer
-open CommonComplexOptions
 open CommonFile
-open CommonDownloads
 open CommonTypes
-open CommonGlobals
 
 open GnutellaNetwork
 open GnutellaTypes
 open GnutellaGlobals
 open GnutellaOptions
 open GnutellaProtocol
-open GnutellaComplexOptions
 open GnutellaProto
   
 (*************************************************************************)
@@ -90,7 +84,7 @@ let server_to_client s p sock =
 
 try 
   match p.pkt_payload with
-  | PingReq t ->
+  | PingReq _ ->
       if p.pkt_hops <= 3 then
         server_send s {
           p with 
@@ -135,7 +129,7 @@ try
       begin
         try
           let files =
-            let find_file q =
+            let find_file _ =
               let q = 
                 let q = 
                   match String2.split_simplify t.Query.keywords ' ' with
@@ -354,7 +348,7 @@ let init s sock gconn =
 (*                                                                       *)
 (*************************************************************************)
   
-let udp_client_handler ip port buf =
+let udp_client_handler _ip _port buf =
   if !verbose then
     lprintf "Unexpected UDP packet: \n%s\n" (String.escaped buf)
   

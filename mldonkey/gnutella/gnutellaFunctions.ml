@@ -99,7 +99,7 @@ let lprint_http_header line headers =
   ) headers;
   lprintf "\n\n"
   
-let handlers info gconn =
+let handlers _info gconn =
   let rec iter_read sock nread =
     let b = TcpBufferedSocket.buf sock in 
     if monitored sock || !verbose_msg_raw then

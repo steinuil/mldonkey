@@ -18,25 +18,10 @@
 *)
 
 
-open Int64ops
 open Printf2
-open Options
-open Md4
 open AnyEndian
 open LittleEndian
-open TcpBufferedSocket
-open Xml_types
   
-open CommonHosts
-open CommonTypes
-open CommonOptions
-open CommonGlobals
-
-open GnutellaNetwork
-open GnutellaGlobals
-open GnutellaTypes
-open GnutellaOptions
-open GnutellaProtocol
 open GnutellaProto
 
 type t = UDP | TCP
@@ -118,7 +103,7 @@ let rec iter s pos =
   else iter s (pos+1)
 
 let hescaped s =
-  String2.replace_char s '\r' ' ';s
+  String2.with_mutations (fun s -> String2.replace_char s '\r' ' ') s
 
 let commit () =  
   Hashtbl.iter (fun _ cnx ->
@@ -161,7 +146,7 @@ let commit () =
   *)
       with 
       
-      | e ->
+      | _ ->
 (*
               lprintf "Exception %s in\n%s\n" (Printexc2.to_string e)
               (String.escaped s)
@@ -178,7 +163,7 @@ let new_packet (kind:t) (number:int) ip1 port1 ip2 port2 data =
         try
 (*              lprintf "New packet:\n%s\n" (String.escaped data);          *)
           piter data 0;
-        with e ->
+        with _ ->
 (*                lprintf "Could not parse UDP packet:\n"; *)
             ()
       end
@@ -198,5 +183,3 @@ let new_packet (kind:t) (number:int) ip1 port1 ip2 port2 data =
             cnx
       in
       Buffer.add_string cnx.packets data
-      
-      

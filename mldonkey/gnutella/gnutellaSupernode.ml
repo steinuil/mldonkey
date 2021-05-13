@@ -17,7 +17,6 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 
-open Queues
 open Printf2
 open Md4
 open Options
@@ -25,22 +24,14 @@ open Options
 open BasicSocket
 open TcpBufferedSocket
   
-open CommonDownloads
 open CommonOptions
-open CommonSearch
-open CommonServer
-open CommonComplexOptions
-open CommonFile
 open CommonTypes
 open CommonGlobals
-open CommonHosts
 
-open GnutellaNetwork
 open GnutellaTypes
 open GnutellaGlobals
 open GnutellaOptions
 open GnutellaProtocol
-open GnutellaComplexOptions  
 open GnutellaProto
 open GnutellaServers
 
@@ -136,7 +127,7 @@ let disconnect_node node s =
       List.iter (fun guid ->
           Hashtbl.remove node_guids guid
       ) node.node_guids
-  | ConnectionWaiting token -> assert false
+  | ConnectionWaiting _token -> assert false
   | NoConnection -> ()
 
 (*************************************************************************)
@@ -188,7 +179,7 @@ let supernode_to_node node p sock =
       print p;
     end;
   match p.pkt_payload with
-  | PingReq t -> 
+  | PingReq _t -> 
       if p.pkt_hops <= 3 then
         node_send node {
           p with 
@@ -210,7 +201,7 @@ let supernode_to_node node p sock =
             });
         };
   
-  | QueryReq t -> 
+  | QueryReq _t -> 
       if p.pkt_hops < 2 && update_route p node then
         let p = { p with pkt_hops = p.pkt_hops + 1 } in
         List.iter (fun n -> if n != node then node_send n p) !nodes
@@ -246,7 +237,7 @@ let supernode_to_node node p sock =
   | QrtPatchReq _ -> ()
   | QrtResetReq _ -> ()
 (* We don't care about all these ones currently *)
-  | PongReq t -> ()
+  | PongReq _t -> ()
   | ByeReq _ -> ()
   | UnknownReq _ -> ()
   | VendorReq _ -> ()
@@ -317,7 +308,7 @@ let supernode_handler2 node_ref gconn sock (first_line, headers) =
 let gnutella_proto = "GNUTELLA/"
 let gnutella_proto_len = String.length gnutella_proto
   
-let supernode_handler1 node gconn sock (first_line, headers) = 
+let supernode_handler1 node _gconn sock (first_line, headers) = 
   lprintf "Entering supernode_handler1\n";
   if List.length !nodes >= !!supernode_degree then begin
 (* TODO hum... we should not close the socket like that, but send an error
@@ -383,10 +374,10 @@ let start_supernode enabler =
         let sock = TcpServerSocket.create "gnutella supernode" 
             Unix.inet_addr_any
             !!supernode_port
-            (fun sock event ->
+            (fun _sock event ->
               match event with
                 TcpServerSocket.CONNECTION (s, 
-                  Unix.ADDR_INET(from_ip, from_port)) ->
+                  Unix.ADDR_INET(from_ip, _from_port)) ->
                   lprintf "CONNECTION RECEIVED FROM %s FOR SUPERNODE\n"
                     (Ip.to_string (Ip.of_inet_addr from_ip))
                   ; 
@@ -495,4 +486,3 @@ let _ =
   );
   plugin_enable_hooks := enable :: !plugin_enable_hooks;
   plugin_disable_hooks := disable :: !plugin_disable_hooks
-  

@@ -27,12 +27,10 @@ open Md4
 open AnyEndian
 open LittleEndian
 open TcpBufferedSocket
-open Xml_types
   
 open CommonHosts
 open CommonTypes
 open CommonOptions
-open CommonGlobals
 
 open GnutellaNetwork
 open GnutellaGlobals
@@ -394,7 +392,7 @@ module QueryReply = struct (* QUERY_REPLY *)
       let support_chat, xml_reply =
         try
           let support_chat = get_uint8 s (pos+9) = 1 in
-          let xml_reply,pos = get_string0 s (pos+10) in
+          let xml_reply,_pos = get_string0 s (pos+10) in
           support_chat, xml_reply
         with _ -> false, ""
       in
@@ -528,7 +526,7 @@ let write buf t =
   | QrtResetReq t -> 
       buf_int8 buf 0;
       QrtReset.write buf t
-  | UnknownReq (i,s) -> Buffer.add_string buf s
+  | UnknownReq (_i,s) -> Buffer.add_string buf s
 
       
 let print p =
@@ -583,10 +581,10 @@ let server_msg_to_string pkt =
   a hops = 0 *)
   buf_int buf 0;
   write buf pkt.pkt_payload;
-  let s = Buffer.contents buf in
-  let len = String.length s - 23 in
+  let s = Buffer.to_bytes buf in
+  let len = Bytes.length s - 23 in
   str_int s 19 len;
-  s 
+  Bytes.to_string s 
 
 let new_packet t =
   { 
@@ -651,17 +649,17 @@ let server_send_new s t =
   server_send s (new_packet t)
 
 
-let gnutella_handler parse f handler sock =
+let gnutella_handler parse f _handler sock =
   let b = TcpBufferedSocket.buf sock in
 (*  lprintf "GNUTELLA HANDLER\n"; 
   dump (String.sub b.buf b.pos b.len); *)
   try
     while b.len >= 23 do
-      let msg_len = get_int b.buf (b.pos+19) in
+      let msg_len = get_int (Bytes.to_string b.buf) (b.pos+19) in
       if b.len >= 23 + msg_len then
         begin
-          let pkt_uid = get_md4 b.buf b.pos in
-          let pkt_type = match get_uint8 b.buf (b.pos+16) with
+          let pkt_uid = get_md4 (Bytes.to_string b.buf) b.pos in
+          let pkt_type = match get_uint8 (Bytes.to_string b.buf) (b.pos+16) with
               0 -> PING
             | 1 -> PONG
             | 2 -> BYE
@@ -672,9 +670,9 @@ let gnutella_handler parse f handler sock =
             | 129 -> QUERY_REPLY
             | n -> UNKNOWN n
           in
-          let pkt_ttl = get_uint8 b.buf  (b.pos+17) in
-          let pkt_hops = get_uint8 b.buf  (b.pos+18) in
-          let data = String.sub b.buf (b.pos+23) msg_len in
+          let pkt_ttl = get_uint8 (Bytes.to_string b.buf)  (b.pos+17) in
+          let pkt_hops = get_uint8 (Bytes.to_string b.buf)  (b.pos+18) in
+          let data = Bytes.sub_string b.buf (b.pos+23) msg_len in
           buf_used b (msg_len + 23);
           let pkt = {
               pkt_uid = pkt_uid;
@@ -735,7 +733,7 @@ let server_send_qrt_reset s m =
 let server_send_qrt_patch s m = 
   server_send_new s (QrtPatchReq m)
   
-let server_send_query quid words xml_query sock s = 
+let server_send_query quid words _xml_query _sock s = 
   let module Q = Query in
   let t = QueryReq {
       Q.min_speed = 0;
@@ -768,10 +766,10 @@ let server_ask_uid s quid fuid =
     } in
   server_send s p
   
-let server_recover_file file sock s =
+let server_recover_file file _sock s =
   List.iter (fun ss ->
       match ss.search_search with
-        FileUidSearch (file, fuid) ->
+        FileUidSearch (_file, fuid) ->
           server_ask_uid s ss.search_uid fuid
 (*      | FileWordSearch (file, words) ->
           server_send_query ss.search_uid words "" sock s;           *)
@@ -783,7 +781,7 @@ let on_send_pings () = ()
 
 let server_send_ping sock s =
   match sock with
-    Connection sock ->
+    Connection _sock ->
       let pl =
         let module P = Ping in
         PingReq P.SimplePing
@@ -824,9 +822,9 @@ let create_qrt_table words table_size =
       array.(Int64.to_int pos) <- 1;
   ) words;
   let string_size = table_length/2 in
-  let table = String.create  string_size in
+  let table = Bytes.create  string_size in
   for i = 0 to string_size - 1 do
-    table.[i] <- char_of_int (
+    Bytes.set table i @@ char_of_int (
       (
         ((array.(i*2) - old_array.(i*2)) land 15) lsl 4) + 
       ((array.(i*2+1) - old_array.(i*2+1)) land 15))
@@ -845,12 +843,12 @@ let send_qrt_sequence s update_table =
     };
   
   if !cached_qrt_table = "" then 
-    cached_qrt_table := create_qrt_table !all_shared_words table_size;
+    cached_qrt_table := Bytes.to_string (create_qrt_table !all_shared_words table_size);
   let table = !cached_qrt_table in
   
   let compressor, table =
       1, 
-      let t = Zlib.compress_string table in
+      let t = Zlib.compress_string (Bytes.of_string table) in
       assert (Zlib.uncompress_string2 t = table);
       t
   in
@@ -860,7 +858,7 @@ let send_qrt_sequence s update_table =
       QrtPatch.seq_size = 1;
       QrtPatch.compressor = compressor;
       QrtPatch.entry_bits = 4;
-      QrtPatch.table = table;
+      QrtPatch.table = (Bytes.to_string table);
     }
 
 
@@ -876,7 +874,7 @@ let known_download_headers = []
 let known_supernode_headers = []
 let is_same_network gnutella2 = not gnutella2
   
-let host_send_qkr h = ()
+let host_send_qkr _h = ()
   
 let check_primitives () = ()
 let recover_files_delay = 3600.
@@ -886,7 +884,7 @@ let xml_to_string xml =
   "<?xml version=\"1.0\"?>" ^ (  Xml.to_string xml)
       
 let audio_schema tags = 
-  Element ("audios",
+  Xml.Element ("audios",
     [("xsi:nonamespaceschemalocation",
         "http://www.limewire.com/schemas/audio.xsd")],
     [Element ("audio", tags, [])])
@@ -921,20 +919,20 @@ let translate_query q =
     match q with
     | QOr (q1,q2) 
     | QAnd (q1, q2) -> iter q1; iter q2
-    | QAndNot (q1,q2) -> iter q1 
+    | QAndNot (q1,_q2) -> iter q1 
     | QHasWord w ->  add_words w
     | QHasField(field, w) ->
         begin
           match field with
             Field_Type -> 
               begin
-                match String.lowercase w with
+                match String.lowercase_ascii w with
                   "audio" -> audio := true
                 | _ -> add_words w
               end
           | Field_Format ->
               begin
-                match String.lowercase w with
+                match String.lowercase_ascii w with
                 | "mp3" | "wav" -> 
                     add_words w;
                     audio := true
@@ -945,8 +943,8 @@ let translate_query q =
           | Field_Title -> tags := ("title", w) :: !tags; add_words w
           | _ -> add_words w
         end
-    | QHasMinVal (field, value) -> ()
-    | QHasMaxVal (field, value) -> ()
+    | QHasMinVal (_field, _value) -> ()
+    | QHasMaxVal (_field, _value) -> ()
     | QNone ->  ()
   in
   iter q;
@@ -977,4 +975,3 @@ let ask_for_push uid =
   List.iter (fun s ->
       server_send s pkt
   ) !connected_servers
-  
