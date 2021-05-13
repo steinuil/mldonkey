@@ -153,7 +153,7 @@ let get_from_client sock (c: client) =
                 lprintf "Current download:\n  Current chunks: ";
                 List.iter (fun (x,y) -> lprintf "%Ld-%Ld " x y) d.download_chunks;
                 lprintf "\n  Current ranges: ";
-                List.iter (fun (x,y,r) ->
+                List.iter (fun (x,y,_r) ->
 (*              let (x,y) = CommonSwarming.range_range r in *)
                     lprintf "%Ld-%Ld " x y) d.download_ranges;
                 lprintf "\n  Current blocks: ";
@@ -218,7 +218,7 @@ let get_from_client sock (c: client) =
   in
   iter c.client_downloads
 
-let init_client c sock =
+let init_client _c sock =
   TcpBufferedSocket.set_read_controler sock download_control;
   TcpBufferedSocket.set_write_controler sock upload_control
 

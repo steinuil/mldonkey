@@ -42,7 +42,7 @@ open FileTPClients
 let shell_command hostname =
   try
     match List.assoc hostname !!remote_shells with
-      (cmd :: tail) as args ->
+      (cmd :: _tail) as args ->
         cmd, Array.of_list args
     | _ -> raise Not_found
   with
@@ -118,7 +118,7 @@ lprintf "READ: buf_used %d\n" to_read_int;
               d.download_ranges <- tail;
               (match c.client_sock with
                   Connection sock ->
-                    for i = 1 to max_queued_ranges do
+                    for _ = 1 to max_queued_ranges do
                       if List.length d.download_ranges <= max_queued_ranges then
                         (try get_from_client sock c with _ -> ());
                     done;
@@ -126,7 +126,7 @@ lprintf "READ: buf_used %d\n" to_read_int;
 (* If we have no more range to receive, disconnect *)
               lprintf "\n ********** RANGE DOWNLOADED  ********** \n";
             end
-      | (xx,yy,r) :: tail ->
+      | (xx,yy,r) :: _tail ->
           let (x,y) = CommonSwarming.range_range r in
           lprintf "Bad range (%Ld): %Ld-%Ld/%Ld-%Ld\n"  pos
             x y xx yy;
@@ -140,7 +140,7 @@ lprintf "READ: buf_used %d\n" to_read_int;
 (*                                                                       *)
 (*************************************************************************)
 
-let ssh_send_range_request c (x,y) sock d =
+let ssh_send_range_request _c (x,y) sock d =
   let file = d.download_url.Url.full_file in
   TcpBufferedSocket.write_string sock
     (Printf.sprintf "%s %s %Ld %Ld %d '.%s'\n"  !!get_range !!range_arg x y
@@ -153,7 +153,7 @@ let ssh_send_range_request c (x,y) sock d =
 (*                                                                       *)
 (*************************************************************************)
 
-let ssh_set_sock_handler c sock =
+let ssh_set_sock_handler _c _sock =
   ()
 
 (*************************************************************************)
@@ -162,7 +162,7 @@ let ssh_set_sock_handler c sock =
 (*                                                                       *)
 (*************************************************************************)
 
-let ssh_check_size file url start_download_file =
+let ssh_check_size _file url start_download_file =
   let token = create_token unlimited_connection_manager in
   let shell, args = shell_command url.Url.server in
   lprintf "SHELL: ";
@@ -236,7 +236,7 @@ let ssh_connect token c f =
       (try Unix.kill Sys.sigkill pid with _ -> ());
       disconnect_client c s);
   let segment = ref Nothing in
-  TcpBufferedSocket.set_reader sock (fun sock nread ->
+  TcpBufferedSocket.set_reader sock (fun sock _nread ->
       let b = TcpBufferedSocket.buf sock in
       let rec iter () =
 
@@ -291,7 +291,7 @@ let ssh_connect token c f =
               else
               if line  = "[/SEGMENT]" then
                 match !segment with
-                | Segment (file_num, pos, len, elen, s) ->
+                | Segment (file_num, pos, _len, _elen, s) ->
                     lprintf "******* SEGMENT RECEIVED *******\n";
 (*
                     lprintf "Received/expected: %d/%d\n" (String.length s) elen;
@@ -304,7 +304,7 @@ let ssh_connect token c f =
                     segment := Nothing;
                     iter0 0
 
-                | SegmentX (file_num, pos, len, elen, ss) ->
+                | SegmentX (file_num, pos, _len, _elen, ss) ->
                     lprintf "******* SEGMENT RECEIVED *******\n";
                     segment_received c file_num ss pos;
                     segment := Nothing;

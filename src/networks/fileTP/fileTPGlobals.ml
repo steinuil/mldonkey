@@ -94,7 +94,7 @@ let protos_by_name = Hashtbl.create 13
 
 
 let _ =
-Heap.add_memstat "FileTPGlobals" (fun level buf ->
+Heap.add_memstat "FileTPGlobals" (fun _level buf ->
       Printf.bprintf buf "  current_files: %d\n" (List.length !current_files);
       Printf.bprintf buf "  file_by_uid: %d\n" (Hashtbl.length files_by_uid);
       Printf.bprintf buf "  clients_by_uid: %d\n" (Hashtbl.length clients_by_uid);

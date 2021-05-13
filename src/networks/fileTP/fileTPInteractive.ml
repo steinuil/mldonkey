@@ -257,7 +257,7 @@ let download_file url referer user group =
 (* I think this is a real bad idea, we should check this by ensuring that the
    bt-url-handler is called first. *)
 let is_http_torrent headers url =
-  let ext = String.lowercase (Filename2.last_extension url) in
+  let ext = String.lowercase_ascii (Filename2.last_extension url) in
   ext = ".torrent" || ext = ".tor"
      || (String2.contains headers "content-type application/x-bittorrent")
 
@@ -401,10 +401,10 @@ let commands = [
 
 let _ =
   CommonNetwork.register_commands commands;
-  network.op_network_share <- (fun fullname codedname size -> ());
-  network.op_network_search <- (fun ss buf -> ());
-  network.op_network_download <- (fun r user group -> dummy_file);
-  file_ops.op_file_commit <- (fun file new_name -> clean_stop file);
+  network.op_network_share <- (fun _fullname _codedname _size -> ());
+  network.op_network_search <- (fun _ss _buf -> ());
+  network.op_network_download <- (fun _r _user _group -> dummy_file);
+  file_ops.op_file_commit <- (fun file __new_name -> clean_stop file);
   file_ops.op_file_pause <- (fun file -> 
     List.iter (fun c ->
       match c.client_connected_for with
@@ -424,12 +424,12 @@ let _ =
                       Some (CommonSwarming.get_strategy s))
   );
   file_ops.op_file_queue <- file_ops.op_file_pause;
-  file_ops.op_file_resume <- (fun file -> ());
-  file_ops.op_file_print <- (fun file buf -> ());
-  network.op_network_close_search <- (fun s -> ());
-  network.op_network_forget_search <- (fun s -> ());
-  network.op_network_connect_servers <- (fun s -> ());
+  file_ops.op_file_resume <- (fun _file -> ());
+  file_ops.op_file_print <- (fun _file _buf -> ());
+  network.op_network_close_search <- (fun _s -> ());
+  network.op_network_forget_search <- (fun _s -> ());
+  network.op_network_connect_servers <- (fun _s -> ());
   network.op_network_reset <- (fun _ -> ());
   network.op_network_porttest_result <- (fun _ -> PorttestNotAvailable);
   network.op_network_check_upload_slots <- (fun _ -> ());
-  network.op_network_recover_temp <- (fun s -> ())
+  network.op_network_recover_temp <- (fun _s -> ())

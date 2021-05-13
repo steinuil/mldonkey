@@ -1,0 +1,3 @@
+(library
+ (name filetp)
+ (libraries mldonkey_lib mldonkey_net mldonkey_common))

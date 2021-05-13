@@ -37,8 +37,8 @@ module type FileTPProtocol = sig
     val handler : gconn -> TcpBufferedSocket.t -> unit
   end
 
-let handlers info gconn =
-  let rec iter_read sock nread =
+let handlers _info gconn =
+  let rec iter_read sock _nread =
 (*    lprintf "iter_read %d\n" nread;  *)
     let b = TcpBufferedSocket.buf sock in
     if b.len > 0 then

@@ -55,12 +55,12 @@ let enable () =
 
     if not !!enable_fileTP then enable_fileTP =:= true;
 
-    add_session_timer enabler 1.0 (fun timer ->
+    add_session_timer enabler 1.0 (fun _timer ->
         FileTPClients.manage_hosts ();
     );
 
     add_timer 10. (fun _ -> FileTPClients.ask_for_files ());
-    add_session_timer enabler 60.0 (fun timer ->
+    add_session_timer enabler 60.0 (fun _timer ->
         FileTPClients.ask_for_files ();
     );
   ()
@@ -79,7 +79,7 @@ let _ =
   network.op_network_save_complex_options <- FileTPComplexOptions.save_config;
   network.op_network_enable <- enable;
   network.network_config_file <- [fileTP_ini];
-  network.op_network_info <- (fun n ->
+  network.op_network_info <- (fun _n ->
       {
         network_netnum = network.network_num;
         network_config_filename = (match network.network_config_file with
@@ -94,4 +94,4 @@ let _ =
   CommonInteractive.register_gui_options_panel "FileTP"
   gui_fileTP_options_panel
 
-let main (toto: int) = ()
+let main (_: int) = ()

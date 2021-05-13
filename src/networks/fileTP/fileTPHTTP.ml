@@ -88,9 +88,9 @@ let parse_line header =
   let endline_pos = String.index header '\n' in
   let http, code =
     match String2.split (String.sub header 0 endline_pos) ' ' with
-    | http :: code :: ok :: _ ->
+    | http :: code :: _ok :: _ ->
       let code = int_of_string code in
-      if not (String2.starts_with (String.lowercase http) "http") 
+      if not (String2.starts_with (String.lowercase_ascii http) "http") 
         then failwith "Not in http protocol"; 
       http, code
     | _ -> 
@@ -121,7 +121,7 @@ let rec client_parse_header c gconn sock header =
     let file = d.download_file in
     let size = file_size file in
 
-    let http, code = parse_line header in
+    let _http, code = parse_line header in
     if !verbose_msg_clients then
       lprintf_nl "GOOD HEADER FROM CONNECTED CLIENT\n";
 
@@ -196,7 +196,7 @@ let rec client_parse_header c gconn sock header =
             if !verbose then lprintf_nl "Specified length: %Ld" len;
             match d.download_ranges with
               [] -> raise Not_found
-            | (start_pos,end_pos,r) :: _ ->
+            | (start_pos,end_pos,_r) :: _ ->
                 lprintf_nl "WARNING: Assuming client is replying to range";
                 if len <> end_pos -- start_pos then
                   begin
@@ -238,7 +238,7 @@ let rec client_parse_header c gconn sock header =
     set_client_state c (Connected_downloading (file_num file));
     let counter_pos = ref start_pos in
 (* Send the next request *)
-    for i = 1 to max_queued_ranges do
+    for _ = 1 to max_queued_ranges do
       if List.length d.download_ranges <= max_queued_ranges then
         (try get_from_client sock c with _ -> ());
     done;
@@ -285,7 +285,7 @@ let rec client_parse_header c gconn sock header =
 
         (match d.download_ranges with
             [] -> lprintf_nl "EMPTY Ranges!"
-          | r :: _ ->
+          | _r :: _ ->
 (*
               let (x,y) = CommonSwarming.range_range r in
               if !verbose then lprintf_nl "Received %Ld [%Ld] (%Ld-%Ld) -> %Ld"
@@ -305,7 +305,7 @@ lprintf "READ: buf_used %d\n" to_read_int;
         if !counter_pos = end_pos then begin
             match d.download_ranges with
               [] -> assert false
-            | (_,_,r) :: tail ->
+            | (_,_,_r) :: tail ->
 (*
                 lprintf "Ready for next chunk (version %s)\nHEADER:%s\n" http
                   (String.escaped header);
@@ -355,7 +355,7 @@ let http_check_size file url start_download_file =
   H.whead2 r (fun headers ->
       let content_length = ref None in
       List.iter (fun (name, content) ->
-          if String.lowercase name = "content-length" then
+          if String.lowercase_ascii name = "content-length" then
         try content_length := Some (Int64.of_string content)
         with _ -> lprintf_nl "bad content length [%s]" content;
       ) headers;

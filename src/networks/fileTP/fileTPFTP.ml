@@ -99,7 +99,7 @@ end_pos !counter_pos b.len to_read;
 
   (match d.download_ranges with
       [] -> lprintf "EMPTY Ranges !!!\n"
-    | r :: _ ->
+    | _ :: _ ->
         ()
   );
 (*
@@ -111,7 +111,7 @@ lprintf "READ: buf_used %d\n" to_read_int;
   if !counter_pos = end_pos then begin
       match d.download_ranges with
         [] -> assert false
-      | (_,_,r) :: tail ->
+      | (_,_,_) :: tail ->
           d.download_ranges <- tail;
 (* If we have no more range to receive, disconnect *)
           if !verbose then lprintf_nl "RANGE DOWNLOADED";
@@ -127,7 +127,7 @@ let download_on_port c d (x,y) ip port =
 
   let token = create_token unlimited_connection_manager in
   let sock = TcpBufferedSocket.connect token "filetp passive"
-      (Ip.to_inet_addr ip) port (fun _ e -> ())
+      (Ip.to_inet_addr ip) port (fun _ _ -> ())
   in
   TcpBufferedSocket.set_reader sock (range_reader c d (ref x) y);
   init_client c sock; 
@@ -180,7 +180,7 @@ let ftp_send_range_request c (x,y) sock d =
 
   if !verbose then lprintf_nl "Asking range %Ld-%Ld" x y;
   let file = d.download_url.Url.full_file in
-  TcpBufferedSocket.set_reader sock (fun sock nread ->
+  TcpBufferedSocket.set_reader sock (fun sock _nread ->
       let b = TcpBufferedSocket.buf sock in
       if !verbose then 
         AnyEndian.dump_hex (Bytes.sub_string b.buf b.pos b.len);
@@ -312,7 +312,7 @@ let ftp_send_range_request c (x,y) sock d =
 (*                                                                       *)
 (*************************************************************************)
 
-let ftp_set_sock_handler c sock =
+let ftp_set_sock_handler _c sock =
   if !verbose then begin
     let ip = 
       try 
@@ -376,10 +376,10 @@ let ftp_check_size file url start_download_file =
 (*        lprintf "IP done %s:%d\n" (Ip.to_string ip) port; *)
       let token = create_token unlimited_connection_manager in
       let sock = TcpBufferedSocket.connect token "ftp client check size"
-          (Ip.to_inet_addr ip) port (fun _ e -> ())
+          (Ip.to_inet_addr ip) port (fun _ _e -> ())
       in
 (*      write_reqs sock reqs; *)
-      TcpBufferedSocket.set_reader sock (fun sock nread ->
+      TcpBufferedSocket.set_reader sock (fun sock _nread ->
           let b = TcpBufferedSocket.buf sock in
           if !verbose then
              AnyEndian.dump_hex (Bytes.sub_string b.buf b.pos b.len);
