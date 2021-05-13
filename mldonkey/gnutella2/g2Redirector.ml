@@ -17,34 +17,21 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 
-open CommonSwarming
-open Printf2
-open Md4
 open CommonOptions
-open CommonSearch
-open CommonServer
-open CommonComplexOptions
-open CommonFile
 open BasicSocket
-open TcpBufferedSocket
 
 open CommonHosts
-open CommonTypes
-open CommonGlobals
 open Options
-open G2Types
 open G2Globals
 open G2Options
-open G2Protocol
-open G2ComplexOptions
 
 let g2_parse_redirector_page f =
   let s = File.to_string f in
-  clean_file s;
+  let s = String2.with_mutations clean_file s in
   let lines = String2.split_simplify s '\n' in
   List.iter (fun line ->
       match String2.split_simplify line '|' with
-        "h" :: ip_port :: n :: _ ->
+        "h" :: ip_port :: _ :: _ ->
           begin
             try
               let ip, port = String2.cut_at ip_port ':' in
@@ -88,4 +75,3 @@ let connect () =
         lprintf_nl "redirector recontacted in %d seconds"
           (!next_redirector_access - last_time ())
     end
-    

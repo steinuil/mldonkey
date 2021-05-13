@@ -1,0 +1,113 @@
+(library
+ (name gnutella2)
+ (libraries mldonkey_lib mldonkey_common mldonkey_net))
+
+(rule
+ (deps
+  (:in g2Clients.mlt)
+  ../gnutella/gnutellaClients.ml
+  (:exe ../../tools/ocamlpp.exe))
+ (targets g2Clients.ml)
+ (action
+  (chdir
+   %{workspace_root}
+   (run %{exe} -o %{targets} -pp %{in}))))
+
+(rule
+ (deps
+  (:in g2ComplexOptions.mlt)
+  ../gnutella/gnutellaComplexOptions.ml
+  (:exe ../../tools/ocamlpp.exe))
+ (targets g2ComplexOptions.ml)
+ (action
+  (chdir
+   %{workspace_root}
+   (run %{exe} -o %{targets} -pp %{in}))))
+
+(rule
+ (deps
+  (:in g2Functions.mlt)
+  ../gnutella/gnutellaFunctions.ml
+  (:exe ../../tools/ocamlpp.exe))
+ (targets g2Functions.ml)
+ (action
+  (chdir
+   %{workspace_root}
+   (run %{exe} -o %{targets} -pp %{in}))))
+
+(rule
+ (deps
+  (:in g2Globals.mlt)
+  ../gnutella/gnutellaGlobals.ml
+  (:exe ../../tools/ocamlpp.exe))
+ (targets g2Globals.ml)
+ (action
+  (chdir
+   %{workspace_root}
+   (run %{exe} -o %{targets} -pp %{in}))))
+
+(rule
+ (deps
+  (:in g2Interactive.mlt)
+  ../gnutella/gnutellaInteractive.ml
+  (:exe ../../tools/ocamlpp.exe))
+ (targets g2Interactive.ml)
+ (action
+  (chdir
+   %{workspace_root}
+   (run %{exe} -o %{targets} -pp %{in}))))
+
+(rule
+ (deps
+  (:in g2Main.mlt)
+  ../gnutella/gnutellaMain.ml
+  (:exe ../../tools/ocamlpp.exe))
+ (targets g2Main.ml)
+ (action
+  (chdir
+   %{workspace_root}
+   (run %{exe} -o %{targets} -pp %{in}))))
+
+(rule
+ (deps
+  (:in g2Options.mlt)
+  ../gnutella/gnutellaOptions.ml
+  (:exe ../../tools/ocamlpp.exe))
+ (targets g2Options.ml)
+ (action
+  (chdir
+   %{workspace_root}
+   (run %{exe} -o %{targets} -pp %{in}))))
+
+(rule
+ (deps
+  (:in g2Protocol.mlt)
+  ../gnutella/gnutellaProtocol.ml
+  (:exe ../../tools/ocamlpp.exe))
+ (targets g2Protocol.ml)
+ (action
+  (chdir
+   %{workspace_root}
+   (run %{exe} -o %{targets} -pp %{in}))))
+
+(rule
+ (deps
+  (:in g2Servers.mlt)
+  ../gnutella/gnutellaServers.ml
+  (:exe ../../tools/ocamlpp.exe))
+ (targets g2Servers.ml)
+ (action
+  (chdir
+   %{workspace_root}
+   (run %{exe} -o %{targets} -pp %{in}))))
+
+(rule
+ (deps
+  (:in g2Types.mlt)
+  ../gnutella/gnutellaTypes.ml
+  (:exe ../../tools/ocamlpp.exe))
+ (targets g2Types.ml)
+ (action
+  (chdir
+   %{workspace_root}
+   (run %{exe} -o %{targets} -pp %{in}))))

@@ -25,7 +25,6 @@ open Options
 open Md4
 open TcpBufferedSocket
 
-open Xml_types
 open CommonGlobals
 open CommonTypes
 open CommonOptions
@@ -173,7 +172,7 @@ module G2_LittleEndian = struct
       buf_ip buf ip;
       buf_int16 buf port
     
-    let buf_short_addr buf (ip,port) =
+    let buf_short_addr buf (ip,_port) =
       buf_ip buf ip
     
     let get_string s pos len =
@@ -225,7 +224,7 @@ module Print = struct
         let buf_addr buf (ip,port) =
           Printf.bprintf buf " %s:%d " (Ip.to_string ip) port
           
-        let buf_short_addr buf (ip,port) =
+        let buf_short_addr buf (ip,_port) =
           Printf.bprintf buf " %s " (Ip.to_string ip)
         
         let buf_int64_32 buf v = Printf.bprintf buf " %Ld " v
@@ -245,7 +244,7 @@ module Print = struct
         let xml = Xml.parse_string s in
         let rec iter indent xml =
           match xml with
-            Element (name, params, subexprs) ->
+            Xml.Element (name, params, subexprs) ->
               Printf.bprintf buf "%s%s:\n" indent name;
               List.iter (fun (name,value) ->
                   Printf.bprintf buf "  %s%s = %s\n" indent name value
@@ -368,7 +367,7 @@ module Print = struct
         | UPROD -> "UPROD"
         | UPROD_XML s -> Buffer.add_string buf s; "XML"
         
-        | Unknown (names, be,s) ->
+        | Unknown (names, _be,s) ->
             (List.iter (fun s -> Printf.bprintf buf "/%s [ %s ]\n" s (AnyEndian.sdump s)) names;
             Printf.bprintf buf "\nUnknown dump:\n %s" (AnyEndian.sdump s));
             "UNKNOWN"
@@ -667,12 +666,12 @@ let g2_decode_payload names be s =
         else
           Q2_UDP (M.get_addr s 0 len, None)
     | [ "MD"; "Q2" ] -> 
-        let s, pos = M.get_string s 0 (String.length s) in Q2_MD s
+        let s, _pos = M.get_string s 0 (String.length s) in Q2_MD s
     
     | [ "URN"; "Q2" ] -> 
-        let s, pos = M.get_uid s 0 (String.length s) in Q2_URN s
+        let s, _pos = M.get_uid s 0 (String.length s) in Q2_URN s
     | [ "DN"; "Q2" ] -> 
-        let s, pos = M.get_string s 0 (String.length s) in Q2_DN s
+        let s, _pos = M.get_string s 0 (String.length s) in Q2_DN s
     | [ "SZR"; "Q2" ] -> 
         Q2_SZR (M.get_uint64_32 s 0, M.get_uint64_32 s 4)
     | [ "I"; "Q2" ] -> 
@@ -706,18 +705,18 @@ let g2_decode_payload names be s =
     
     | [ "H"; "QH2" ] -> QH2_H
     | [ "URN"; "H"; "QH2" ] -> 
-        let s, pos = M.get_uid s 0 (String.length s) in QH2_H_URN s
+        let s, _pos = M.get_uid s 0 (String.length s) in QH2_H_URN s
     | [ "URL"; "H"; "QH2" ] -> 
-        let s, pos = M.get_string s 0 (String.length s) in QH2_H_URL s
+        let s, _pos = M.get_string s 0 (String.length s) in QH2_H_URL s
     | [ "COM"; "H"; "QH2" ] -> 
-        let s, pos = M.get_string s 0 (String.length s) in QH2_H_COM s
+        let s, _pos = M.get_string s 0 (String.length s) in QH2_H_COM s
     | [ "PVU" ;"H"; "QH2" ] -> 
-        let s, pos = M.get_string s 0 (String.length s) in QH2_H_PVU s
+        let s, _pos = M.get_string s 0 (String.length s) in QH2_H_PVU s
     | [ "MD"; "QH2" ] -> 
-        let s, pos = M.get_string s 0 (String.length s) in QH2_MD s
+        let s, _pos = M.get_string s 0 (String.length s) in QH2_MD s
     | [ "UPRO"; "QH2" ] -> QH2_UPRO
     | [ "NICK"; "UPRO"; "QH2" ] -> 
-        let s, pos = M.get_string s 0 (String.length s) in QH2_UPRO_NICK s
+        let s, _pos = M.get_string s 0 (String.length s) in QH2_UPRO_NICK s
     | [ "DN"; "H"; "QH2" ] -> 
           QH2_H_DN s
     | [ "SZ"; "H"; "QH2" ] -> 
@@ -760,7 +759,7 @@ let g2_decode_payload names be s =
     | [ "UPROC" ] -> UPROC
     | [ "UPROD" ] -> UPROD
     | [ "XML"; "UPROD" ] -> 
-        let xml, pos = M.get_string s 0 (String.length s) in
+        let xml, _pos = M.get_string s 0 (String.length s) in
         UPROD_XML xml
     | _ -> raise Not_found
   with e ->
@@ -876,11 +875,11 @@ let resend_udp_packets () =
   | Some sock ->
       try
         while true do
-          let (s,ip,port,seq,times, next_time, acked) = 
+          let (_s,_ip,_port,_seq,_times, next_time, _acked) = 
             Fifo.head udp_packet_waiting_for_ack
           in
           if next_time < last_time () then begin
-              let (s,ip,port,seq,times, next_time,acked) = 
+              let (s,ip,port,seq,times, _next_time,acked) = 
                 Fifo.take udp_packet_waiting_for_ack in
               if not !acked then begin
                   if !verbose then lprintf_nl "resend_udp_packets %s %d: %d" (Ip.to_string ip) port seq;
@@ -908,7 +907,7 @@ let udp_send ip port msg =
         let s = g2_encode msg in
         let compress = String.length s > max_uncompress_packet in
         let s = if compress then
-            (udp_header true) ^ (Zlib.compress_string s)
+            (udp_header true) ^ (Bytes.to_string (Zlib.compress_string (Bytes.of_string s)))
           else
             (udp_header false) ^ s
         in
@@ -963,12 +962,12 @@ let g2_handler f gconn sock  =
 
   if !verbose then begin
     lprintf_nl "g2_handler:";
-    AnyEndian.dump_hex (String.sub b.buf b.pos b.len);
+    AnyEndian.dump_hex (Bytes.sub_string b.buf b.pos b.len);
   end;
 
   try
     while b.len >= 2 do
-      let s = b.buf in
+      let s = Bytes.to_string b.buf in
       (* if !verbose then lprintf_nl "g2_tcp_packet_handler"; *)
       let cb = get_uint8 s b.pos in
       let len_len = (cb lsr 6) land 3 in
@@ -993,8 +992,8 @@ let g2_handler f gconn sock  =
       if b.len < msg_len then raise Not_found;
       
       (* if !verbose then lprintf_nl "One gnutella2 packet received";  *)
-      let name = String.sub b.buf (b.pos + pos) name_len in
-      let packet = String.sub b.buf (b.pos + pos + name_len) len in
+      let name = Bytes.sub_string b.buf (b.pos + pos) name_len in
+      let packet = Bytes.sub_string b.buf (b.pos + pos + name_len) len in
       let has_children = cb land 4 <> 0 in
       TcpBufferedSocket.buf_used b msg_len;
       f gconn (g2_parse [name] has_children be packet)
@@ -1073,7 +1072,7 @@ let parse_udp_packet ip port buf =
   if nCount = 0 then begin
 (*      lprintf "ACK PACKET (%d)\n" nSequence; *)
       
-      Fifo.iter (fun (s,p_ip,p_port,p_seq,_,_,acked) ->
+      Fifo.iter (fun (_s,p_ip,p_port,p_seq,_,_,acked) ->
           if p_ip = ip && p_port = port && p_seq = nSequence then begin
 (*              lprintf "packed %d Acked !!\n" p_seq; *)
               acked := true
@@ -1089,7 +1088,7 @@ let parse_udp_packet ip port buf =
         let my_part = (get_uint8 buf 6)-1 in
 (*        lprintf "part %d on %d\n" my_part nCount; *)
         let needed = Array.make nCount None in
-        Fifo.iter (fun (p_ip, p_port, nSeq, nPart, nFlags, data) ->
+        Fifo.iter (fun (p_ip, p_port, nSeq, nPart, _nFlags, data) ->
             if p_port = port && nSeq = nSequence
                 && p_ip = ip then needed.(nPart) <- Some data
         ) udp_fragmented_packets;
@@ -1121,7 +1120,7 @@ let parse_udp_packet ip port buf =
     let trailer = String.sub buf 8 (len - 8) in
     let buf = 
       if nFlags land 1 <> 0 then 
-        Zlib.uncompress_string2 trailer
+        Zlib.uncompress_string2 (Bytes.of_string trailer)
       else trailer
     in
     
@@ -1416,11 +1415,11 @@ let server_ask_uid sock s quid fuid file_name =
   in
   server_send sock s (packet (Q2 quid) args)
   
-let server_recover_file file sock s =
+let server_recover_file file _sock s =
   List.iter (fun ss ->
       match ss.search_search with
         
-      | UserSearch (_,words, xml_query) ->
+      | UserSearch (_,_words, _xml_query) ->
 (*          server_send_query ss.search_uid words NoConnection s *)
           ()
 (*      | FileWordSearch (_,words) ->
@@ -1476,15 +1475,15 @@ let on_send_pings () =
     server_send_lni s.server_sock s 0L 0L;
    ) !connected_servers
 
-let server_send_push s uid uri = ()
+let server_send_push _s _uid _uri = ()
 
 let bitv_to_string bitv =
-  let s = String.make ((Bitv.length bitv) / 8) '\000' in
+  let s = Bytes.make ((Bitv.length bitv) / 8) '\000' in
   Bitv.iteri_true (fun i ->
       let pos = i / 8 in
       let bit = 7 - (i mod 8) in
       let x = (1 lsl bit) in
-      s.[pos] <- char_of_int ( (int_of_char s.[pos]) lor x );
+      Bytes.set s (pos) @@ char_of_int ( (int_of_char (Bytes.get s pos)) lor x );
   ) bitv;
   s
     
@@ -1515,9 +1514,9 @@ let create_qrt_table2 words table_size =
       array.(pos) <- array.(pos) lor bit; (* index_out_of_bounds *)
   ) words;
   let string_size = table_length in
-  let table = String.create  string_size in
+  let table = Bytes.create  string_size in
   for i = 0 to string_size - 1 do
-    table.[i] <- char_of_int array.(i)
+    Bytes.set table (i) @@ char_of_int array.(i)
   done;
   table
   
@@ -1533,11 +1532,11 @@ let send_qrt_sequence s update_table =
   server_send_qrt_reset s;
   
   if !cached_qrt_table = "" then 
-    cached_qrt_table := create_qrt_table !all_shared_words table_size;
+    cached_qrt_table := Bytes.to_string @@ create_qrt_table !all_shared_words table_size;
   let table = !cached_qrt_table in
   
   let compressor, table =
-      1, Zlib.compress_string table
+      1, Zlib.compress_string (Bytes.of_string table)
   in
   
   server_send_qrt_patch s {
@@ -1545,7 +1544,7 @@ let send_qrt_sequence s update_table =
       QrtPatch.seq_size = 1;
       QrtPatch.compressor = compressor;
       QrtPatch.entry_bits = 1;
-      QrtPatch.table = table;
+      QrtPatch.table = (Bytes.to_string table);
     }
 
 (* let packets = Hashtbl.create 100 *)
@@ -1581,7 +1580,7 @@ let print_string s buf =
     let buf,pos = if nFlags land 1 <> 0 then
         let trailer = String.sub buf 8 (len - 8) in
         lprintf "Uncompress\n";
-        Zlib.uncompress_string2 trailer, 0
+        Zlib.uncompress_string2 (Bytes.of_string trailer), 0
       else buf, 8
     in
     try
@@ -1635,16 +1634,16 @@ let print_string s buf =
       dump buf
   
 let ask_for_uids sh =
-  CommonUploads.ask_for_uid sh SHA1 (fun sh uid -> 
+  CommonUploads.ask_for_uid sh SHA1 (fun _sh _uid -> 
       lprintf "Could share urn\n";
       ());
-  CommonUploads.ask_for_uid sh TIGER (fun sh uid -> 
+  CommonUploads.ask_for_uid sh TIGER (fun _sh _uid -> 
       lprintf "Could share urn:tiger:\n";
       ());
-  CommonUploads.ask_for_uid sh BITPRINT (fun sh uid -> 
+  CommonUploads.ask_for_uid sh BITPRINT (fun _sh _uid -> 
       lprintf "Could share urn:bitprint:\n";
       ());
-  CommonUploads.ask_for_uid sh ED2K (fun sh uid -> 
+  CommonUploads.ask_for_uid sh ED2K (fun _sh _uid -> 
       lprintf "Could share urn:bitprint:\n";
       ())
   
@@ -1655,7 +1654,7 @@ let xml_to_string xml =
   "<?xml version=\"1.0\"?>" ^ (  Xml.to_string xml)
       
 let audio_schema tags = 
-  Element ("audios",
+  Xml.Element ("audios",
     [("xsi:nonamespaceschemalocation",
         "http://www.limewire.com/schemas/audio.xsd")],
     [Element ("audio", tags, [])])
@@ -1690,20 +1689,20 @@ let translate_query q =
     match q with
     | QOr (q1,q2) 
     | QAnd (q1, q2) -> iter q1; iter q2
-    | QAndNot (q1,q2) -> iter q1 
+    | QAndNot (q1,_q2) -> iter q1 
     | QHasWord w ->  add_words w
     | QHasField(field, w) ->
         begin
           match field with
             Field_Type -> 
               begin
-                match String.lowercase w with
+                match String.lowercase_ascii w with
                   "audio" -> audio := true
                 | _ -> add_words w
               end
           | Field_Format ->
               begin
-                match String.lowercase w with
+                match String.lowercase_ascii w with
                 | "mp3" | "wav" -> 
                     add_words w;
                     audio := true
@@ -1714,8 +1713,8 @@ let translate_query q =
           | Field_Title -> tags := ("title", w) :: !tags; add_words w
           | _ -> add_words w
         end
-    | QHasMinVal (field, value) -> ()
-    | QHasMaxVal (field, value) -> ()
+    | QHasMinVal (_field, _value) -> ()
+    | QHasMaxVal (_field, _value) -> ()
     | QNone ->  ()
   in
   iter q;
@@ -1733,4 +1732,3 @@ let parse_url url =
   (name, zero, uids)
 
 let ask_for_push _ = ()
-  

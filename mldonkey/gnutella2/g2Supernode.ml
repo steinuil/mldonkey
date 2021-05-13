@@ -17,7 +17,6 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 
-open Queues
 open Printf2
 open Md4
 open Options
@@ -25,22 +24,15 @@ open Options
 open BasicSocket
 open TcpBufferedSocket
   
-open CommonDownloads
 open CommonOptions
-open CommonSearch
-open CommonServer
-open CommonComplexOptions
-open CommonFile
 open CommonTypes
 open CommonGlobals
 open CommonHosts
 
-open G2Network
 open G2Types
 open G2Globals
 open G2Options
 open G2Protocol
-open G2ComplexOptions  
 open G2Proto
 open G2Servers
 
@@ -141,7 +133,7 @@ let disconnect_node node s =
       List.iter (fun guid ->
           Hashtbl.remove node_guids guid
       ) node.node_guids
-  | ConnectionWaiting token -> assert false
+  | ConnectionWaiting _token -> assert false
   | NoConnection -> ()
 
 (*************************************************************************)
@@ -191,7 +183,7 @@ let node_send_ping node =
 (*                                                                       *)
 (*************************************************************************)
 
-let supernode_to_node node sock gconn p =
+let supernode_to_node node sock _gconn p =
   set_lifetime sock 600.;
   if !verbose_msg_servers then begin
       lprintf "RECEIVED supernode_to_node: %s\n"
@@ -207,7 +199,7 @@ let supernode_to_node node sock gconn p =
         
 (* Normally, the client immediatly replies with QA to ack the query...
 forget it... *)
-  | QH2 (n, quid) ->
+  | QH2 (_n, quid) ->
 
         begin
           if not (Hashtbl.mem node_guids quid) then begin
@@ -307,7 +299,7 @@ let supernode_handler2 node_ref gconn sock (first_line, headers) =
 let gnutella_proto = "GNUTELLA/"
 let gnutella_proto_len = String.length gnutella_proto
       
-let supernode_handler1 node gconn sock (first_line, headers) = 
+let supernode_handler1 node _gconn sock (first_line, headers) = 
   lprintf "Entering supernode_handler1\n";
   if List.length !nodes >= !!supernode_degree then begin
 (* TODO hum... we should not close the socket like that, but send an error
@@ -370,10 +362,10 @@ let start_supernode enabler =
         let sock = TcpServerSocket.create "gnutella supernode" 
             Unix.inet_addr_any
             !!supernode_port
-            (fun sock event ->
+            (fun _sock event ->
               match event with
                 TcpServerSocket.CONNECTION (s, 
-                  Unix.ADDR_INET(from_ip, from_port)) ->
+                  Unix.ADDR_INET(from_ip, _from_port)) ->
                   lprintf "CONNECTION RECEIVED FROM %s FOR SUPERNODE\n"
                     (Ip.to_string (Ip.of_inet_addr from_ip))
                   ; 
@@ -481,4 +473,3 @@ let _ =
   );
   plugin_enable_hooks := enable :: !plugin_enable_hooks;
   plugin_disable_hooks := disable :: !plugin_disable_hooks
-  

@@ -1,0 +1,9 @@
+(executable
+ (name ocamlpp)
+ (libraries camlp4.lib str))
+
+(rule
+ (deps ocamlpp.camlp4.ml)
+ (targets ocamlpp.ml)
+ (action
+  (run camlp4of -impl %{deps} -o %{targets})))

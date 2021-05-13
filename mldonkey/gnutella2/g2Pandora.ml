@@ -17,25 +17,9 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 
-open Int64ops
-open BasicSocket
 open AnyEndian
 open Printf2
-open Options
-open Md4
-open TcpBufferedSocket
 
-open Xml_types
-open CommonGlobals
-open CommonTypes
-open CommonOptions
-open CommonHosts
-
-open G2Network
-open G2Options
-open G2Types
-open G2Protocol
-open G2Globals
 open G2Proto
   
 type t = UDP | TCP
@@ -72,11 +56,11 @@ let new_packet t (n : int) ip1 port1 ip2 port2 s =
         let p = parse_udp_packet (Ip.of_string ip1) port1 s in
         lprintf "\nPACKET %s:%d -> %s:%d\n%s\n\n" ip1 port1 ip2 port2
           (Print.print p)
-      with e ->
+      with _ ->
 (* lprintf "Could not parse: %s\n" (Printexc2.to_string e) *) ()
 
 let hescaped s =
-  String2.replace_char s '\r' ' ';s
+  String2.with_mutations (fun s -> String2.replace_char s '\r' ' ') s
 
 let rec iter s pos =
   if pos < String.length s then
@@ -150,11 +134,11 @@ let piter s1 deflate h msgs =
       if deflate then
         let z = Zlib.inflate_init true in
         let _ =  
-          let s2 = String.make 100000 '\000' in
+          let s2 = Bytes.make 100000 '\000' in
           let f = Zlib.Z_SYNC_FLUSH in
-          let (_,used_in, used_out) = Zlib.inflate z s1 0 len s2 0 100000 f in
+          let (_,_used_in, used_out) = Zlib.inflate z (Bytes.unsafe_of_string s1) 0 len s2 0 100000 f in
           lprintf "decompressed %d/%d\n" used_out len;
-          String.sub s2 0 used_out
+          Bytes.sub_string s2 0 used_out
         in
         begin
 (* First of all, deflate in one pass *)
@@ -162,12 +146,12 @@ let piter s1 deflate h msgs =
 (*                lprintf "PARSE ONE BEGIN...\n%s\n" (String.escaped s1); *)
             let z = Zlib.inflate_init true in
             let s =  
-              let s2 = String.make 1000000 '\000' in
+              let s2 = Bytes.make 1000000 '\000' in
               let f = Zlib.Z_SYNC_FLUSH in
               let len = String.length s1 in
-              let (_,used_in, used_out) = Zlib.inflate z s1 0 len s2
+              let (_,_used_in, used_out) = Zlib.inflate z (Bytes.unsafe_of_string s1) 0 len s2
                   0 1000000 f in
-              String.sub s2 0 used_out
+              Bytes.sub_string s2 0 used_out
             in
             ignore (parse_string s);
 (*                lprintf "...PARSE ONE END\n"; *)
@@ -184,12 +168,12 @@ let piter s1 deflate h msgs =
               let m = if offset > 0 then String.sub m offset (len - offset) else m in
               let rem = rem ^ m in
               let len = String.length rem in
-              let s2 = String.make 100000 '\000' in
+              let s2 = Bytes.make 100000 '\000' in
               let f = Zlib.Z_SYNC_FLUSH in
 (*                  lprintf "deflating %d bytes\n" len; *)
-              let (_,used_in, used_out) = Zlib.inflate z rem 0 len s2 0 100000 f in
+              let (_,used_in, used_out) = Zlib.inflate z (Bytes.unsafe_of_string rem) 0 len s2 0 100000 f in
 (*                  lprintf "decompressed %d/%d[%d]\n" used_out len used_in; *)
-              let m = buf ^ (String.sub s2 0 used_out) in
+              let m = buf ^ (Bytes.sub_string s2 0 used_out) in
               
               let buf =
                 try
@@ -265,5 +249,3 @@ let commit () =
       end;
       lprintf "\nEND OF CONNECTION\n---------------------------------------\n";
   ) connections;
-  
-  

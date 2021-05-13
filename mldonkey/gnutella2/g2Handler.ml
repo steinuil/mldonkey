@@ -17,21 +17,15 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *)
 
-open Int64ops
-open Xml
 open Printf2
 open Md4
 open BasicSocket
 open TcpBufferedSocket
 open Options
   
-open CommonSwarming  
 open CommonUploads
 open CommonOptions
-open CommonSearch
 open CommonServer
-open CommonComplexOptions
-open CommonFile
 open CommonTypes
 open CommonGlobals
 open CommonHosts
@@ -41,8 +35,11 @@ open G2Types
 open G2Globals
 open G2Options
 open G2Protocol
-open G2ComplexOptions
 open G2Proto
+
+let xml_of = function
+  | Xml.Element (a,b,c) -> a,b,c
+  | _ -> failwith "Xml.xml_of: bad XML type"
 
 (* TODO: try to find a more general function *)
 let g2_tag_of_name name = field_of_string name
@@ -71,7 +68,7 @@ let xml_profile () =
   (local_login ())
   (local_login ())
   
-let g2_packet_handler s sock gconn p = 
+let g2_packet_handler s sock _gconn p = 
   let h = s.server_host in
   if !verbose_msg_servers then begin
       lprintf_nl "Received %s packet from %s:%d: %s" 
@@ -118,7 +115,7 @@ try
           | LNI_HS (leaves,maxleaves) -> 
               s.server_nusers <- Int64.of_int leaves;
               s.server_maxnusers <- Int64.of_int maxleaves;
-          | LNI_LS (files,kb) ->
+          | LNI_LS (files,_kb) ->
               s.server_nfiles <- files;
           | _ -> ()
       ) p.g2_children;
@@ -206,7 +203,7 @@ try
               by_urn := true;
               files := find_urn urn
           | Q2_DN dn when String2.starts_with dn "magnet" ->
-              let name, uids = parse_magnet dn in
+              let _name, uids = parse_magnet dn in
               by_urn := true;
               List.iter (fun urn ->
                   files := (find_urn urn) @ !files
@@ -307,8 +304,8 @@ packet QH2_H (
               ignore (H.new_host (Ip.addr_of_ip ip) port Ultrapeer);
               List.iter (fun c ->
                   match c.g2_payload with
-                    KHL_NH_LS (f,kb)
-                  | KHL_CH_LS (f,kb) -> (
+                    KHL_NH_LS (f,_kb)
+                  | KHL_CH_LS (f,_kb) -> (
                     let s = find_server (Ip.addr_of_ip ip) port in
                     match s with 
                       Some s -> 
@@ -456,7 +453,7 @@ XML ("audios",
           | QH2_MD xml ->
               begin
                 try
-                  let xml = Xml.xml_of (Xml.parse_string xml) in
+                  let xml = xml_of (Xml.parse_string xml) in
                   xml_info := Some xml
                 with e ->
                     if !verbose_unknown_messages then
@@ -470,11 +467,11 @@ XML ("audios",
       let user_files = List.rev !user_files in
       let user_files = match !xml_info with
           None -> user_files
-        | Some ( (kind, _, files)) -> 
+        | Some ( (_kind, _, files)) -> 
             
             if List.length files = List.length user_files then begin
                 List.map2 (fun (urn, size, name, url, _) file ->
-                    let (file_type, tags, _) = Xml.xml_of file in
+                    let (_file_type, tags, _) = xml_of file in
                     (urn, size, name, url, 
                       List.map (fun (tag, v) ->
                           string_tag (g2_tag_of_name tag) v) 
@@ -491,7 +488,7 @@ XML ("audios",
       
       if !verbose_msg_servers then begin
           lprintf_nl "Results Received:";
-          List.iter (fun (urn, size, name, url, tags) ->
+          List.iter (fun (urn, size, name, url, _tags) ->
               lprintf "[name %s] [size %s] [urn %s] [url %s]\n"
                 name (match size with
                   None -> "??" | Some sz -> Int64.to_string sz) 
@@ -548,7 +545,7 @@ XML ("audios",
                   
                   (match size with
                       None -> ()
-                    | Some size ->
+                    | Some _size ->
                         if file_size file = Int64.zero then begin
                             lprintf "Recover correct file size\n";
                             
@@ -675,4 +672,3 @@ let udp_client_handler ip port buf =
       
 let update_shared_files () = ()
 let declare_word _ = new_shared_words := true
-  

@@ -1,0 +1,4 @@
+
+#where "enable_gnutella" = "enable_gnutella2"
+
+#include "mldonkey/gnutella/gnutellaMain.ml" where "Gnutella" = "G2" 
