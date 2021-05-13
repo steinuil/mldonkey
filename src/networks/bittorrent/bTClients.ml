@@ -353,7 +353,7 @@ let connect_trackers file event need_sources f =
                   t.tracker_last_conn <- last_time ();
                   file.file_tracker_connected <- true;
                   f t fileres)
-            | `Other url -> assert false (* should have been disabled *)
+            | `Other _url -> assert false (* should have been disabled *)
             | `Udp (host,port) -> talk_to_udp_tracker host port args file t need_sources
         end
 
@@ -529,7 +529,7 @@ let is_bit_set s n =
 
 let set_bit s n =
   let i = n lsr 3 in
-  s.[i] <- Char.unsafe_chr (Char.code (Bytes.get s (i)) lor bits.(n land 7))
+  Bytes.set s i @@ Char.unsafe_chr (Char.code (Bytes.get s (i)) lor bits.(n land 7))
 
 (* Official client seems to use max_range_request 5 and max_range_len 2^14 *)
 (* How much requests in the 'pipeline' *)
@@ -538,8 +538,8 @@ let max_range_requests = 5
 
 let reserved () =
   let s = Bytes.make 8 '\x00' in
-  s.[7] <- (match !bt_dht with None -> '\x00' | Some _ -> '\x01');
-  s.[5] <- '\x10'; (* TODO bep9, bep10, notify clients about extended*)
+  Bytes.set s 7 (match !bt_dht with None -> '\x00' | Some _ -> '\x01');
+  Bytes.set s 5 '\x10'; (* TODO bep9, bep10, notify clients about extended*)
   s
 
 (** handshake *)
@@ -608,7 +608,7 @@ let parse_reserved rbits c =
 
   c.client_azureus_messaging_protocol <- has_bit 0 0x80
 
-let send_extended_handshake c file =
+let send_extended_handshake c _file =
   let module B = Bencode in
   let msg = (B.encode (B.Dictionary [(* "e",B.Int 0L; *)
                                      "m", (B.Dictionary ["ut_metadata", B.Int 1L]);
@@ -616,7 +616,7 @@ let send_extended_handshake c file =
     send_client c (Extended (Int64.to_int 0L, msg));
   end
 
-let send_extended_piece_request c piece file =
+let send_extended_piece_request c piece _file =
   let module B = Bencode in
   let msg = (B.encode (B.Dictionary ["msg_type", B.Int 0L; (* 0 is request subtype*)
                                      "piece", B.Int piece; ])) in begin
@@ -640,7 +640,7 @@ let show_client c =
 (* removed: @param peer_id The hash (sha1) of the client. (Should be checked)
 *)
 let rec client_parse_header counter cc init_sent gconn sock
-    (proto, rbits, file_id) =
+    (_proto, rbits, file_id) =
   try
     set_lifetime sock 600.;
     if !verbose_msg_clients then
@@ -742,7 +742,7 @@ let rec client_parse_header counter cc init_sent gconn sock
     set_rtimeout sock !!client_timeout;
     (* Once parsed succesfully we define the function client_to_client
        to be the function used when a message is read *)
-    gconn.gconn_handler <- Reader (fun gconn sock ->
+    gconn.gconn_handler <- Reader (fun _gconn sock ->
         bt_handler TcpMessages.parsing (client_to_client c) c sock
     );
 
@@ -812,7 +812,7 @@ and update_client_bitmap c =
   @param sock Socket of the client
   @param c The client
 *)
-and get_from_client sock (c: client) =
+and get_from_client _sock (c: client) =
   let file = c.client_file in
   (* Check if there's not enough requests in the 'pipeline'
      and if a request can be send (not choked and file is downloading) *)
@@ -830,7 +830,7 @@ and get_from_client sock (c: client) =
 
   try
   
-    let num, x,y, r =
+    let num, x,y, _r =
 
       if !verbose_msg_clients then
         lprintf_file_nl (as_file file) "CLIENT %d: Finding new range to send" (client_num c);
@@ -853,7 +853,7 @@ and get_from_client sock (c: client) =
 
         match c.client_range_waiting with
         | None -> ()
-        | Some (x,y,r) -> lprintf "Waiting %Ld-%Ld" x y;
+        | Some (x,y,_) -> lprintf "Waiting %Ld-%Ld" x y;
 
         lprint_newline ();
           
@@ -861,7 +861,7 @@ and get_from_client sock (c: client) =
           
         match c.client_chunk with
         | None -> lprintf "none"
-        | Some (chunk, blocks) -> List.iter (fun b -> 
+        | Some (_chunk, blocks) -> List.iter (fun b -> 
             CommonSwarming.print_block b.up_block) blocks;
 
         lprint_newline ();
@@ -1070,7 +1070,7 @@ and client_to_client c sock msg =
         begin
           match c.client_ranges_sent with
             [] -> ()
-          | r :: tail ->
+          | _ :: tail ->
 (*              CommonSwarming.free_range r; *)
               c.client_ranges_sent <- tail;
         end;
@@ -1218,7 +1218,7 @@ and client_to_client c sock msg =
         begin
           c.client_choked <- false;
           (* remote peer cleared our request : re-request *)
-          for i = 1 to max_range_requests -
+          for _ = 1 to max_range_requests -
             List.length c.client_ranges_sent do
             (try get_from_client sock c with _ -> ())
           done
@@ -1381,7 +1381,7 @@ and client_to_client c sock msg =
                           file.file_metadata_chunks.(0) <- "eed4:info";
                           file.file_metadata_chunks.(2 + Int64.to_int last_piece_index) <- "eee";
                           try
-                            Array.iteri (fun index chunk ->
+                            Array.iter (fun chunk ->
                             (* regexp ee is a fugly way to find the end of the 1st dict before the real payload *)
                               let metaindex = (2 + (Str.search_forward  (Str.regexp_string "ee") chunk 0 )) in
                               let chunklength = ((String.length chunk) - metaindex) in
@@ -1391,7 +1391,7 @@ and client_to_client c sock msg =
                               fileindex := Int64.add !fileindex  (Int64.of_int chunklength);
                               ();
                             ) file.file_metadata_chunks;
-                          with e -> begin
+                          with _ -> begin
                             (* TODO ignoring errors for now, the array isnt really set up right anyway yet *)
                             (*
                             lprintf_file_nl (as_file file) "Error %s saving metadata"
@@ -1552,7 +1552,7 @@ let listen () =
     let s = TcpServerSocket.create "bittorrent client server"
         (Ip.to_inet_addr !!client_bind_addr)
         !!client_port
-        (fun sock event ->
+        (fun _sock event ->
           match event with
             TcpServerSocket.CONNECTION (s,
               Unix.ADDR_INET(from_ip, from_port)) ->
@@ -1651,7 +1651,7 @@ let resume_clients file =
   Hashtbl.iter (fun _ c ->
       try
         match c.client_sock with
-        | Connection sock -> ()
+        | Connection _sock -> ()
             (*i think this one is not really usefull for debugging
               lprintf_nl "[BT]: RESUME: Client is already connected"; *)
         | _ ->
@@ -1810,7 +1810,7 @@ let talk_to_tracker file need_sources =
                 in
                 if need_sources then 
                   iter_comp p 0 (String.length p)
-            | "private", Int n -> ()
+            | "private", Int _ -> ()
               (* TODO: if set to 1, disable peer exchange *)
             | "peers6", _ -> ()
               (* TODO IPv6 support required *)
@@ -1860,7 +1860,7 @@ let recover_files () =
       match file.file_swarmer with
         None -> ()
       | Some swarmer ->
-          (try check_finished swarmer file with e -> ());
+          (try check_finished swarmer file with _ -> ());
           match file_state file with
             FileDownloading ->
               if !verbose_share then
@@ -1944,7 +1944,7 @@ let client_can_upload c allowed =
   do_if_connected  c.client_sock (fun sock ->
       match c.client_upload_requests with
         [] -> ()
-      | _ :: tail ->
+      | _ :: _ ->
     let new_allowed_to_write =
       c.client_allowed_to_write ++ (Int64.of_int allowed) in
       if allowed > 0 && can_write_len sock

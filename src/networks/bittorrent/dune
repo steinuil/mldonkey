@@ -1,3 +1,5 @@
 (library
  (name bittorrent)
- (libraries mldonkey_net mldonkey_lib mldonkey_common num))
+ (libraries mldonkey_net mldonkey_lib mldonkey_common num bitstring)
+ (preprocess
+  (pps ppx_bitstring)))

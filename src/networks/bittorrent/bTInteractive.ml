@@ -234,7 +234,7 @@ let get_subfiles file =
   let downloaded = CommonSwarming.get_swarmer_block_verified swarmer in
   let r = ref [] in
   Unix32.subfile_tree_map (file_fd file)
-    begin fun fname start length current_length ->
+    begin fun fname start length _current_length ->
       let prio = count_intervals_till (start ++ length) in
 (*       let (blockstart,blockend) = CommonSwarming.blocks_of_ *)
       let stop = if length <> 0L then (start ++ length -- 1L) else start in
@@ -427,7 +427,7 @@ let op_file_print file o =
     let fdn = file_disk_name file in
     let new_file_files = ref [] in
   
-    List.iter (fun (f, s, m) -> 
+    List.iter (fun (f, s, _) -> 
       let subfile = Filename.concat fdn f in
       new_file_files := (f,s, check_magic subfile) :: !new_file_files;
     ) file.file_files;
@@ -529,7 +529,7 @@ let op_file_print_sources file o =
       html_mods_td buf l
     else
       (* List *)
-      List.iter (fun (t,c,d)  ->
+      List.iter (fun (_,_,d)  ->
           (* Title Class Value *)
           Printf.bprintf buf "%s "
           d;
@@ -541,7 +541,7 @@ let op_file_print_sources file o =
     else
       if List.length l > 0 then begin
         Printf.bprintf buf "\n";
-        List.iter (fun (w,x,y,z)  ->
+        List.iter (fun (_,_,_,z)  ->
           (* Sort Class Title Value *)
           Printf.bprintf buf "%s "
           z;
@@ -688,7 +688,7 @@ let op_file_cancel file =
 let op_ft_cancel ft =
   Hashtbl.remove ft_by_num ft.ft_id
 
-let op_ft_commit ft newname =
+let op_ft_commit ft _newname =
   Hashtbl.remove ft_by_num ft.ft_id
 
 let op_file_info file =
@@ -952,7 +952,7 @@ let load_torrent_from_web r user group ft =
         end)
 
 let valid_torrent_extension url =
-  let ext = String.lowercase (Filename2.last_extension url) in
+  let ext = String.lowercase_ascii (Filename2.last_extension url) in
   ext = ".torrent" || ext = ".tor"
 
 let get_regexp_string text r =
@@ -993,7 +993,7 @@ let op_network_parse_url url user group =
                   torrent_private = false; 
                   torrent_announce =
                     (match magnet#trackers with
-                     | h::q -> h
+                     | h::_ -> h
                      | [] -> "");
                   torrent_announce_list = magnet#trackers;
                 }  in
@@ -1016,8 +1016,8 @@ let op_network_parse_url url user group =
             H.req_proxy = !CommonOptions.http_proxy;
             H.req_user_agent = get_user_agent ();
             H.req_referer = (
-              let (rule_search,rule_value) =
-                try (List.find(fun (rule_search,rule_value) ->
+              let (_rule_search,rule_value) =
+                try (List.find(fun (rule_search,_rule_value) ->
                         Str.string_match (Str.regexp rule_search) real_url 0
                     ) !!referers )
                 with Not_found -> ("",real_url) in
@@ -1189,10 +1189,10 @@ let output buf typ elements =
   let f = match typ with
   | HTML | XHTML | XML ->
     begin function 
-    | `Text s -> Xml.buffer_escape buf s
+    | `Text s -> Xml_escape.buffer_escape buf s
     | `Link (name,url) -> 
         Printf.bprintf buf "<a href=\"%s\">%s</a>" 
-          (Xml.escape url) (Xml.escape (match name with "" -> url | s -> s))
+          (Xml_escape.escape url) (Xml_escape.escape (match name with "" -> url | s -> s))
     | `Break -> Buffer.add_string buf "<br/>"
     end
   | TEXT | ANSI ->
@@ -1311,7 +1311,7 @@ let commands =
       "" end
     ), _s ":\t\t\tprint all seeded .torrent files on this server (output: name, total upload, session upload, session download)";
 
-    "reshare_torrents", "Network/Bittorrent", Arg_none (fun o ->
+    "reshare_torrents", "Network/Bittorrent", Arg_none (fun _ ->
       share_files ();
       _s "done"
     ), _s ":\t\t\trecheck torrents/* directories for changes";
@@ -1372,7 +1372,7 @@ let commands =
           let num = ref "" in
           let urls = ref [] in
           (match args with
-          | nums :: [] -> raise Not_found
+          | _ :: [] -> raise Not_found
           | nums :: rest -> num := nums; urls := rest
           | _ -> raise Not_found);
 
@@ -1440,7 +1440,7 @@ let op_gui_message s user =
   | 1 -> (* 34+ *)
       let n = get_int s 2 in
       let a, pos = get_string s 6 in
-      let c, pos = get_string s pos in
+      let c, _ = get_string s pos in
       let sf = CommonShared.shared_find n in
       let f = shared_fullname sf in
       ignore (compute_torrent f a c)
@@ -1464,7 +1464,7 @@ let _ =
   file_ops.op_file_check <- op_file_check;
   file_ops.op_file_cancel <- op_file_cancel;
   file_ops.op_file_info <- op_file_info;
-  file_ops.op_file_save_as <- (fun file name -> ());
+  file_ops.op_file_save_as <- (fun _ _ -> ());
   file_ops.op_file_shared <- (fun file ->
       match file.file_shared with
         None -> None
@@ -1484,15 +1484,15 @@ let _ =
   network.op_network_gui_message <- op_gui_message;
   network.op_network_connected <- op_network_connected;
   network.op_network_parse_url <- op_network_parse_url;
-  network.op_network_share <- (fun fullname codedname size -> ());
-  network.op_network_close_search <- (fun s -> ());
-  network.op_network_forget_search <- (fun s -> ());
-  network.op_network_connect_servers <- (fun s -> ());
-  network.op_network_search <- (fun ss buf -> ());
-  network.op_network_download <- (fun r user group -> dummy_file);
-  network.op_network_recover_temp <- (fun s -> ());
+  network.op_network_share <- (fun _ _ _ -> ());
+  network.op_network_close_search <- (fun _ -> ());
+  network.op_network_forget_search <- (fun _ -> ());
+  network.op_network_connect_servers <- (fun _ -> ());
+  network.op_network_search <- (fun _ _ -> ());
+  network.op_network_download <- (fun _ _ _ -> dummy_file);
+  network.op_network_recover_temp <- (fun _ -> ());
   let clean_exit_started = ref false in
-  network.op_network_clean_exit <- (fun s ->
+  network.op_network_clean_exit <- (fun _ ->
     if not !clean_exit_started then
       begin
         List.iter (fun file -> BTClients.file_stop file) !current_files;

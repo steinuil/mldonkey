@@ -87,7 +87,7 @@ let enable () =
         lprint_newline();
         lprintf_nl "BT-client_port and BT-tracker_port can not be the same.";
         lprintf_nl "Change one of the settings and restart MLDonkey, exiting...\n";
-        Pervasives.exit 69
+        Stdlib.exit 69
       end;
     if !!BTTracker.tracker_port > 0 then (
         try BTTracker.start_tracker !!tracked_files_list
@@ -112,15 +112,15 @@ let enable () =
     if not !!enable_bittorrent then enable_bittorrent =:= true;
 
     BTClients.recover_files ();
-    add_session_timer enabler 60.0 (fun timer ->
+    add_session_timer enabler 60.0 (fun _ ->
         BTClients.recover_files ();
     );
 
-    add_session_timer enabler 120.0 (fun timer ->
+    add_session_timer enabler 120.0 (fun _timer ->
         BTClients.send_pings ();
     );
 
-  add_session_timer enabler 10.0 (fun timer ->
+  add_session_timer enabler 10.0 (fun _timer ->
       BTClients.recompute_uploaders());
 
   CommonGlobals.do_at_exit ( fun _ ->
@@ -157,7 +157,7 @@ let _ =
   network.op_network_enable <- enable;
   network.network_config_file <- [bittorrent_ini];
   check_client_uid ();
-  network.op_network_info <- (fun n ->
+  network.op_network_info <- (fun _n ->
       {
         network_netnum = network.network_num;
         network_config_filename = (match network.network_config_file with
@@ -172,4 +172,4 @@ let _ =
   CommonInteractive.register_gui_options_panel "BitTorrent"
   gui_bittorrent_options_panel
 
-let main (toto: int) = ()
+let main (_: int) = ()
