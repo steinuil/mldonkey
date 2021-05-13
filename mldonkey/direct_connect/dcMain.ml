@@ -107,10 +107,10 @@ let enable () =
   Unix2.can_write_to_directory filelist_directory;
   
   (match  DcClients.create_udp_socket (); with        (* UDP listening socket *)
-  | Some sock -> ()
+  | Some _sock -> ()
   | None -> failwith "Could not create udp socket" ); (* TCP listening socket *) 
   (match DcClients.create_tcp_socket () with
-  | Some sock -> ()
+  | Some _sock -> ()
   | None -> failwith "Could not create tcp socket" );
 
   add_session_timer enabler 60. one_min_timer;
@@ -124,7 +124,7 @@ let enable () =
 (* list of todos here... *)
 
   
-  add_timer 60.0 (fun timer -> do_once_after_start ());
+  add_timer 60.0 (fun _timer -> do_once_after_start ());
 
 (*  add_session_timer enabler 300. (fun timer ->
       DcServers.recover_files_clients ()
@@ -147,7 +147,7 @@ let _ =
       else network_disable network);
   network.network_config_file <- [directconnect_ini];
   network.op_network_enable <- enable;
-    network.op_network_info <- (fun n ->
+    network.op_network_info <- (fun _n ->
       { 
         network_netnum = network.network_num;
         network_config_filename = (match network.network_config_file with
@@ -159,7 +159,7 @@ let _ =
         network_downloaded = Int64.zero;
       network_connected_servers = List.length !connected_servers;
       });
-  network.op_network_search <- (fun q buf -> (* DC search function *)
+  network.op_network_search <- (fun q _buf -> (* DC search function *)
     let query = q.search_query in
     let module S = DcProtocol.Search in
     let words = ref [] in
@@ -169,7 +169,7 @@ let _ =
       (match q with
       | QOr (q1,q2)
       | QAnd (q1,q2) -> iter q1; iter q2
-      | QAndNot (q1,q2) -> iter q1
+      | QAndNot (q1,_q2) -> iter q1
       | QHasWord w -> words := w :: !words
       | QHasField (field, w) ->
           (match field with
@@ -248,4 +248,3 @@ let _ =
       as_server (new_server ip port).server_server
   )
 *)
-

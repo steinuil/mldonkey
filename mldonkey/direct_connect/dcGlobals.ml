@@ -210,7 +210,7 @@ let dc_shared_tree = dc_new_shared_dir ""
 let rec dc_add_shared_file node dcsh dir_list =
   match dir_list with
     [] -> assert false
-  | [filename] ->
+  | [_filename] ->
       node.shared_files <- dcsh :: node.shared_files
   | dirname :: dir_tail ->
       let node =

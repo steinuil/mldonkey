@@ -758,10 +758,10 @@ let rec client_reader c t sock =
                    lprintf_nl "  Stalemate (levels are equal), closing";
                  close sock (Closed_for_error "Negotiation download: Stalemate" )
            | _ -> () ) (* Upload *)
-      | DcConnectionStyle (MeActive (Download our_level))
-      | DcConnectionStyle (ClientActive (Download our_level)) -> (* connection is ready for uploading             *)
+      | DcConnectionStyle (MeActive (Download _our_level))
+      | DcConnectionStyle (ClientActive (Download _our_level)) -> (* connection is ready for uploading             *)
           (match t.Direction.direction with
-          | Upload level ->                          (* Active mode and client wants to upload too ?? *)
+          | Upload _level ->                          (* Active mode and client wants to upload too ?? *)
              if !verbose_msg_clients then lprintf_nl "We have a conflict, both want to upload...";
              (match c.client_state with
              | DcConnectionStyle MeActive _ ->
@@ -1042,7 +1042,7 @@ let rec client_reader c t sock =
               (*lprintf_nl "Connection state is: DcDownloadListConnecting )"; *)
               (match c.client_supports with (* send $Supports if necessary *)
               | None -> ()
-              | Some dc_client_supports -> 
+              | Some _dc_client_supports -> 
                   dc_send_msg sock ( SupportsReq (ClientSupports mldonkey_dc_client_supports) ) );
               c.client_state <- DcDownloadListConnecting (level,true,time); (* memorise $Direction level *)
               dc_send_msg sock ( DirectionReq {
@@ -1057,7 +1057,7 @@ let rec client_reader c t sock =
         | _ ->
               (match c.client_supports with   (* send $Supports if necessary *)
               | None -> ()
-              | Some dc_client_supports ->    (* if EXTENDEDPROTOCOL supported by client, send own $Supports *)
+              | Some _dc_client_supports ->    (* if EXTENDEDPROTOCOL supported by client, send own $Supports *)
                   dc_send_msg sock ( SupportsReq (ClientSupports mldonkey_dc_client_supports) ) );
 
               (match dir with                 (* send $Direction *)
@@ -1306,7 +1306,7 @@ let file_complete file =
   file_completed (as_file file.file_file);   (* update_file_state impl FileDownloaded; *)
   List.iter (fun c ->                        (* remove this files clients except current connection       *)
     (match c.client_state with               (* because we use this connection possibly for next download *)
-    | DcDownload f -> ()                     (* only one client should be in this state *) 
+    | DcDownload _f -> ()                     (* only one client should be in this state *) 
     | _ ->
         remove_client c )  
   ) file.file_clients
@@ -1321,11 +1321,11 @@ let client_downloaded c sock nread = (* TODO check tth while loading, abort if e
         let downloaded =
           if c.client_preread_bytes_left > 0 then begin                (* if precheck not yet done *)
             let check_bytes = min nread c.client_preread_bytes_left in (* which is smaller... *) 
-            let check_buffer = String.create check_bytes in
+            let check_buffer = Bytes.create check_bytes in
             Unix32.read (file_fd file) (c.client_pos -- (Int64.of_int c.client_preread_bytes_left))
               check_buffer 0 check_bytes;
-            let str2 = String.sub b.buf b.pos check_bytes in
-            if (String.compare check_buffer str2) = 0 then begin      (* if downloaded is ok *) 
+            let str2 = Bytes.sub b.buf b.pos check_bytes in
+            if (Bytes.compare check_buffer str2) = 0 then begin      (* if downloaded is ok *) 
               c.client_preread_bytes_left <- c.client_preread_bytes_left - check_bytes;
               if c.client_preread_bytes_left = 0 then begin            (* if checked all preread bytes *)
                 let downloaded = b.len - check_bytes in
@@ -1407,9 +1407,9 @@ let init_anon_client sock =
 let create_tcp_socket () = 
   (try
     let sock = TcpServerSocket.create "DC client listening" (Ip.to_inet_addr !!client_bind_addr) !!dc_port
-        (fun sock event ->
+        (fun _sock event ->
           match event with
-        | TcpServerSocket.CONNECTION (s, Unix.ADDR_INET(from_ip, from_port)) ->
+        | TcpServerSocket.CONNECTION (s, Unix.ADDR_INET(_from_ip, _from_port)) ->
             (*lprintf_nl "Listen: connection received from %s:%d" 
               (Ip.to_string (Ip.of_inet_addr from_ip)) from_port; *)
               
@@ -1423,7 +1423,7 @@ let create_tcp_socket () =
     (*lprintf_nl "Created listening socket..." ;*)
     dc_tcp_listen_sock := Some sock;
     (match (Unix.getsockname (BasicSocket.fd (TcpServerSocket.sock sock))) with 
-    | Unix.ADDR_INET (addr,port) -> Some sock
+    | Unix.ADDR_INET (_addr,_port) -> Some sock
     | _ -> None )
   with e -> lprintf_nl "Exception %s while initializing DC listen socket" (Printexc2.to_string e);
             None )
@@ -1431,11 +1431,11 @@ let create_tcp_socket () =
 (* UDP *)
 
 (* Parse udp messages *)
-let udp_parse buf sock =
+let udp_parse buf _sock =
   if !verbose_udp then lprintf_nl "UDP Receive: (%s)" buf; 
   let str = String2.splitn buf ' ' 1 in
   (match str with
-  | [cmd; args] -> 
+  | [_cmd; args] -> 
       let module S = SR in
       let msg = S.parse (String2.replace args '|' empty_string) in (* strip following '|' from message *)  
       if msg.S.filename = empty_string then ()
@@ -1476,7 +1476,7 @@ let udp_handler sock event =
           let len = String.length pbuf in
           if len > 0 then
             udp_parse pbuf sock
-        with e -> () ) 
+        with _e -> () ) 
       ) 
           | _ -> ()
 
@@ -1537,9 +1537,9 @@ let dc_upload c bytes =
           in 
           let rlen = int64_min_int (c.client_endpos -- c.client_pos) bytes in
           CommonUploads.consume_bandwidth rlen;
-          let upload_buffer = String.create rlen in
+          let upload_buffer = Bytes.create rlen in
           Unix32.read file_fd c.client_pos upload_buffer 0 rlen;
-          TcpBufferedSocket.write sock upload_buffer 0 rlen;
+          TcpBufferedSocket.write sock (Bytes.unsafe_to_string upload_buffer) 0 rlen;
           (*lprintf_nl "  Wrote (%d) bytes" rlen;*)
           let uploaded = Int64.of_int rlen in 
           c.client_pos <- c.client_pos ++ uploaded;

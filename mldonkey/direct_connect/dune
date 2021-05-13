@@ -1,0 +1,6 @@
+(library
+ (name direct_connect)
+ (libraries mldonkey_net mldonkey_lib mldonkey_common)
+ (foreign_stubs
+  (language c)
+  (names che3_c)))

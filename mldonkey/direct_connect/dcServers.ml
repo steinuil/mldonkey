@@ -77,7 +77,7 @@ let disconnect_server s reason =
       remove_connected_server s )
   
 (* Server connection handler *) 
-let server_handler s sock event = 
+let server_handler s _sock event = 
   (match event with
   | BASIC_EVENT (CLOSED r) ->
       disconnect_server s r     
@@ -291,7 +291,7 @@ let client_to_server s m sock =
       if !verbose_msg_clients then lprintf_nl "Received RevConnectToMe (%s)" orig;
       if not !!firewalled then begin (* we are in active mode, send $ConnectToMe *)
         (match !dc_tcp_listen_sock with 
-        | Some lsock -> (* our listenin socket is active, so send ConnectToMe *)
+        | Some _lsock -> (* our listenin socket is active, so send ConnectToMe *)
             (try 
               let u = search_user_by_name orig in
               if (u.user_state = UserIdle) then begin
@@ -476,7 +476,7 @@ let client_to_server s m sock =
         lprintf_nl "%s" errortxt;
       disconnect_server s (Closed_for_error errortxt )
 
-  | VersionReq v -> ()
+  | VersionReq _v -> ()
 
   | _ -> 
     lprintf_nl "--> Unhandled server message. Implement ?:";
@@ -533,7 +533,7 @@ let make_hublist_from_file f =
           if ll = 2 then begin
             (try
               port := int_of_string (List.nth ap 1)
-            with e -> () )
+            with _e -> () )
           end;
           if (ll < 3) && ((String.length !addr) > 2) && (!port > 0) && (!port < 65536) then begin
             let nusers = ref 0 in begin
@@ -557,7 +557,7 @@ let make_hublist_from_file f =
   if !verbose_msg_servers then lprintf_nl "Found %d valid servers from hublist" !counter;
   !hublist
 
-let xml_tag name = let name = String.lowercase name in fun x -> String.lowercase (Xml.tag x) = name
+let xml_tag name = let name = String.lowercase_ascii name in fun x -> String.lowercase_ascii (Xml.tag x) = name
 
 let rec xml_select names xs =
   match names with
@@ -577,11 +577,11 @@ let ssplit s sub =
 exception ADC_not_supported
 
 let parse_address s =
-  let s = match ssplit (String.lowercase s) "://" with
+  let s = match ssplit (String.lowercase_ascii s) "://" with
   | Some ("dchub",s) -> s
   | None -> s
   | Some (("adc"|"adcs"),_) -> raise ADC_not_supported
-  | Some (proto,_) -> failwith (Printf.sprintf "Unsupported protocol in %S" s)
+  | Some (_proto,_) -> failwith (Printf.sprintf "Unsupported protocol in %S" s)
   in
   try Scanf.sscanf s "%s@:%u" (fun s n -> s,n) with _ -> s,411
 
@@ -675,6 +675,3 @@ let _ =
     mutable op_server_low_id : ('a -> bool);
     mutable op_server_rename : ('a -> string -> unit);
 *)
-
-  
-  

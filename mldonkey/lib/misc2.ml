@@ -123,3 +123,6 @@ let map_file file =
     int8_unsigned c_layout false [|-1|])
 
 let bzlib_version_num () = ""
+
+let bz2_extract _ =
+  failwith "bz2 not supported"

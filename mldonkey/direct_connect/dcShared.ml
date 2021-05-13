@@ -68,15 +68,15 @@ let make_mylist () =
 let make_xml_mylist root = 
   let buf = Buffer.create 1000 in
   Printf.bprintf buf "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?>\r\n";
-  Printf.bprintf buf "<FileListing Version=\"1\" CID=\"1,0,2,3,4,5,6\" Base=\"/\" Generator=\"MLDC-%s\">\r\n" (Xml.escape Autoconf.current_version);
+  Printf.bprintf buf "<FileListing Version=\"1\" CID=\"1,0,2,3,4,5,6\" Base=\"/\" Generator=\"MLDC-%s\">\r\n" (Xml_escape.escape Autoconf.current_version);
   let rec iter ntabs node =
     buf_tabs buf ntabs;
-    Printf.bprintf buf "<Directory Name=\"%s\">\r\n" (Xml.escape node.shared_dirname);
+    Printf.bprintf buf "<Directory Name=\"%s\">\r\n" (Xml_escape.escape node.shared_dirname);
     List.iter (fun dcsh ->
       buf_tabs buf (ntabs + 1);
       let fname = Filename2.basename dcsh.dc_shared_codedname in
-      Printf.bprintf buf "<File Name=\"%s\" Size=\"%Ld\" TTH=\"%s\"/>\r\n" (Xml.escape fname)
-        dcsh.dc_shared_size (Xml.escape dcsh.dc_shared_tiger_root)
+      Printf.bprintf buf "<File Name=\"%s\" Size=\"%Ld\" TTH=\"%s\"/>\r\n" (Xml_escape.escape fname)
+        dcsh.dc_shared_size (Xml_escape.escape dcsh.dc_shared_tiger_root)
     ) node.shared_files;
     List.iter (fun (_, node) -> iter (ntabs+1) node) node.shared_dirs;
     buf_tabs buf ntabs;
@@ -98,9 +98,9 @@ let file_to_che3_to_string filename =
     let rec read pos =
       let rlen = int64_min_int (flen -- pos) slen in
       let npos = Int64.add pos (Int64.of_int rlen) in
-      let str = String.create slen in
+      let str = Bytes.create slen in
       Unix32.read file_fd pos str 0 rlen;
-      Buffer.add_string buf str;
+      Buffer.add_bytes buf str;
       if npos < flen then read npos
     in
     read Int64.zero;
@@ -125,7 +125,7 @@ let string_to_che3_to_file str filename =
         else wlen
       in
       let npos = pos + len in
-      Unix32.write file_fd (Int64.of_int pos) s pos len;
+      Unix32.write file_fd (Int64.of_int pos) (Bytes.unsafe_of_string s) pos len;
       if npos < slen then write npos
     in 
     write 0;
@@ -146,12 +146,12 @@ let file_to_bz2_to_buffer filename =
       getchar ()
     in getchar ();*)
     let rec decompress () =
-      let str = String.create 4096 in 
-      let n = Bzip2.input ic str 0 (String.length str) in
+      let str = Bytes.create 4096 in 
+      let n = Bzip2.input ic str 0 (Bytes.length str) in
       if n = 0 then ()
       else begin 
         (*let ss = (String.sub str 0 n) in*)
-        Buffer.add_string buf (String.sub str 0 n);
+        Buffer.add_subbytes buf str 0 n;
         (*lprintf_nl "(%s)" ss;*)
         decompress ()
       end
@@ -180,7 +180,7 @@ let buffer_to_bz2_to_file buf filename =
         else slen
       in
       let npos = pos + len in
-      let str = Buffer.sub buf pos len in      
+      let str = Buffer.sub buf pos len |> Bytes.of_string in      
       Bzip2.output oc str 0 len;
       if npos < blen then compress npos 
     in compress 0;
@@ -313,7 +313,7 @@ let () =
     let codedname =
       match Filename2.slash with
       | '/' -> codedname
-      | c -> let s = String.copy codedname in String2.replace_char s c '/'; s
+      | c -> let s = Bytes.of_string codedname in String2.replace_char s c '/'; Bytes.to_string s
     in
     (try
       let dcsh = Hashtbl.find dc_shared_files_by_fullname fullname in
@@ -332,7 +332,7 @@ let () =
       let dcsh = {
         dc_shared_fullname = fullname;
         dc_shared_codedname = codedname;
-        dc_shared_searchname = String.lowercase (List.nth (String2.splitn codedname '/' 1) 1);
+        dc_shared_searchname = String.lowercase_ascii (List.nth (String2.splitn codedname '/' 1) 1);
         dc_shared_size = size;
         dc_shared_tiger_root = empty_string;
         (*dc_shared_tiger_array = [||];*)

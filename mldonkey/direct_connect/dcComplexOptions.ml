@@ -67,7 +67,7 @@ module SharedDcFileOption = struct
         in
         let sh_sname =
           (try
-            String.lowercase (List.nth (String2.splitn sh_cname '/' 1) 1) (* strip the "shared##" *)
+            String.lowercase_ascii (List.nth (String2.splitn sh_cname '/' 1) 1) (* strip the "shared##" *)
           with _ -> failwith "Bad DC shared file codedname" )
         in 
         let sh_root =
@@ -147,7 +147,7 @@ let server_to_value h =
   
 
 (* parse options for files *)
-let value_to_file file_size file_state user group assocs =
+let value_to_file _file_size _file_state user group assocs =
   let get_value name conv = conv (List.assoc name assocs) in
 (*  let get_value_nil name conv = 
     try conv (List.assoc name assocs) with _ -> []
@@ -223,7 +223,7 @@ let client_to_value c =
       in
       list )
       
-let value_to_client is_friend assocs = (* CHECK *)
+let value_to_client _is_friend assocs = (* CHECK *)
   let get_value name conv = conv (List.assoc name assocs) in
   let ip = get_value "client_ip" Ip.value_to_ip in
   let port = get_value "client_port" value_to_int in
@@ -293,4 +293,3 @@ let _ =
   client_ops.op_client_to_option <- client_to_value;
   network.op_network_client_of_option <- (fun is_friend c ->
       as_client (value_to_client is_friend c).client_client)
-

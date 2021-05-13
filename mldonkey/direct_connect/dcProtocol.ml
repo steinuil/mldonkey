@@ -74,15 +74,15 @@ let dc_encode_chat s = (* convert '|'and '$' to html characters &#36; and &#124;
 
 (* Reuseable modules for simple commands *)
 module Empty = functor(M: sig val msg : string end) ->  struct
-  let parse s = ()
-  let print t = lprintf_nl "%s" M.msg
-      let write buf t = ()
+  let parse _s = ()
+  let print _t = lprintf_nl "%s" M.msg
+      let write _buf _t = ()
     end
 
 module Empty2 = functor(M: sig val msg : string end) ->  struct
-      let parse s = ()
-  let print t = lprintf_nl "%s" M.msg
-      let write buf t = Printf.bprintf buf "$%s" M.msg
+      let parse _s = ()
+  let print _t = lprintf_nl "%s" M.msg
+      let write buf _t = Printf.bprintf buf "$%s" M.msg
     end
 
 (* DC uses 1-byte encodings *)
@@ -92,13 +92,13 @@ let utf_to_dc s =
   (* FIXME need hub-specific encodings *)
 (*   Charset.convert Charset.UTF_8 Charset.CP1252 s *)
   try
-    Charset.convert Charset.UTF_8 (Charset.charset_from_string !!DcOptions.default_encoding) s
+    Charset.convert ~from_charset:Charset.UTF_8 ~to_charset:(Charset.charset_from_string !!DcOptions.default_encoding) s
   with
     _ -> Charset.Locale.to_locale s
 
 let dc_to_utf s =
   try
-    Charset.convert (Charset.charset_from_string !!DcOptions.default_encoding) Charset.UTF_8 s
+    Charset.convert ~from_charset:(Charset.charset_from_string !!DcOptions.default_encoding) ~to_charset:Charset.UTF_8 s
   with
     _ -> Charset.Locale.to_utf8 s
 
@@ -218,7 +218,7 @@ well be sent in one go. Identifier must be a directory in the unnamed root, endi
       match t.adctype with
 (*       | AdcTthl tth -> "tthl", show_name (NameTTH tth), [] *)
       | AdcFile name -> "file", show_name name, ""
-      | AdcList (path,re) -> "list", path, " RE1"
+      | AdcList (path,_re) -> "list", path, " RE1"
     in
     let flags = if t.zl then flags ^ " ZL1" else flags in
     Printf.sprintf "$%s %s %s %Ld %Ld%s" A.command
@@ -243,7 +243,7 @@ module ConnectToMe = struct
       }
       
     let parse s = 
-    let snick, rnick, senderip =
+    let snick, _rnick, senderip =
       match String2.split s ' ' with
       | [ snick ; rnick ; senderip ] -> snick, rnick, senderip (* NMDC compatible clients: *)
       | [ rnick ; senderip ] -> create_temp_nick (), rnick, senderip   (* DC++, NMDC v2.205 and DC:PRO v0.2.3.97A: *)
@@ -585,9 +585,9 @@ module Search = struct
             if filetype = 9 then                             (* TTH *)
               dc_replace_str_to_str words s_tth empty_string (* Strip TTH: *)             
             else begin                                       (* normal search words *)
-              let s = ref (String.copy words) in
+              let s = ref (Bytes.of_string words) in
               String2.replace_char !s '$' ' ';
-              String.lowercase !s 
+              String.lowercase_ascii (Bytes.to_string !s)
             end
           in 
           let words = dc_to_utf words in 
@@ -626,9 +626,9 @@ module Search = struct
       (let words =
          if t.filetype = 9 then s_tth ^ t.words_or_tth    (* if TTH search is wanted, send root hash *)
          else begin
-           let s = ref (String.copy t.words_or_tth) in    (* otherwise send search words *) 
+           let s = ref (Bytes.of_string t.words_or_tth) in    (* otherwise send search words *) 
            String2.replace_char !s char32 '$';
-           !s
+           Bytes.to_string !s
          end
        in
        utf_to_dc words);
@@ -723,7 +723,7 @@ module SR = struct
               | _ -> raise Not_found )
           | _ -> raise Not_found )
       | _ -> raise Not_found )
-    with e ->
+    with _e ->
       if !verbose_msg_clients then lprintf_nl "Error in SR parsing (%s)" s;
       raise Not_found )
                           
@@ -1048,9 +1048,9 @@ let dc_write buf m =
   | HelloReq t -> Hello.write buf t
   | HubIsFullReq -> ()
   | HubNameReq t -> HubName.write buf t
-  | HubTopicReq s -> ()
+  | HubTopicReq _s -> ()
   | LockReq t -> Buffer.add_string buf "$Lock"; Lock.write buf t
-  | LogedInReq s -> ()
+  | LogedInReq _s -> ()
   | KeyReq t -> Buffer.add_string buf "$Key"; Key.write buf t
   | MaxedOutReq -> Buffer.add_string buf "$MaxedOut"
   | MessageReq t -> Message.write buf t
@@ -1084,8 +1084,8 @@ let dc_print m =
   | CanceledReq -> Canceled.print ()
   | ConnectToMeReq t -> ConnectToMe.print t
   | DirectionReq t -> Direction.print t
-  | ErrorReq t -> lprintf_nl "$Error"
-  | FailedReq t -> lprintf_nl "$Failed"
+  | ErrorReq _t -> lprintf_nl "$Error"
+  | FailedReq _t -> lprintf_nl "$Failed"
   | FileLengthReq t -> FileLength.print t
   | ForceMoveReq t -> ForceMove.print t
   | GetListLenReq -> GetListLen.print ()
@@ -1129,10 +1129,10 @@ let dc_handler_server f sock nread =
   (try
     let rec iter nread =
       if nread > 0 then begin
-        let pos = String.index_from b.buf b.pos '|' in
+        let pos = Bytes.index_from b.buf b.pos '|' in
         if pos < (b.pos + b.len) then begin
           let len = pos - b.pos in
-          let s = String.sub b.buf b.pos len in
+          let s = Bytes.sub_string b.buf b.pos len in
           buf_used b (len+1);
           begin 
             try f (dc_parse true s) sock
@@ -1157,10 +1157,10 @@ let dc_handler_client c fm nm dm sock nread = (* fm = (read_first_message false)
         | Some c when c.client_receiving <> Int64.zero -> (* if we are downloading from client ...*)
             dm c sock nread 
         | _ ->                                            (* or message is a new connection ... *)
-            let pos = String.index_from b.buf b.pos '|' in
+            let pos = Bytes.index_from b.buf b.pos '|' in
             if pos < (b.pos + b.len) then begin
               let len = pos - b.pos in
-              let s = String.sub b.buf b.pos len in
+              let s = Bytes.sub_string b.buf b.pos len in
               let msg = dc_parse false s in
               buf_used b (len+1);
               begin try
@@ -1187,4 +1187,3 @@ let dc_send_msg sock m =
   Buffer.add_char buf '|';
   let s = Buffer.contents buf in
   write_string sock s
-
