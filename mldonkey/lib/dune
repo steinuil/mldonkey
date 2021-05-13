@@ -26,8 +26,6 @@
   (flags -fexceptions -fPIC))
  (c_library_flags -lz -lpthread -lstdc++))
 
-(ocamllex http_lexer)
-
 (rule
  (alias camlp4of)
  (deps options.camlp4.ml)

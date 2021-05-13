@@ -2048,7 +2048,7 @@ let runinfo html buf o =
       Printf.sprintf "\t\t language: %s - locale: %s - UTC offset: %s"
         Charset.Locale.default_language
         Charset.Locale.locale_string
-        (Rss_date.mk_timezone (Unix.time ()))
+        (Date.mk_timezone (Unix.time ()))
     );
   tack list
     (

@@ -18,79 +18,165 @@
 *)
 
 type date_format =
-  Second
-| Minute
-| Hour
-| Day
-| WeekDay
-| Month
-| MonthNumber
-| Year
-| Comma
-| Space
-| Colon
-| Dot
-| Minus
-| Zone
-| Gmt
+  | Second
+  | Minute
+  | Hour
+  | Day
+  | WeekDay
+  | Month
+  | MonthNumber
+  | Year
+  | Comma
+  | Space
+  | Colon
+  | Dot
+  | Minus
+  | Zone
+  | Gmt
 
-let months = [| "Jan"; "Feb"; "Mar"; "Apr"; "May"; "Jun";
-                "Jul"; "Aug"; "Sep"; "Oct"; "Nov"; "Dec"|]
+let months =
+  [|
+    "Jan";
+    "Feb";
+    "Mar";
+    "Apr";
+    "May";
+    "Jun";
+    "Jul";
+    "Aug";
+    "Sep";
+    "Oct";
+    "Nov";
+    "Dec";
+  |]
 
 let days = [| "Sun"; "Mon"; "Tue"; "Wed"; "Thu"; "Fri"; "Sat" |]
 
 let month = ref (fun n -> months.(n))
+
 let day = ref (fun n -> days.(n))
-  
+
+let localzone () =
+  let t = Unix.time () in
+  let gt = Unix.gmtime t and lt = Unix.localtime t in
+  let min_diff =
+    (lt.Unix.tm_hour * 60) + lt.Unix.tm_min
+    - ((gt.Unix.tm_hour * 60) + gt.Unix.tm_min)
+  in
+  let day_diff = lt.Unix.tm_yday - gt.Unix.tm_yday in
+  if day_diff < -1 || day_diff = 1 then min_diff + (24 * 60)
+  else if day_diff > 1 || day_diff = -1 then min_diff - (24 * 60)
+  else min_diff
+
+let mk_timezone (_ : float) =
+  let zone = localzone () in
+  let s, z = if zone >= 0 then ('+', zone) else ('-', zone) in
+  let h = z / 60 in
+  let m = z mod 60 in
+  Printf.sprintf "%c%02d%02d" s h m
+
 let string_of_date formats tm date =
-  List.fold_left (fun s format ->
+  List.fold_left
+    (fun s format ->
       match format with
-        Second -> Printf.sprintf "%s%02d" s tm.Unix.tm_sec
+      | Second -> Printf.sprintf "%s%02d" s tm.Unix.tm_sec
       | Minute -> Printf.sprintf "%s%02d" s tm.Unix.tm_min
       | Hour -> Printf.sprintf "%s%02d" s tm.Unix.tm_hour
       | Day -> Printf.sprintf "%s%02d" s tm.Unix.tm_mday
-      | WeekDay  -> Printf.sprintf "%s%s" s (!day tm.Unix.tm_wday)
+      | WeekDay -> Printf.sprintf "%s%s" s (!day tm.Unix.tm_wday)
       | Month -> Printf.sprintf "%s%s" s (!month tm.Unix.tm_mon)
-      | MonthNumber -> Printf.sprintf "%s%02d" s (tm.Unix.tm_mon+1)
-      | Year -> Printf.sprintf "%s%04d" s (1900+tm.Unix.tm_year)
+      | MonthNumber -> Printf.sprintf "%s%02d" s (tm.Unix.tm_mon + 1)
+      | Year -> Printf.sprintf "%s%04d" s (1900 + tm.Unix.tm_year)
       | Comma -> s ^ ","
       | Space -> s ^ " "
       | Colon -> s ^ ":"
       | Dot -> s ^ "."
       | Minus -> s ^ "-"
-      | Zone -> Printf.sprintf "%s%s" s (Rss_date.mk_timezone date)
-      | Gmt -> s ^ "GMT"
-  ) "" formats
+      | Zone -> Printf.sprintf "%s%s" s (mk_timezone date)
+      | Gmt -> s ^ "GMT")
+    "" formats
 
-  
 let to_string date =
-  string_of_date [Hour;Colon;Minute;Space; Space; WeekDay; Space; Day; Space;Month;]
+  string_of_date
+    [ Hour; Colon; Minute; Space; Space; WeekDay; Space; Day; Space; Month ]
     (Unix.localtime date) date
-    
+
 let to_full_string date =
-  string_of_date [Hour;Colon;Minute;Space; Space; WeekDay; Space; Day; Space;Month; Space;Year]
+  string_of_date
+    [
+      Hour;
+      Colon;
+      Minute;
+      Space;
+      Space;
+      WeekDay;
+      Space;
+      Day;
+      Space;
+      Month;
+      Space;
+      Year;
+    ]
     (Unix.localtime date) date
 
-let simple date = 
-  string_of_date [Hour;Colon;Minute;Colon;Second;Space; Space; WeekDay]
+let simple date =
+  string_of_date
+    [ Hour; Colon; Minute; Colon; Second; Space; Space; WeekDay ]
     (Unix.localtime date) date
 
-let reverse date = 
-  string_of_date [Year;MonthNumber;Day;Minus;Hour;Minute;Second]
+let reverse date =
+  string_of_date
+    [ Year; MonthNumber; Day; Minus; Hour; Minute; Second ]
     (Unix.localtime date) date
-  
+
 let mail_string date =
-    string_of_date [WeekDay;Comma;Space;Day;Space;Month;Space;Year;Space;Hour;Colon;Minute;Colon;Second;Space;Zone]
-      (Unix.localtime date) date
+  string_of_date
+    [
+      WeekDay;
+      Comma;
+      Space;
+      Day;
+      Space;
+      Month;
+      Space;
+      Year;
+      Space;
+      Hour;
+      Colon;
+      Minute;
+      Colon;
+      Second;
+      Space;
+      Zone;
+    ]
+    (Unix.localtime date) date
 
 let apache_string date =
-    string_of_date [WeekDay;Comma;Space;Day;Space;Month;Space;Year;Space;Hour;Colon;Minute;Colon;Second;Space;Gmt]
-      (Unix.localtime date) date
+  string_of_date
+    [
+      WeekDay;
+      Comma;
+      Space;
+      Day;
+      Space;
+      Month;
+      Space;
+      Year;
+      Space;
+      Hour;
+      Colon;
+      Minute;
+      Colon;
+      Second;
+      Space;
+      Gmt;
+    ]
+    (Unix.localtime date) date
 
 let time_of_string date =
   let month =
     match String.sub date 8 3 with
-      "Jan" -> 0
+    | "Jan" -> 0
     | "Feb" -> 1
     | "Mar" -> 2
     | "Apr" -> 3
@@ -104,50 +190,59 @@ let time_of_string date =
     | "Dec" -> 11
     | _ -> 0
   in
-  begin
-    try
-      let time = fst(Unix.mktime{ 
-      Unix.tm_isdst = false;
-      Unix.tm_wday = 0;
-      Unix.tm_yday = 0;
-      Unix.tm_sec = int_of_string (String.sub date 23 2);
-      Unix.tm_min = int_of_string (String.sub date 20 2);
-      Unix.tm_hour = int_of_string (String.sub date 17 2);
-      Unix.tm_mday = int_of_string (String.sub date 5 2);
-      Unix.tm_mon = month;
-      Unix.tm_year = int_of_string (String.sub date 12 4) - 1900}) in time
-    with e -> failwith (Printf.sprintf "date error %s" (Printexc2.to_string e))
-  end
+  try
+    let time =
+      fst
+        (Unix.mktime
+           {
+             Unix.tm_isdst = false;
+             Unix.tm_wday = 0;
+             Unix.tm_yday = 0;
+             Unix.tm_sec = int_of_string (String.sub date 23 2);
+             Unix.tm_min = int_of_string (String.sub date 20 2);
+             Unix.tm_hour = int_of_string (String.sub date 17 2);
+             Unix.tm_mday = int_of_string (String.sub date 5 2);
+             Unix.tm_mon = month;
+             Unix.tm_year = int_of_string (String.sub date 12 4) - 1900;
+           })
+    in
+    time
+  with e -> failwith (Printf.sprintf "date error %s" (Printexc2.to_string e))
 
 let minute_in_secs = 60
+
 let hour_in_minutes = 60
+
 let day_in_hours = 24
+
 let half_hour_in_secs = 30 * minute_in_secs
+
 let hour_in_secs = 60 * minute_in_secs
-let half_day_in_secs = (day_in_hours / 2) * hour_in_secs
+
+let half_day_in_secs = day_in_hours / 2 * hour_in_secs
+
 let day_in_secs = day_in_hours * hour_in_secs
+
 let day_in_minutes = day_in_hours * hour_in_minutes
+
 let year_in_secs = 365 * day_in_secs
 
 let time_to_string time print_format =
   let days = time / 60 / 60 / 24 in
-  let rest = time - days * 60 * 60 * 24 in
+  let rest = time - (days * 60 * 60 * 24) in
   let hours = rest / 60 / 60 in
-  let rest = rest - hours * 60 * 60 in
+  let rest = rest - (hours * 60 * 60) in
   let minutes = rest / 60 in
-  let seconds = rest - minutes * 60 in
+  let seconds = rest - (minutes * 60) in
   match print_format with
-    "long" ->
-
-  if days > 0
-    then Printf.sprintf " %dd " days
-  else if hours > 0
-    then Printf.sprintf " %d:%02d:%02d " hours minutes seconds
-    else Printf.sprintf " %d:%02d " minutes seconds
-
+  | "long" ->
+      if days > 0 then Printf.sprintf " %dd " days
+      else if hours > 0 then
+        Printf.sprintf " %d:%02d:%02d " hours minutes seconds
+      else Printf.sprintf " %d:%02d " minutes seconds
   | "verbose" ->
-        Printf.sprintf "%s%s%dm %ds"
-          (if days > 0 then (string_of_int days) ^ "d " else "")
-          (if hours > 0 then (string_of_int hours) ^ "h " else "")
-          minutes seconds
+      Printf.sprintf "%s%s%dm %ds"
+        (if days > 0 then string_of_int days ^ "d " else "")
+        (if hours > 0 then string_of_int hours ^ "h " else "")
+        minutes seconds
   | _ -> ""
