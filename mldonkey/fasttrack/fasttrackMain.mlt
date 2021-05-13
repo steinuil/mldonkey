@@ -1,0 +1,4 @@
+#where "_gnutella" = "_fasttrack"
+#where "gnutella_" = "fasttrack_"
+
+#include "mldonkey/gnutella/gnutellaMain.ml" where "Gnutella" = "Fasttrack" 

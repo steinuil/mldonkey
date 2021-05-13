@@ -1,0 +1,89 @@
+(library
+ (name fasttrack)
+ (libraries mldonkey_lib mldonkey_net mldonkey_common)
+ (foreign_stubs
+  (language c)
+  (names
+   fst_crypt
+   fst_crypt_ml
+   enc_type_1
+   enc_type_2
+   enc_type_20
+   enc_type_80)))
+
+(rule
+ (deps
+  (:in fasttrackClients.mlt)
+  ../gnutella/gnutellaClients.ml
+  (:exe ../../tools/ocamlpp.exe))
+ (targets fasttrackClients.ml)
+ (action
+  (chdir
+   %{workspace_root}
+   (run %{exe} -o %{targets} -pp %{in}))))
+
+(rule
+ (deps
+  (:in fasttrackComplexOptions.mlt)
+  ../gnutella/gnutellaComplexOptions.ml
+  (:exe ../../tools/ocamlpp.exe))
+ (targets fasttrackComplexOptions.ml)
+ (action
+  (chdir
+   %{workspace_root}
+   (run %{exe} -o %{targets} -pp %{in}))))
+
+(rule
+ (deps
+  (:in fasttrackFunctions.mlt)
+  ../gnutella/gnutellaFunctions.ml
+  (:exe ../../tools/ocamlpp.exe))
+ (targets fasttrackFunctions.ml)
+ (action
+  (chdir
+   %{workspace_root}
+   (run %{exe} -o %{targets} -pp %{in}))))
+
+(rule
+ (deps
+  (:in fasttrackInteractive.mlt)
+  ../gnutella/gnutellaGlobals.ml
+  (:exe ../../tools/ocamlpp.exe))
+ (targets fasttrackInteractive.ml)
+ (action
+  (chdir
+   %{workspace_root}
+   (run %{exe} -o %{targets} -pp %{in}))))
+
+(rule
+ (deps
+  (:in fasttrackMain.mlt)
+  ../gnutella/gnutellaInteractive.ml
+  (:exe ../../tools/ocamlpp.exe))
+ (targets fasttrackMain.ml)
+ (action
+  (chdir
+   %{workspace_root}
+   (run %{exe} -o %{targets} -pp %{in}))))
+
+(rule
+ (deps
+  (:in fasttrackOptions.mlt)
+  ../gnutella/gnutellaMain.ml
+  (:exe ../../tools/ocamlpp.exe))
+ (targets fasttrackOptions.ml)
+ (action
+  (chdir
+   %{workspace_root}
+   (run %{exe} -o %{targets} -pp %{in}))))
+
+(rule
+ (deps
+  (:in fasttrackTypes.mlt)
+  ../gnutella/gnutellaOptions.ml
+  (:exe ../../tools/ocamlpp.exe))
+ (targets fasttrackTypes.ml)
+ (action
+  (chdir
+   %{workspace_root}
+   (run %{exe} -o %{targets} -pp %{in}))))

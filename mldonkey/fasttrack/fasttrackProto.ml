@@ -65,8 +65,7 @@ let ip_to_string ip = Ip.to_string ip
 let crypt_and_send sock out_cipher str =
   if !verbose_msg_raw || monitored sock then
     lprintf "crypt_and_send: to send [%s]\n" (String.escaped str);
-  let str = String.copy str in
-  apply_cipher out_cipher str 0 (String.length str);
+  let str = String2.with_mutations (fun str -> apply_cipher out_cipher str 0 (Bytes.length str)) str in
   if !verbose_msg_raw || monitored sock then
     lprintf "crypt_and_send: [%s] sent\n" (String.escaped str);
   write_string sock str
@@ -127,7 +126,7 @@ let tag_of_tag tag s =
       int64_tag tag s
   | Field_KNOWN "resolution" ->
       let n1, pos = get_dynint s 0 in
-      let n2, pos = get_dynint s pos in
+      let n2, _pos = get_dynint s pos in
       { tag_name =  tag; tag_value = Pair (n1, n2) }
 
   | Field_Completesources
@@ -838,12 +837,12 @@ dec: [(63)]
             | 53 (* 0x35 0, 1, 2, -1 *)
             | 33 (* 0x21 size *)
               ->
-                let dynint, npos = get_dynint m pos in
+                let dynint, _npos = get_dynint m pos in
                 Uint64 dynint
 
             | 0x0d ->
-                let n1, npos = get_dynint m pos in
-                let n2, npos = get_dynint m pos in
+                let n1, _npos = get_dynint m pos in
+                let n2, _npos = get_dynint m pos in
                 Pair (n1,n2)
 
 
@@ -896,7 +895,7 @@ dec: [(63)]
 
       s_uid,
       if  first_op = 0 && first_tag = 3 then begin
-          let hash, pos = get_string m (pos+7) in
+          let hash, _pos = get_string m (pos+7) in
           let hash = Md5Ext.direct_of_string hash in
           QueryLocationReq hash
 
@@ -998,7 +997,7 @@ dec: [(63)]
             let shared_hash = String.sub m 0 20 in
             let shared_checksum, pos = get_dynint m 20 in
             let shared_size, pos = get_dynint m pos in
-            let shared_tags, pos = get_tags m pos in
+            let shared_tags, _pos = get_tags m pos in
 
             let computed_checksum = 
               Int64.of_int (fst_hash_checksum shared_hash) in
@@ -1249,7 +1248,7 @@ dec: [(63)]
             let shared_hash = String.sub m 4 20 in
             let shared_checksum, pos = get_dynint m 24 in
             let shared_size, pos = get_dynint m pos in
-            let shared_tags, pos = get_tags m pos in
+            let shared_tags, _pos = get_tags m pos in
 
             let computed_checksum = 
               Int64.of_int (fst_hash_checksum shared_hash) in
@@ -1368,7 +1367,7 @@ dec: [(0)(35)(31)(147)(72)(36)(60)(179)(137)(93)(0)(40)(0)(184)(102)(10)(138)(31
 (*          lprintf "We have got a real packet\n"; *)
             if len > 4 then
 (*                dump_sub s b.pos b.len; *)
-              let msg_type, size = parse_head ciphers s pos in
+              let _msg_type, size = parse_head ciphers s pos in
               Some (size + 5)
             else None
 
@@ -1377,7 +1376,7 @@ dec: [(0)(35)(31)(147)(72)(36)(60)(179)(137)(93)(0)(40)(0)(184)(102)(10)(138)(31
             if len > 4 then begin
 (*                dump_sub s b.pos b.len; *)
                 lprintf "Trying to continue...\n";
-                let msg_type, size = parse_head ciphers s pos in
+                let _msg_type, size = parse_head ciphers s pos in
                 Some (size + 5)
               end
             else None
@@ -1725,14 +1724,14 @@ module UdpMessages = struct
       | 0x27 ->
           let min_enc_type = get_int p 1 in
           let unknown = String.sub p 5 1 in
-          let netname, pos = extract_string p 6 in
+          let netname, _pos = extract_string p 6 in
 
           PingReq (min_enc_type, unknown, netname)
       | 0x28 ->
 
           let min_enc_type = get_int p 1 in
           let unknown = String.sub p 5 6 in
-          let netname, pos = extract_string p 11 in
+          let netname, _pos = extract_string p 11 in
           SupernodePongReq (min_enc_type, unknown, netname)
 
       | 0x29 ->
@@ -1761,7 +1760,7 @@ module UdpMessages = struct
             buf_int8 b 0x29;
             buf_int b min_enc_type;
             Buffer.add_string b unknown
-        | UnknownReq (opcode, unknown) ->
+        | UnknownReq (_opcode, unknown) ->
             Buffer.add_string b unknown;
       end;
       Buffer.contents b
@@ -1782,7 +1781,7 @@ module UdpMessages = struct
             Printf.bprintf b "NodePong (%d, " min_enc_type;
             bprint_ints b unknown;
             Printf.bprintf b ")"
-        | UnknownReq (opcode, unknown) ->
+        | UnknownReq (_opcode, unknown) ->
             Printf.bprintf b "Unknown \n    ";
             bprint_ints b unknown;
             Printf.bprintf b  "\n    ";
@@ -1892,9 +1891,9 @@ let check_primitives () =
       cipher_packet_set cipher s 0;
       assert (Bytes.to_string s = "\007\091\205\021\110\233\135\1870000"); 
       (* lprintf "cipher_packet_set s = \"%s\"\n" (String.escaped s); *)
-      let s = "123456789abcdefghijklm\233\234\235" in
-      apply_cipher cipher s 0 (String.length s);
-      assert (s = "\016\210\245\241\144Ug\028Z\229\1928\176\167\192\008\139\019\018Z\1937\226\250i"); 
+      let s = Bytes.of_string "123456789abcdefghijklm\233\234\235" in
+      apply_cipher cipher s 0 (Bytes.length s);
+      assert (s = Bytes.of_string "\016\210\245\241\144Ug\028Z\229\1928\176\167\192\008\139\019\018Z\1937\226\250i"); 
       (* lprintf "apply_cipher s = \"%s\"\n" (String.escaped s); *)
       cipher_free cipher;
     with _ ->
@@ -1917,15 +1916,15 @@ let translate_query q =
     match q with
     | QOr (q1,q2)
     | QAnd (q1, q2) -> iter q1; iter q2
-    | QAndNot (q1,q2) -> iter q1
+    | QAndNot (q1,_q2) -> iter q1
     | QHasWord w ->  add_words w
     | QHasField(field, w) ->
         begin
           match field with
-          | Field_Type -> realm := String.lowercase w
+          | Field_Type -> realm := String.lowercase_ascii w
           | Field_Format ->
               begin
-                match String.lowercase w with
+                match String.lowercase_ascii w with
                 | "mp3" | "wav" ->
                     add_words w;
                     realm := "audio"

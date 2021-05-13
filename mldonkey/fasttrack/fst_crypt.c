@@ -16,7 +16,7 @@
  */
 
 #include "fst_crypt.h"
-#include "../../utils/lib/md5.h"
+#include "../lib/md5.h"
 
 #define FALSE 0
 #define TRUE 1

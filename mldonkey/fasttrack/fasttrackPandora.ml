@@ -196,9 +196,9 @@ let rec check_xinu s pos len depth =
   | 0x4b ->
       if pos + 5 < len then
 
-        let msg_type0, len0 = get_xinu s pos 0 in
-        let msg_type1, len1 = get_xinu s pos 1 in
-        let msg_type2, len2 = get_xinu s pos 2 in
+        let _msg_type0, len0 = get_xinu s pos 0 in
+        let _msg_type1, len1 = get_xinu s pos 1 in
+        let _msg_type2, len2 = get_xinu s pos 2 in
 
         let check0 = check_xinu s (pos + 5 + len0) len (depth+1) in
         let check1 = check_xinu s (pos + 5 + len1) len (depth+1) in
@@ -208,9 +208,9 @@ let rec check_xinu s pos len depth =
       else depth
   | _ -> -10
 
-let parse (s_out : string) (s_in : string) =
+let parse (s_out : bytes) (s_in : bytes) =
   let parsed = ref false in
-  if String.length s_in > 12 && String.length s_out > 12 then begin
+  if Bytes.length s_in > 12 && Bytes.length s_out > 12 then begin
       let ciphers = {
           in_cipher = create_cipher ();
           out_cipher = create_cipher ();
@@ -220,25 +220,25 @@ let parse (s_out : string) (s_in : string) =
       begin
         try
 
-          get_cipher_from_packet s_out 4 ciphers.out_cipher;
+          get_cipher_from_packet (Bytes.to_string s_out) 4 ciphers.out_cipher;
           init_cipher ciphers.out_cipher;
 
-          get_cipher_from_packet s_in 0 ciphers.in_cipher;
+          get_cipher_from_packet (Bytes.to_string s_in) 0 ciphers.in_cipher;
           init_cipher ciphers.in_cipher;
 
           xor_ciphers ciphers.out_cipher ciphers.in_cipher;
           init_cipher ciphers.out_cipher;
 
           lprintf "HEADER OF CONNECTION: %02x.%02x.%02x.%02x - %02x.%02x.%02x.%02x\n"
-            (int_of_char s_out.[0])
-          (int_of_char s_out.[1])
-          (int_of_char s_out.[2])
-          (int_of_char s_out.[3])
+            (int_of_char (Bytes.get s_out (0)))
+          (int_of_char (Bytes.get s_out (1)))
+          (int_of_char (Bytes.get s_out (2)))
+          (int_of_char (Bytes.get s_out (3)))
 
-          (int_of_char s_out.[4])
-          (int_of_char s_out.[5])
-          (int_of_char s_out.[6])
-          (int_of_char s_out.[7])
+          (int_of_char (Bytes.get s_out (4)))
+          (int_of_char (Bytes.get s_out (5)))
+          (int_of_char (Bytes.get s_out (6)))
+          (int_of_char (Bytes.get s_out (7)))
           ;
 
           begin
@@ -256,7 +256,7 @@ let parse (s_out : string) (s_in : string) =
           end;
 
           (
-            let len = String.length s_out in
+            let len = Bytes.length s_out in
             let start_pos = 12 in
             apply_cipher ciphers.out_cipher s_out start_pos (len-start_pos);
 (*
@@ -265,7 +265,7 @@ let parse (s_out : string) (s_in : string) =
   *)
           );
           (
-            let len = String.length s_in in
+            let len = Bytes.length s_in in
             let start_pos = 8 in
             apply_cipher ciphers.in_cipher s_in start_pos (len-start_pos);
 (*
@@ -275,11 +275,11 @@ let parse (s_out : string) (s_in : string) =
           );
 
           lprintf "---------------------------------------------->\n";
-          lprintf "  HEADER[%s]\n" (String.escaped (String.sub s_out 0 4));
-          parse_netname 12 s_out { ciphers with
+          lprintf "  HEADER[%s]\n" (String.escaped (Bytes.sub_string s_out 0 4));
+          parse_netname 12 (Bytes.to_string s_out) { ciphers with
             in_xinu = ciphers.out_xinu; in_cipher = ciphers.out_cipher };
           lprintf "<----------------------------------------------\n";
-          parse_netname 8 s_in ciphers;
+          parse_netname 8 (Bytes.to_string s_in) ciphers;
           parsed := true;
 (*
  (*
@@ -292,7 +292,7 @@ dump_sub s (start_pos) (len - start_pos);
         lprintf "exception %s while parsing stream\n"
           (Printexc2.to_string e) ;
         lprintf "  [%s]\n" (String.escaped
-            (String.sub s_in 0 (min 50 (String.length s_in))))
+            (Bytes.sub_string s_in 0 (min 50 (Bytes.length s_in))))
   end;
   cipher_free ciphers.in_cipher;
     cipher_free ciphers.out_cipher;
@@ -378,13 +378,13 @@ let print_packets () =
 
                     lprintf "First direction....\n";
                     let parsed = parse
-                        (Buffer.contents cnx.packets_out)
-                      (Buffer.contents cnx.packets_in) in
+                        (Buffer.to_bytes cnx.packets_out)
+                      (Buffer.to_bytes cnx.packets_in) in
                     if not parsed then begin
                         lprintf "Second direction....\n";
                         let _ = parse
-                            (Buffer.contents cnx.packets_in)
-                          (Buffer.contents cnx.packets_out) in
+                            (Buffer.to_bytes cnx.packets_in)
+                          (Buffer.to_bytes cnx.packets_out) in
                         ()
                       end
                   end
@@ -403,7 +403,7 @@ let commit () =
 let local_net = "129.104"
 let time = ref 0
 
-let new_packet (kind:t) (number:int) ip1 port1 ip2 port2 data =
+let new_packet (kind:t) (_number:int) ip1 port1 ip2 port2 data =
   if not (String2.starts_with ip1 local_net &&
       String2.starts_with ip2 local_net) then
     begin
@@ -415,7 +415,7 @@ let new_packet (kind:t) (number:int) ip1 port1 ip2 port2 data =
             try
               packets := (time, UdpPacket (ip1,port1,ip2,port2,data)) :: !packets
 (*              lprintf "New packet:\n%s\n" (String.escaped data);           *)
-            with e ->
+            with _ ->
 (*                lprintf "Could not parse UDP packet:\n"; *)
                 ()
           end

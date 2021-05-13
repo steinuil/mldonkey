@@ -78,7 +78,7 @@ let declare_shared_files s =
       ) uids
   )
 
-let udp_packet_handler ip port msg =
+let udp_packet_handler ip port _msg =
   let h = H.new_host ip port Ultrapeer in
   H.host_queue_add active_udp_queue h (last_time ());
   H.connected h;
@@ -113,7 +113,7 @@ let server_msg_handler sock s addr t =
         if not (List.memq s !connected_servers) then
           connected_servers := s :: !connected_servers;
 
-        List.iter (fun (ip,port,seen,slots) ->
+        List.iter (fun (ip,port,_seen,_slots) ->
             try
               ignore (H.new_host (Ip.addr_of_ip ip) port Ultrapeer)
             with Not_found -> ()
@@ -158,7 +158,7 @@ the FasttrackSupernode module, and get rid of it. *)
             ) !current_files;
           end
 
-    | M.QueryReplyReq ( (s_ip, s_port), id, results) ->
+    | M.QueryReplyReq ( (_s_ip, _s_port), id, results) ->
 
         let s = Hashtbl.find searches_by_uid id in
 
@@ -186,7 +186,7 @@ the FasttrackSupernode module, and get rid of it. *)
                   add_source rs fuser;
                   CommonInteractive.search_add_result false sss rs
 
-              | FileUidSearch (file, file_hash) -> ()
+              | FileUidSearch (_file, _file_hash) -> ()
             end;
 
             try
@@ -198,7 +198,7 @@ the FasttrackSupernode module, and get rid of it. *)
             with _ -> ()
         ) results
 
-    | M.NetworkStatsReq (stats, netname, nusers) ->
+    | M.NetworkStatsReq (stats, _netname, _nusers) ->
         begin
           match stats with
             [] -> ()
@@ -209,7 +209,7 @@ the FasttrackSupernode module, and get rid of it. *)
               server_must_update s;
         end
 
-    | M.NetworkNameReq netname ->
+    | M.NetworkNameReq _netname ->
         server_send s M.DirectPacket (M.NetworkNameReq network_name)
 
     | M.PingReq ->
@@ -251,11 +251,11 @@ let udp_client_handler ip port p =
   | Some f -> f ip port t
   | None ->
       match t with
-      | M.PingReq (min_enc_type, _, netname) -> ()
+      | M.PingReq (_min_enc_type, _, _netname) -> ()
 (*          udp_send ip port (M.NodePongReq (min_enc_type, netname)) *)
-      | M.SupernodePongReq (min_enc_type, _, netname) ->
+      | M.SupernodePongReq (_min_enc_type, _, _netname) ->
           UdpSocket.declare_pong ip
-      | M.NodePongReq (min_enc_type, _) ->
+      | M.NodePongReq (_min_enc_type, _) ->
           UdpSocket.declare_pong ip
       | M.UnknownReq _ -> ()
 

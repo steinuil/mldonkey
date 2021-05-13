@@ -59,13 +59,13 @@ let load_nodes_file filename =
   )
 
 let unpack_nodes_gzip filename url =
-  let ext = String.lowercase (Filename2.extension filename) in
-  let last_ext = String.lowercase (Filename2.last_extension filename) in
+  let ext = String.lowercase_ascii (Filename2.extension filename) in
+  let last_ext = String.lowercase_ascii (Filename2.last_extension filename) in
   let real_ext = if last_ext = ".zip" then last_ext else ext in
     match real_ext with
     | ".gzip" -> (
          try     
-            Misc.archive_extract filename "gz"
+            Misc2.archive_extract filename "gz"
          with e ->
           lprintf_nl "Exception %s while extracting from %s" (Printexc2.to_string e) url;
           raise Not_found
@@ -81,7 +81,7 @@ let _ =
         if f <> filename then Sys.remove f
     )    
 
-let server_parse_after s gconn sock =
+let server_parse_after s _conn sock =
   try
     match s.server_ciphers with
       None -> assert false
@@ -210,7 +210,7 @@ let connect_server h =
               let ip = Ip.to_inet_addr ip in
               let sock = connect token "fasttrack to server"
                   ip port
-                  (fun sock event ->
+                  (fun _sock event ->
                     match event with
                       BASIC_EVENT (RTIMEOUT|LTIMEOUT) ->
 (*                  lprintf "RTIMEOUT\n"; *)
@@ -245,10 +245,10 @@ let connect_server h =
 
               (match !connection_header_hook with
                   None ->
-                    s.[0] <- '\250';
-                    s.[1] <- '\000';
-                    s.[2] <- '\182';
-                    s.[3] <- '\043';
+                    Bytes.set s (0) '\250';
+                    Bytes.set s (1) '\000';
+                    Bytes.set s (2) '\182';
+                    Bytes.set s (3) '\043';
                 | Some f -> f s);
 
               cipher_packet_set out_cipher s 4;
@@ -272,7 +272,7 @@ let get_file_from_source c file =
     if connection_can_try c.client_connection_control then begin
         connection_try c.client_connection_control;
         match c.client_user.user_kind with
-          Indirect_location ("", uid, _, _) ->
+          Indirect_location ("", _uid, _, _) ->
 (*
           lprintf "++++++ ASKING FOR PUSH +++++++++\n";
 
@@ -432,7 +432,7 @@ let connect_servers connect =
   (if !!max_ultrapeers > List.length !connected_servers then
       try
         let to_connect = 3 * (!!max_ultrapeers - !nservers) in
-        for i = 1 to to_connect do
+        for _ = 1 to to_connect do
 (*          lprintf "try_connect_ultrapeer...\n";  *)
           try_connect_ultrapeer connect
         done

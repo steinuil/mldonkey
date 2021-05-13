@@ -176,11 +176,11 @@ module H = CommonHosts.Make(struct
                 ]
             ));
           Udp_Connect,
-          (600, (fun kind ->
+          (600, (fun _kind ->
                    [waiting_udp_queue]
             ))]
 
-      let default_requests kind = [Tcp_Connect,0; Udp_Connect,0]
+      let default_requests _kind = [Tcp_Connect,0; Udp_Connect,0]
 
       let max_ultrapeers = max_known_ultrapeers
       let max_peers = max_known_peers
@@ -392,7 +392,7 @@ let check_client_country_code c =
     match c.client_country_code with
     | None ->
         (match c.client_host with
-        | Some (ip,port) -> c.client_country_code <- Geoip.get_country_code_option ip
+        | Some (ip,_port) -> c.client_country_code <- Geoip.get_country_code_option ip
         | _ -> ())
     | _ -> ()
 
@@ -544,5 +544,5 @@ let client_name () =
 **************************************************************)
 
 let _ =
-  Heap.add_memstat "FasttrackGlobals" (fun level buf ->
+  Heap.add_memstat "FasttrackGlobals" (fun _level buf ->
      Printf.bprintf buf "Number of old files: %d\n" (List.length !!old_files))
