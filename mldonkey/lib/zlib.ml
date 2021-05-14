@@ -1,6 +1,6 @@
 exception Error of string * string
 
-let _ =
+let () =
   Callback.register_exception "Zlib.Error" (Error("",""))
 
 type stream

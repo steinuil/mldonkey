@@ -19,8 +19,6 @@
 
 open Gettext
 open Md4
-open LittleEndian
-open Unix
 open Printf2
 
 let _s x = _s "Mld_hash" x
@@ -57,7 +55,7 @@ let rec tiger_of_array array pos block =
   let d1 = tiger_of_array array pos (block/2) in
   let d2 = tiger_of_array array (pos+block/2) (block/2) in
   let s = Bytes.create (1 + Tiger.length * 2) in
-  s.[0] <- '\001';
+  Bytes.set s 0 '\001';
   String.blit (TigerTree.direct_to_string d1) 0 s 1 Tiger.length;
   String.blit (TigerTree.direct_to_string d2) 0 s (1+Tiger.length) Tiger.length;
   let t = Tiger.string (Bytes.unsafe_to_string s) in
@@ -196,13 +194,13 @@ let aich_hash side nchunks f_hashchunk =
              aux Right (if q = 0L || side = Left then p else p ++ 1L) next_leaf
                (fun right_hash next_leaf ->
                   cont (combine_sha1 left_hash right_hash) next_leaf)) in
-    aux side n 0L (fun root_hash number_of_leaves -> root_hash)
+    aux side n 0L (fun root_hash _number_of_leaves -> root_hash)
   in
   build_tree nchunks
 
 let aich_hash_chunk side fd offset len =
   let nzones = (Int64.pred len // edk_zone_size) ++ 1L in
-  let compute_sha1_zone side nzone =
+  let compute_sha1_zone _side nzone =
     let begin_pos = offset ++ edk_zone_size ** nzone in
     let end_pos = offset ++ (min (edk_zone_size ** (nzone ++ 1L)) len) in
     let len = end_pos -- begin_pos in
@@ -291,10 +289,10 @@ let check_external_functions file_size =
   let test_string_len = 43676 in
   let dummy_string = "bonjourhello1" in
   
-  let create_diskfile filename size =
+  let create_diskfile filename _size =
     Unix32.create_diskfile filename true
   in
-  let create_sparsefile filename size =
+  let create_sparsefile filename _size =
     Unix32.create_sparsefile filename true
   in
   let create_multifile filename size =    
@@ -482,7 +480,7 @@ let _ =
     (Sys.Signal_handle (fun _ -> lprintf_nl "Received SIGTERM, stopping mld_hash...";
         exit 0));
 
-  Arg2.parse2 [
+  Arg2.parse [
     "-diff_chunk", Arg2.Array (4, diff_chunk), 
     "<filename1> <filename2> <begin_pos> <end_pos> : compute diff between the two files";
     "-hash", Arg2.String ( (:=) hash), _s " <hash> : Set hash type you want to compute (ed2k, aich, sha1, sig2dat, bp)";

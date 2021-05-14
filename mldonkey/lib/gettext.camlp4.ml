@@ -418,7 +418,7 @@ in the default and in the translation. *)
   save_strings ()
 
 
-let _ =
+let () =
   try
     let file = Sys.getenv "GETTEXT_FILE" in
     let ext = Sys.getenv "LANG" in

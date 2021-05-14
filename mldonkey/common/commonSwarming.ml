@@ -830,9 +830,9 @@ let split_blocks s chunk_size =
   let nblocks = List.length blocks in
 (*  lprintf "%d blocks to generate\n" nblocks; *)
 
-  if Array2.exists ((<>) 0) s.s_availability then
+  if Array.exists ((<>) 0) s.s_availability then
     lprintf_nl "WARNING: splitting swarmer discarded availability counters";
-  if Array2.exists ((<>) 0) s.s_nuploading then
+  if Array.exists ((<>) 0) s.s_nuploading then
     lprintf_nl "WARNING: splitting a swarmer beging uploaded to";
 
   s.s_blocks <- Array.make nblocks EmptyBlock;
@@ -3049,7 +3049,7 @@ let uploader_swarmer up = up.up_t
 
 let chunks_availability t =
   let s = t.t_s in
-  String2.init (partition_size t) (fun i ->
+  String.init (partition_size t) (fun i ->
     char_of_int (
       let v = List2.min
         (List.map (fun i -> s.s_availability.(i)) t.t_blocks_of_chunk.(i)) in

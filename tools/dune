@@ -1,5 +1,6 @@
 (executable
  (name ocamlpp)
+ (modules ocamlpp)
  (libraries camlp4.lib str))
 
 (rule
@@ -7,3 +8,13 @@
  (targets ocamlpp.ml)
  (action
   (run camlp4of -impl %{deps} -o %{targets})))
+
+(executable
+ (name mld_hash)
+ (modules mld_hash)
+ (libraries mldonkey_lib mldonkey_net))
+
+(executable
+ (name subconv)
+ (modules subconv)
+ (libraries mldonkey_lib mldonkey_net))

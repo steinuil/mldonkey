@@ -18,9 +18,6 @@
 *)
 
 open Gettext
-open Md4
-open LittleEndian
-open Unix
 open Printf2
 
 let _s x = _s "Subconv" x
@@ -81,7 +78,7 @@ let frame_of_srt_time time =
             float_of_int msecs /. 1000.) *. !framerate)
     | _ -> raise Not_found
   
-  with e ->
+  with _ ->
       failwith (Printf.sprintf "Bad time format [%s]" time)
 
 (*************************************************************************)
@@ -341,17 +338,17 @@ let _ =
           [] -> failwith "Not enough subtitles"
         | (pos, lines) :: _ ->
 
-            Printf.fprintf Pervasives.stdout "FIRST SUBTITLE:\n";
-            fprintf_sub Pervasives.stdout (pos, lines) 0.;
-            fprintf_srt Pervasives.stdout 1 (pos, lines) 0.;
+            Printf.fprintf Stdlib.stdout "FIRST SUBTITLE:\n";
+            fprintf_sub Stdlib.stdout (pos, lines) 0.;
+            fprintf_srt Stdlib.stdout 1 (pos, lines) 0.;
             
             let rec iter list =
               match list with
                 [] -> assert false
               | [pos, lines] ->
-                  Printf.fprintf Pervasives.stdout "\n\nLAST SUBTITLE:\n";
-                  fprintf_sub Pervasives.stdout (pos, lines) 0.;
-                  fprintf_srt Pervasives.stdout 1 (pos, lines) 0.;
+                  Printf.fprintf Stdlib.stdout "\n\nLAST SUBTITLE:\n";
+                  fprintf_sub Stdlib.stdout (pos, lines) 0.;
+                  fprintf_srt Stdlib.stdout 1 (pos, lines) 0.;
 
               | _ :: tail -> iter tail
             in

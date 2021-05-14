@@ -1521,8 +1521,8 @@ type statfs = {
 exception Not_supported
 exception Error
 
-let _ = Callback.register_exception "not supported" Not_supported
-let _ = Callback.register_exception "error" Error
+let () = Callback.register_exception "not supported" Not_supported
+let () = Callback.register_exception "error" Error
 
 external statfs : string -> statfs = "statfs_statfs"
 
@@ -1686,7 +1686,7 @@ let set_max_cache_size v =
 
 let get_max_cache_size () = !max_cache_size
 
-let _ =
+let () =
   Heap.add_memstat "Unix32" (fun _level buf ->
       let counter = ref 0 in
       H.iter (fun _ -> incr counter) table;

@@ -364,6 +364,7 @@ let load_config () =
   Unix2.can_write_to_directory !!temp_directory
 
 let _ =
+  print_endline "driverMain";
 
   let t = Unix.localtime (Unix.time ()) in
   if (t.Unix.tm_year<=104) then

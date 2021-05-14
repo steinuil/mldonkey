@@ -178,7 +178,7 @@ module Base32 = struct
 module Base6427 = struct  
     let base64tbl = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
     
-    let _ = assert (String.length base64tbl = 64)
+    let () = assert (String.length base64tbl = 64)
     
     let to_string _ hashbin =
       let hash64 = Bytes.create 30 in
@@ -201,7 +201,7 @@ module Base6427 = struct
       Bytes.sub_string hash64 0 !j
     
     let base64tbl_inv = Bytes.create 126
-    let _ = 
+    let () = 
       for i = 0 to 63 do
         Bytes.set base64tbl_inv (int_of_char base64tbl.[i]) @@ char_of_int i
       done

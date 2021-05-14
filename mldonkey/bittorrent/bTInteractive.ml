@@ -290,7 +290,7 @@ let op_file_print file o =
   (* calculate subfile ranges covered by directories *)
   let directories =
     let h = Hashtbl.create 16 in
-    List2.iteri begin fun i (path,size,_,progress,prio) ->
+    List.iteri begin fun i (path,size,_,progress,prio) ->
       List.iter begin fun dir ->
         let (i_from,_,acc_size,acc_progress,acc_prio) = try Hashtbl.find h dir with Not_found -> (i,i,0L,0.,None) in
         let new_size = Int64.add acc_size size in
@@ -469,7 +469,7 @@ let op_file_print file o =
     html_mods_table_header buf "subfilesInfo" "subfilesInfo" header_list;
   end;
 
-  List2.iteri begin fun cntr (filename, size, magic, progress, prio) ->
+  List.iteri begin fun cntr (filename, size, magic, progress, prio) ->
 
     (* check whether it is new directory *)
     List.iter begin fun dir ->
@@ -971,7 +971,7 @@ let op_network_parse_url url user group =
               List.iter (fun(v) -> lprintf_nl "magnet %s" (string_of_uid v)) magnet#uids;
               List.iter (fun(v) -> lprintf_nl "magnet trackers %s" v) magnet#trackers;
             end;
-            match List2.filter_map (function BTUrl btih -> Some btih | _ -> None) magnet#uids with
+            match List.filter_map (function BTUrl btih -> Some btih | _ -> None) magnet#uids with
               | [] -> "No btih found in magnet url", false;
               | btih::_ ->
                 if !verbose then

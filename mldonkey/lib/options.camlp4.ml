@@ -871,7 +871,7 @@ let save opfile =
         List.iter (fun s ->
           let options = List.filter (fun o -> o.option_advanced)  
             s.section_options in
-          if options = [] then () else let _ = () in
+          if options = [] then () else
           Printf.fprintf oc "\n\n";
           Printf.fprintf oc "    (************************************)\n";
           

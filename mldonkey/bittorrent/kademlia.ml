@@ -315,7 +315,7 @@ let refresh table =
   let rec loop acc = function
   | N (l,_,r) -> let acc = loop acc l in loop acc r
   | L b when b.last_change < expire ->
-    if Array2.exists (fun n -> n.status <> Bad) b.nodes then
+    if Array.exists (fun n -> n.status <> Bad) b.nodes then
       let nodes = Array.map (fun n -> n.id, n.addr) b.nodes in
       (choose_random b.lo b.hi, Array.to_list nodes) :: acc
     else

@@ -33,11 +33,6 @@ let max a =
   done;
   !max_val
   
-let exists p a =
-  let l = Array.length a in
-  let rec aux i = (i < l) && (p a.(i) || aux (i+1)) in
-  aux 0
-
 let existsi p a =
   let l = Array.length a in
   let rec aux i = (i < l) && (p i a.(i) || aux (i+1)) in
@@ -69,4 +64,3 @@ let shuffle a =
     a.(j) <- a.(i);
     a.(i) <- tmp
   done
-

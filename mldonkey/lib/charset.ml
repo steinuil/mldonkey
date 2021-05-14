@@ -1670,8 +1670,8 @@ module Locale = struct
 (* FIXME move away! *)
 let () =
   (* block signals until core started correctly *)
-  (MlUnix.set_signal  Sys.sigint
-    (Sys.Signal_handle (fun _ -> ())));
+  (* (MlUnix.set_signal  Sys.sigint
+    (Sys.Signal_handle (fun _ -> ()))); *)
   (MlUnix.set_signal  Sys.sigterm
     (Sys.Signal_handle (fun _ -> ())))
 
@@ -1729,7 +1729,7 @@ let all_regions =
 let charset_list_from_language lang =
   let li = ref [] in
   li := ascii :: unicode :: !li;
-  let _ =
+  let () =
     match lang with
         "AR" -> li := arabic :: !li
       | "HY" -> li := armenian :: !li

@@ -248,29 +248,6 @@ let stem s =
   done;
   split_simplify (Bytes.unsafe_to_string s) ' '
   
-let map f s =
-  let len = String.length s in
-  if len = 0 then [||] else
-  let v = f s.[0] in
-  let array = Array.make len v in
-  for i = 1 to len -1 do 
-    array.(i) <- f s.[i]
-  done;
-  array
-  
-let iteri f s =
-  let len = String.length s in
-  for i = 0 to len-1 do
-    f i s.[i]
-  done
-  
-let init n f =
-  let s = Bytes.create n in
-  for i = 0 to n - 1 do
-    Bytes.set s i (f i)
-  done;
-  Bytes.unsafe_to_string s
-
 let exists p s =
   let l = String.length s in
   let rec aux i =

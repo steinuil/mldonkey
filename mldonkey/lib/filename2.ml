@@ -271,14 +271,17 @@ let temp_file prefix suffix =
     with Sys_error _ as e ->
       if counter >= 1000 then raise e else try_name (counter + 1)
   in try_name 0
-  
-let _ = (* some assertions on these functions *)
-  assert (basename "c:\\Program Files\\Toto history.exe" = "Toto history.exe");
-  assert (path_of_filename 
-      "c:\\Program Files\\Toto history.exe" = 
-    [ "c:"; "Program Files"; "Toto history.exe"] );
-  assert (path_of_filename 
-      "/home/bidule/mldonkey folder/toto" = 
-    [ "home"; "bidule"; "mldonkey folder"; "toto"] );
-  assert (path_of_filename 
-      "/home//bidule" = ["home"; "bidule"])
+
+let%test _ =
+  basename "c:\\Program Files\\Toto history.exe" = "Toto history.exe"
+
+let%test _ =
+  path_of_filename "c:\\Program Files\\Toto history.exe"
+  = ["c:"; "Program Files"; "Toto history.exe"]
+
+let%test _ =
+  path_of_filename "/home/bidule/mldonkey folder/toto"
+  = ["home"; "bidule"; "mldonkey folder"; "toto"]
+
+let%test _ =
+  path_of_filename "/home//bidule" = ["home"; "bidule"]

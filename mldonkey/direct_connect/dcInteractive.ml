@@ -95,7 +95,7 @@ let parse_url url user group =
     if !verbose then
       lprintf_nl "Got magnet url %S" url;
     (* TODO multiple TTHs, multiple xt, automatic merge of downloads from different networks (?!) *) 
-    match List2.filter_map (function TigerTree tth -> Some tth | _ -> None) magnet#uids with
+    match List.filter_map (function TigerTree tth -> Some tth | _ -> None) magnet#uids with
     | [] -> "No TTH found in magnet url", false
     | tth::_ ->
       let (_ : _ option) = start_new_download None (TigerTree.to_string tth) "" magnet#name (opt_default 0L magnet#size) user group in

@@ -98,13 +98,3 @@ let shuffle list =
   let a = Array.of_list list in
   Array2.shuffle a;
   Array.to_list a
-
-let filter_map f =
-  List.fold_left (fun acc x -> match f x with Some y -> y :: acc | None -> acc) []
-
-let iteri f l =
-  let rec loop i = function
-  | [] -> ()
-  | x::xs -> f i x; loop (i+1) xs
-        in
-        loop 0 l

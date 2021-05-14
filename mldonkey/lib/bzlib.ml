@@ -14,7 +14,7 @@ let string_of_error = function
 
 exception Error of string * bzlib_error
 
-let _ =
+let () =
   Callback.register_exception "Bzlib.Error" (Error("",BZ_CONFIG_ERROR))
 
 type stream

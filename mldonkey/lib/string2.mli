@@ -82,8 +82,6 @@ val of_char : char -> string
 val resize : bytes -> int ->  bytes
 (*d [resize s len] returns a string of length [len] starting with [s]. *)
   
-val init : int -> (int -> char) -> string
-
 val tokens: string -> string list
 
 (* [contains s sub] checks whether [s] contains [sub] *)
@@ -98,8 +96,6 @@ val replace_char : bytes -> char -> char -> unit
 (* [stem s] cuts the string [s] in small words, for indexation eg *)
 val stem : string -> string list
   
-val map : (char -> 'a) -> string -> 'a array
-val iteri: (int -> char -> unit) -> string -> unit
 val exists: (char -> bool) -> string -> bool
 val existsi: (int -> char -> bool) -> string -> bool
 val for_all: (char -> bool) -> string -> bool

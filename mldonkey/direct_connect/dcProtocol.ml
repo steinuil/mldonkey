@@ -903,7 +903,7 @@ module UserIP = struct
   let parse s = String2.split_simplify s '$'
 
   let parse_nameip =
-    List2.filter_map (fun s ->
+    List.filter_map (fun s ->
       match String2.split s ' ' with
       | [name;addr] -> Some (dc_to_utf name, Ip.addr_of_string addr)
       | _ -> None)

@@ -7,7 +7,7 @@ let memstat_functions = ref []
 
 let add_memstat m f = memstat_functions := (m,f) :: !memstat_functions
 
-let _ = 
+let () = 
   add_memstat "Gc" (fun level buf ->
     let stat = if level > 0 then Gc.stat () else Gc.quick_stat () in
     let ab = (stat.Gc.minor_words +. stat.Gc.major_words -. stat.Gc.promoted_words) 
