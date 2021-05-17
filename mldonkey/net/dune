@@ -1,7 +1,10 @@
 (library
  (name mldonkey_net)
  (wrapped false)
- (libraries mldonkey_lib)
+ (libraries mldonkey_lib base64)
+ (inline_tests)
  (foreign_stubs
   (language c)
-  (names upnp_stubs)))
+  (names upnp_stubs))
+ (preprocess
+  (pps ppx_inline_test)))

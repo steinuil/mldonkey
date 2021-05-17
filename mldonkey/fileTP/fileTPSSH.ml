@@ -296,7 +296,7 @@ let ssh_connect token c f =
 (*
                     lprintf "Received/expected: %d/%d\n" (String.length s) elen;
 *)
-                    let ss = Base64.decode s in
+                    let ss = Base64.decode_exn s in
 (*
                     lprintf "Decoded/expected: %d/%d\n" (String.length ss) len;
 *)
