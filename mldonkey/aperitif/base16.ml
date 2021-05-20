@@ -4,15 +4,7 @@ let lowercase_alphabet = "0123456789abcdef"
 
 type error = string
 
-module type Input = sig
-  type t
-
-  val length : t -> int
-
-  val get : t -> int -> char
-end
-
-module Make (I : Input) = struct
+module Make (I : Input.S) = struct
   let encode ?(alphabet = default_alphabet) ?(off = 0) ?len input =
     let real_len = I.length input in
     let len = Option.value ~default:(real_len - off) len in
@@ -55,26 +47,13 @@ module Make (I : Input) = struct
       Ok (Bytes.unsafe_to_string res)
 
   let decode_exn ?alphabet ?off ?len input =
-    match encode ?alphabet ?off ?len input with
+    match decode ?alphabet ?off ?len input with
     | Ok str -> str
     | Error err -> invalid_arg err
 end
 
-module Base16_string = Make (struct
-  type t = string
-
-  let length = String.length
-
-  let get = String.unsafe_get
-end)
-
-module Base16_bytes = Make (struct
-  type t = bytes
-
-  let length = Bytes.length
-
-  let get = Bytes.unsafe_get
-end)
+module Base16_string = Make (Input.String)
+module Base16_bytes = Make (Input.Bytes)
 
 let encode_string = Base16_string.encode
 
