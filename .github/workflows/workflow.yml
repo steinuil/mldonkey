@@ -6,35 +6,15 @@ on:
 
 jobs:
   build:
-    continue-on-error: ${{ ! matrix.required }}
     strategy:
       fail-fast: false
       matrix:
         ocaml-version:
-          - 4.00.1
-          - 4.01.0
-          - 4.02.3
-          - 4.03.0
-          - 4.04.2
-          - 4.05.0
-          - 4.06.1
-          - 4.07.1
-          - 4.08.1
-          - 4.09.1
-        required:
-          - true
+          - 4.11.2
         os:
           - ubuntu-latest
-        include:
-          - ocaml-version: 4.09.1
-            required: true
-            os: macos-latest
-          - ocaml-version: 4.09.1
-            required: false
-            os: windows-latest
-          - ocaml-version: 4.10.0
-            required: false
-            os: ubuntu-latest
+          - macos-latest
+          - windows-latest
 
     runs-on: ${{ matrix.os }}
 
