@@ -1,12 +1,4 @@
-(* let rol n cnt = (num lsl cnt) lor (num lsr (32 - cnt)) *)
-
-(* let f x y z =
-  (x land y) lor ((lnot x) land z) *)
-
 let f x y z = Int32.(logor (logand x y) (logand (lognot x) z))
-
-(* let g x y z =
-  (x land y) lor ((x land z) lor (y land z)) *)
 
 let g x y z = Int32.(logor (logand x y) (logor (logand x z) (logand y z)))
 
@@ -75,7 +67,7 @@ let digest ?(off = 0) ?len input =
           Int32.(
             add !a
               (add (g !b !c !d)
-                 (add (Int32.of_int (Char.code (Bytes.get x k))) 0x5A827999l)))
+                 (add (Int32.of_int (Char.code (Bytes.get x k))) 0x5a827999l)))
           s
     in
 
