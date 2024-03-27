@@ -1,7 +1,7 @@
 (library
  (name mldonkey_lib)
  (wrapped false)
- (libraries camlp4.lib str unix)
+ (libraries camlp4.lib str unix base64 qcheck)
  (inline_tests)
  (preprocess
   (pps ppx_inline_test))

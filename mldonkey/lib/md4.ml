@@ -237,6 +237,14 @@ module Base6427 = struct
       
     let to_string_case _ = to_string
   end
+
+let%test_unit _ =
+  QCheck.(Test.check_exn
+    (Test.make ~count:1000 ~name:"base6427 is the same shit as base64 except with a leading ="
+      (string_of_size Gen.(pure 20))
+      (fun str ->
+        Base6427.to_string () (Bytes.of_string str) = "=" ^ Base64.encode_exn str)))
+
   
   
 module type Digest = sig
